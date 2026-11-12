@@ -1,0 +1,42 @@
+{
+  "fileFormatVersion": "1",
+  "parameterSets": {
+    "Kitchen cutlery drawer": {
+      "drawer_top_inner_width_mm": "218",
+      "drawer_bottom_flat_width_mm": "190",
+      "drawer_bottom_inside_radius_mm": "10",
+      "drawer_inside_length_mm": "475",
+      "drawer_rim_height_mm": "65",
+      "assembly_total_clearance_mm": "1",
+      "grid_columns": "3",
+      "grid_rows": "6",
+      "row_01_splits": "1",
+      "row_02_splits": "0",
+      "row_03_splits": "3",
+      "row_04_splits": "0",
+      "row_05_splits": "0",
+      "row_06_splits": "1",
+      "row_07_splits": "0",
+      "row_08_splits": "0",
+      "row_09_splits": "0",
+      "row_10_splits": "0",
+      "output_mode": "0",
+      "selected_grid_row": "1",
+      "selected_grid_column": "1",
+      "tray_extension_above_rim_mm": "10",
+      "wall_thickness_mm": "1.8",
+      "base_thickness_mm": "1.8",
+      "chamfer_fit_mode": "0",
+      "connector_mode": "0",
+      "sockets_per_boundary_overlap": "1",
+      "joiner_distribution": "0",
+      "rim_on_left": "true",
+      "rim_on_right": "true",
+      "rim_on_front": "false",
+      "rim_on_rear": "false",
+      "rim_overhang_mm": "3",
+      "chamfer_angle_deg": "45",
+      "join_edge_chamfer_height_mm": "1"
+    }
+  }
+}
