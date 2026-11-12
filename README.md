@@ -1,13 +1,13 @@
-# Modular Drawer Organizer
+# Drawer Organizer
 
 Parametric, 3D-printable organizer for metal-sided kitchen drawers, including sloped sidewalls, connector sockets, and a grid-based tray layout.
 
 ## Current version: v5
 
-- [OpenSCAD source](modular-organizer-v5.scad)
-- [OpenSCAD Customizer preset](modular-organizer-v5.json)
+- [OpenSCAD source](drawer-organizer-v5.scad)
+- [OpenSCAD Customizer preset](drawer-organizer-v5.json)
 
-Download **both files to the same folder**, then open `modular-organizer-v5.scad` in OpenSCAD 2021.01. The JSON supplies the **Kitchen cutlery drawer** preset.
+Download **both files to the same folder**, then open `drawer-organizer-v5.scad` in **OpenSCAD 2021.01**. Its matching JSON file contains the **Kitchen cutlery drawer** preset.
 
 ## Example drawer and layout
 
@@ -17,14 +17,14 @@ Download **both files to the same folder**, then open `modular-organizer-v5.scad
 
 This creates five trays: one full-width rear tray, three long central trays, and one full-width front tray. A row value of `0` extends the preceding tray group.
 
-Use **Full layout** to preview the assembly or select an individual grid row and column to export one tray. The Customizer also controls adjoining-edge cutouts, connector placement, bottom chamfers, and optional exterior rim extensions.
-
-## Versioning
-
-Only the **current** `modular-organizer-vN.scad` and `modular-organizer-vN.json` files live in the repository root. Earlier revisions remain available in [Git history](https://github.com/realcarbonneau/drawer-organizer-scad/commits/main); no `versions/` directory is maintained.
+Use **Full layout** to preview the assembly, or select an individual grid row and column to export one tray. The Customizer also controls adjoining-edge cutouts, connector placement, bottom chamfers, and optional exterior rim extensions.
 
 ## Source and notes
 
 Based on the [Modular Drawer Organizer Remix](https://www.printables.com/model/816729-modular-drawer-organizer-remix/) concept. Check the upstream license and attribution requirements before redistributing derived files.
 
 Check fit with a small test print before manufacturing the full set; measured drawer dimensions and physical fit have not yet been validated.
+
+## Development guidelines
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for naming, version increments, Git-history policy, and release steps. **Keep only the current version at the repository root; use Git history for earlier versions.**

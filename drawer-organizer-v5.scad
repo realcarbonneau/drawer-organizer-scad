@@ -1,4 +1,4 @@
-// MODULAR DRAWER ORGANIZER v5 — GRID-ROW LAYOUT ENGINE
+// DRAWER ORGANIZER v5 — GRID-ROW LAYOUT ENGINE
 // Remix foundation: https://www.printables.com/model/816729-modular-drawer-organizer-remix/
 // OpenSCAD 2021.01; no third-party libraries.
 //
