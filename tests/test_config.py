@@ -1,0 +1,55 @@
+"""Fast release, OpenSCAD Customizer and grid-schema tests."""
+from __future__ import annotations
+
+import json
+import re
+
+import pytest
+
+from scripts.organizer_cli import default_parts, preset_parameters, release_paths
+
+
+def test_only_one_current_release_pair():
+    source, preset = release_paths()
+    assert source.stem == preset.stem
+    assert source.name == "drawer-organizer-v8.scad"
+    assert json.loads(preset.read_text())["fileFormatVersion"] == "1"
+
+
+def test_preset_keys_exist_as_model_controls():
+    source, preset = release_paths()
+    scad = source.read_text()
+    for key in preset_parameters(preset):
+        assert re.search(rf"(?m)^\s*{re.escape(key)}\s*=", scad), key
+
+
+def test_default_grid_and_row_continuations():
+    _, preset = release_paths()
+    params = preset_parameters(preset)
+    assert default_parts(params) == [(1, 1), (3, 1), (3, 2), (3, 3), (6, 1)]
+    assert [int(params[f"row_{i:02d}_splits"]) for i in range(1, 7)] == [1, 0, 3, 0, 0, 1]
+
+
+def test_invalid_grid_first_row_rejected():
+    with pytest.raises(ValueError, match="row 1"):
+        default_parts({"grid_rows": "1", "grid_columns": "1", "row_01_splits": "0"})
+
+
+def test_one_by_one_grid_is_valid():
+    assert default_parts({"grid_rows": "1", "grid_columns": "1", "row_01_splits": "1"}) == [(1, 1)]
+
+
+def test_customizer_controls_and_defaults():
+    source, preset = release_paths()
+    scad = source.read_text()
+    params = preset_parameters(preset)
+    assert "preview_separation_mm = 0; // [0:1:50]" in scad
+    assert "render_facets = 20; // [3:1:200]" in scad
+    assert int(params["render_facets"]) == 20
+    assert int(params["print_overhang_angle_deg"]) == 60
+    assert "connector_diameter_addition_mm" in params
+    for key in ("connector_entry_bevel_mm", "connector_head_diameter_mm",
+                "connector_lobe_inset_mm", "cutout_after_column_row_03"):
+        assert key not in params
+    for i in range(1, 11):
+        assert params[f"cutout_row_{i:02d}"] in ("true", "false")

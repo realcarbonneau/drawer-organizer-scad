@@ -1,53 +1,59 @@
 # Drawer Organizer
 
-Parametric 3D-printable organizer for metal-sided kitchen drawers, written independently in OpenSCAD 2021.01. Designs are defined by the actual **drawer**, an adjustable **logical grid**, and a shared set of **tray/connector** parameters.
+Parametric 3D-printable trays for metal-sided kitchen drawers, implemented in OpenSCAD 2021.01. The entire arrangement is defined by drawer measurements, a logical grid, and shared tray / connector settings.
 
-## Current source: v7
+## Current release: v8
 
-- [OpenSCAD model](drawer-organizer-v7.scad)
-- [Kitchen cutlery drawer preset](drawer-organizer-v7.json)
-- [Development guidelines](DEVELOPMENT.md)
+- [OpenSCAD model](drawer-organizer-v8.scad)
+- [Kitchen cutlery drawer Customizer preset](drawer-organizer-v8.json)
+- [Development and testing guidelines](DEVELOPMENT.md)
 
-Download the matching `.scad` and `.json` **into the same directory**. Open the SCAD file in OpenSCAD 2021.01; in Customizer, choose **Kitchen cutlery drawer** if required.
+Download the matching SCAD and JSON files into the **same directory**, open the SCAD in OpenSCAD, and choose **Kitchen cutlery drawer** in the Customizer.
 
-## Drawer dimensions and top-view conventions
+### Drawer orientation and example
 
-Looking **straight down into the open drawer while standing at its FRONT**:
+**Top view, standing at the FRONT of the open drawer:** Row 1 is at the REAR (farthest away); larger row numbers move toward the FRONT. Column 1 is LEFT; larger column numbers move RIGHT.
 
-- Row **1** is at the **REAR** (farthest from the viewer); subsequent rows approach the **FRONT**.
-- Column **1** is at the **LEFT**; increasing columns move **RIGHT**.
-- A row split of **0** continues the tray group started in the previous row. Row 1 cannot be zero.
-- The default **six logical rows** read rear-to-front as `1, 0, 3, 0, 0, 1`. This makes **one wide rear tray, three long middle trays, and one wide front tray**.
-- The Customizer offers labeled row-split and selected row/column dropdowns (up to 10). Choosing a non-existent row or column prints `SELECTION INVALID` to the console and draws no tray.
+Example measured drawer: top opening **218 mm**, flat floor width **190 mm**, bottom corner radius **10 mm**, interior depth **475 mm**, rim height approximately **65 mm**, and tray extension **10 mm**. These dimensions remain approximate until physically verified.
 
-Measured example: top inner width **218 mm**, flat-floor inner width **190 mm**, bottom corner radius **10 mm**, depth **475 mm**, metal rim height **about 65 mm**, and tray extension **10 mm**. Actual corner radii and drawer fit remain approximate and should be verified by test-printing.
+The default 6-row grid, \`1, 0, 3, 0, 0, 1\`, creates five parts: one full-width rear tray (rows 1–2), three long middle trays (rows 3–5), and one full-width front tray (row 6). **0 means continue the previous row's compartments.** Grid rows and columns are selectable with labeled dropdowns. Invalid selected parts print an explanatory message and generate no geometry.
 
-## Geometry and printing
+### What v8 changes
 
-- The default **printing slope angle is 60° from the horizontal print bed**. It is used for bottom chamfers, optional rim ramps, joining-edge relief, and dogbone roof transitions.
-- **Exterior** bottom edges receive a large, automatically fitted chamfer. **Joining** edges receive independent, small, full-length elephant-foot relief, normally **1 mm**, including across socket blocks.
-- Upper **interior horizontal** edges are sharp by default; the **bottom interior** corners are filleted using the base-thickness constraint. Outer bottom corners remain chamfered.
-- Rim flares can be enabled independently for left, right, front, and rear; the default has **left and right on**. The ramp starts immediately at the metal rim without an intermediate vertical section. Larger horizontal projections can increase the tray height automatically to maintain the chosen slope.
-- A raised socket pad is provided where needed for structural reinforcement. The bottom-facing socket has a blind roof, with roof stock of at least the specified base thickness. Socket-side material is at least the greater of the base and wall thickness.
+- **Preview separation:** 0–50 mm in **whole millimetres**, with a constant gap between adjacent tray parts in both axes. The spacing is counted per actual tray-group boundary, not per logical grid row. Preview separation does not change an individual exported tray.
+- **Render facets:** default **20** for faster previews; permitted range **3–200**.
+- **Round dogbone joiners:** two circles connected by a rectangle in XY, straight-extruded in Z; **no locking taper or retention edges**. They press **from underneath** into blind, closed-roof sockets in the inverted trays. Connector web width, circular diameter addition, and fit clearance are adjustable; height and socket reinforcement are derived.
+- **Joining-edge elephant-foot relief:** a small bevel along joining edges; the female socket mouths are protected from the bevel. There are no internal socket chamfers.
+- **Sidewalls and rim:** side profiles widen outward to the drawer rim; the rear and front exterior ends are vertical unless a separately enabled rim flare is requested. Default rim extensions are LEFT and RIGHT only. Default printable ramp/chamfer angle is **60° from horizontal**.
+- **Interior bottom fillets** are retained and related to the base-thickness requirement. The top interior horizontal edges remain square; exterior bottom edges receive chamfers.
+- **Divider access cutouts:** one checkbox per row, affecting **all interior dividers** in that row, not external walls. The notch has rounded shoulders and a controlled printable slope; the width control measures the opening at its base.
 
-## Dogbone connectors — underside vertical insertion
+### Preview and export
 
-The connector is a **rounded I/dogbone in XY (top view)** with two circular lobes and a narrower central bar. The profile extends **upward in Z**.
+1. Choose **Full layout preview**, **Selected tray**, or **Loose dogbone connectors** in the Part selection and preview section.
+2. For **Selected tray**, choose row and column. A continuation row resolves to its full multirow part.
+3. Press F5 to preview, F6 to render, then export the STL.
+4. For visual inspection, increase preview separation. Use 0 mm for the dimensional assembly arrangement.
 
-**Assembly:** Turn two trays **upside down**, align their joining edges, and **press the dogbone upward into the open underside sockets** (in the final upright coordinate system). Put the assembled trays right side up. The dogbone's **bottom is flush with the underside**, in contact with the drawer floor. The mating sockets have a **closed upper roof**; they are **not** open through the tray floor and do **not** receive the connectors horizontally through a sidewall.
+**Physical fit and press-fit tolerance must be confirmed by a small test print.** Watertight STL tests do not guarantee mechanical fit or printability on every machine.
 
-The lower section of the dogbone has vertical walls. The upper section narrows inward with a taper based on the selected printing slope; the blind pocket has the corresponding shape plus clearance. Socket pads maintain material around the pocket and above its roof.
+## Automated tests and builds
 
-Connector placement is based on **center-to-center spacing** (default **59 mm**) with symmetric end margins. If only one can fit, it is centered. Connectors are placed only along adjoining edges by default; a standalone 1×1 tray can optionally enable individual edges.
+Uses **Python 3 + pytest + trimesh**, with **OpenSCAD 2021.01** as the actual geometry engine. The suite covers valid and invalid grid selections, all default trays, exact preview gaps at 0/1/12/50 mm, bottom fillets, rear-wall profile, dogbones, row cutouts, print angles, large rim projections, and watertight meshes.
 
-## Selecting and exporting
+Install Python requirements from [requirements-dev.txt](requirements-dev.txt), install OpenSCAD, then run:
 
-- **Full layout preview:** shows assembled tray locations. This is not a printable monolithic STL.
-- **Selected tray:** choose a **row** and **column**, then press **F6** and export that individual tray as STL.
-- **Loose dogbone connectors:** prints an array of separate bottom-inserted connectors.
+\`\`\`sh
+python -m pip install -r requirements-dev.txt
+make test      # Test source, presets, parameter combinations and STL geometry
+make build     # Render all sample tray STLs, joiners, and screenshots
+make check     # Both steps; the CI build command
+\`\`\`
 
-The **Part selection and preview** section also contains rendering-quality controls. The OpenSCAD console reports selected tray geometry and connector stations.
+On Linux, PNG snapshots require \`xvfb-run\` and a working OpenSCAD installation.
 
-## Development
+[GitHub Actions](.github/workflows/ci.yml) runs \`make check\` on pushes and pull requests. The workflow publishes **STLs and PNG preview screenshots as a downloadable build artifact**; generated parts/images are not committed to the repository.
 
-See [DEVELOPMENT.md](DEVELOPMENT.md). Each functional release increments the version, and the root contains **only the current** SCAD/JSON pair alongside documentation. Older versions remain in [Git history](https://github.com/realcarbonneau/drawer-organizer-scad/commits/main).
+## Development and versions
+
+See [DEVELOPMENT.md](DEVELOPMENT.md). Each functional release increments the number, and only the current \`drawer-organizer-vN.scad\` and matching \`.json\` stay at repository root. Earlier releases remain in ordinary [Git history](https://github.com/realcarbonneau/drawer-organizer-scad/commits/main). No release ZIPs or \`versions/\` folder are maintained.

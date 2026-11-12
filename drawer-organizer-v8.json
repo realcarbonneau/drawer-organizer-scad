@@ -32,17 +32,24 @@
       "base_thickness_mm": "1.8",
       "wall_thickness_mm": "1.8",
       "connector_spacing_mm": "59",
-      "connector_head_diameter_mm": "5.2",
-      "connector_lobe_inset_mm": "5.8",
       "connector_web_width_mm": "3.6",
-      "connector_height_mm": "5",
       "connector_clearance_mm": "0.2",
-      "connector_entry_bevel_mm": "0.6",
       "output_mode": "0",
       "selected_row": "1",
       "selected_column": "1",
       "preview_separation_mm": "0",
-      "render_facets": "48"
+      "render_facets": "20",
+      "connector_diameter_addition_mm": "1.6",
+      "cutout_row_01": "false",
+      "cutout_row_02": "false",
+      "cutout_row_03": "false",
+      "cutout_row_04": "false",
+      "cutout_row_05": "false",
+      "cutout_row_06": "false",
+      "cutout_row_07": "false",
+      "cutout_row_08": "false",
+      "cutout_row_09": "false",
+      "cutout_row_10": "false"
     }
   }
 }
