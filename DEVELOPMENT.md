@@ -2,16 +2,14 @@
 
 ## Naming and versioning
 
-- Name the project **Drawer Organizer**.
-- Use matching, lowercase, hyphenated file names: `drawer-organizer-vN.scad` and `drawer-organizer-vN.json` (for example, `drawer-organizer-v5.scad` and `drawer-organizer-v5.json`).
-- Increment the version number for **each new functional release**: v5 → v6 → v7, and so on. Update both filenames and the version text inside the SCAD header.
-- **Current version is v5.** Keep it at v5 while it is being tested; make v6 when the next requested changes are implemented and ready for review.
-- A documentation or naming correction to the current release does not, by itself, require a version increment.
-- Keep the SCAD and matching JSON preset beside one another in the repository root and in download packages. Update the README links when a new version is released.
+- Name the project **Drawer Organizer**. Use lowercase hyphenated filenames: `drawer-organizer-vN.scad` and `drawer-organizer-vN.json`.
+- Increment `N` for each **new functional release**: `v5 → v6 → v7`. Update **both filenames**, the SCAD title/header, the README links, and any version references in documentation.
+- **Current version: v6.** Keep the latest version at repository root while it is being tested. A documentation-only correction to the existing release does not necessarily require an increment.
+- Keep the matching SCAD and JSON files next to each other, both in the repository and when downloaded. The JSON provides the OpenSCAD Customizer named preset.
 
-## Repository layout
+## Repository structure
 
-The root should contain the **current version only**, alongside project documentation:
+The main branch root should include only the current release plus project documentation:
 
 ```text
 README.md
@@ -20,19 +18,34 @@ drawer-organizer-vN.scad
 drawer-organizer-vN.json
 ```
 
-- Do **not** create a `versions/` folder.
-- When promoting vN+1, remove the old vN files from the **current Git tree** in the same commit as adding vN+1. Git history preserves old content and names.
-- Do not leave duplicate dated or numbered copies of earlier releases in the current tree.
+- Never use a `versions/` folder or keep old numbered copies in the current tree.
+- On release of vN+1, replace vN source and preset with vN+1 **in the same ordinary commit**.
+- Prior versions remain accessible from ordinary [Git history](https://github.com/realcarbonneau/drawer-organizer-scad/commits/main).
 
-## Change and commit policy
+## Grid and part-selection conventions
 
-1. Start from the current release and implement the requested changes.
-2. Keep the Customizer layout, preset parameters, and README instructions synchronized.
-3. Compile and render the relevant parts in **OpenSCAD 2021.01**; verify geometry, connector placement, and STLs when practical. Report any remaining untested physical fit.
-4. Commit normally to the existing branch, preserving the parent history. **Do not squash, force-push, rewrite, or discard prior commits.**
-5. Use a short, descriptive, plain commit message (for example, `Update drawer organizer to v6`). Do not add attribution trailers such as `Co-authored-by`.
-6. Confirm the repository root contains only the current SCAD/JSON pair and documentation.
+- All rows and columns are described **in top view, as a human looking straight down into the drawer from the front**.
+- **Row 1 = REAR (farthest); highest row = FRONT (nearest).**
+- **Column 1 = LEFT; highest column = RIGHT**.
+- A row split value of `0` continues the preceding row's tray group.
+- Dropdowns are a fixed list of 1–10; OpenSCAD 2021.01 cannot dynamically constrain them based on another parameter. Out-of-range selected **row** or **column** must **not** trigger a hard assertion. Print a clear `SELECTION INVALID` message and generate no geometry for invalid part selections.
+- Invalid global configurations that cannot produce a feasible drawer or tray are allowed to fail with a clear explanatory assertion; do not emit misleading geometry silently.
 
-## Sources and fit
+## Rendering and quality expectations
 
-The project draws on the [Modular Drawer Organizer Remix](https://www.printables.com/model/816729-modular-drawer-organizer-remix/) concept; comply with any applicable source license and attribution requirements. Test physical drawer fit before a complete print.
+1. Begin from the currently published `.scad` and `.json` pair and implement requested changes.
+2. Preserve shared drawer geometry, per-tray geometry, connector positioning, and sample preset consistency.
+3. Test with **OpenSCAD 2021.01**: full preview, each sample individual tray, selected row continuations, invalid row and column selections, join-edge chamfer variants, and the full selectable chamfer-angle range.
+4. Render each exported tray individually, checking that it is a watertight solid when practical. Distinguish the assembled display (multiple separate solids) from a single-print STL.
+5. Verify that the relief chamfer on **joining edges** remains continuous across connector socket blocks and is subtracted from the tray without modifying the loose joiner models.
+6. Describe any unverified physical fit; the 218/190 mm profile and R10 corner are measurement approximations.
+
+## Commit policy
+
+- Commit normally to `main` with an existing parent, preserving all history. **No squashing, rebasing, forced ref updates, or other history rewrites.**
+- Use a concise descriptive commit message such as `Update drawer organizer to v7`. Do not add `Co-authored-by` or other model-attribution trailers.
+- After committing, verify the root lists only the current `.scad`, `.json`, `README.md`, and `DEVELOPMENT.md`.
+
+## Upstream source
+
+Based on the [Modular Drawer Organizer Remix](https://www.printables.com/model/816729-modular-drawer-organizer-remix/) concept. Review and respect any applicable license and attribution requirements before distributing derivatives.

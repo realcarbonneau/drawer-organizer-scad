@@ -1,4 +1,4 @@
-// DRAWER ORGANIZER v5 — GRID-ROW LAYOUT ENGINE
+// DRAWER ORGANIZER v6 — GRID-ROW LAYOUT ENGINE
 // Remix foundation: https://www.printables.com/model/816729-modular-drawer-organizer-remix/
 // OpenSCAD 2021.01; no third-party libraries.
 //
@@ -6,7 +6,9 @@
 // 1) Enter the drawer measurements and define the logical GRID.
 // 2) Each GRID ROW specifies a number of widthwise compartments.
 //    0 = continue the preceding row's compartments, extending them in depth.
-//    Row 1 is at the BACK, highest row is at the FRONT.
+//    TOP VIEW: look down into an open drawer, FRONT closest to you.
+//    Row 1 is at the BACK (farthest), last row is at the FRONT (nearest).
+//    Column 1 is at your LEFT; higher columns are progressively RIGHT.
 // 3) Select FULL LAYOUT or one tray by row + column. The selected row can
 //    be a 0 continuation: it automatically resolves to its group start.
 // 4) Outer walls are drafted automatically; connectors exist ONLY at joins.
@@ -49,7 +51,8 @@ chamfer_angle_deg = 45; // [25:1:70]
 chamfer_fit_mode = 0; // [0:Use drawer bottom radius, 1:Manual rise]
 // Outer bottom chamfer vertical rise, mm (manual mode).
 bottom_chamfer_height_mm = 10; // [0:0.5:25]
-// A smaller chamfer on INTERNAL joining edges to mitigate elephant foot.
+// Continuous, full-length elephant-foot relief on INTERNAL joining edges,
+// including the connector-socket mounting blocks; 0 disables it.
 join_edge_chamfer_height_mm = 1; // [0:0.25:4]
 // Whether the upper rim flares over each EXTERIOR metal wall (not every tray).
 rim_on_left = true;
@@ -122,10 +125,12 @@ curve_facets = 40; // [16:8:160]
 /* [08 - Part selection and preview] */
 // A full preview is NOT intended for printing as one STL.
 output_mode = 0; // [0:Full drawer layout, 1:One tray by row and column, 2:Loose joiners, 3:Loose half joiners]
-// Grid row 1 = BACK; row with split 0 selects its merged tray group.
-selected_grid_row = 1; // [1:1:10]
-// Column 1 = LEFT; choose a column valid for that row's group.
-selected_grid_column = 1; // [1:1:10]
+// TOP VIEW: BACK = row 1 (farther away), FRONT = last row (nearest).
+// Row selection may be a continuation (0-split) row; it selects the whole tray.
+// Invalid selected rows/columns show an ECHO warning and NO geometry.
+selected_grid_row = 1; // [1:Selected row 1,2:Selected row 2,3:Selected row 3,4:Selected row 4,5:Selected row 5,6:Selected row 6,7:Selected row 7,8:Selected row 8,9:Selected row 9,10:Selected row 10]
+// Column 1 is LEFT, as seen from above looking into the drawer.
+selected_grid_column = 1; // [1:Selected column 1,2:Selected column 2,3:Selected column 3,4:Selected column 4,5:Selected column 5,6:Selected column 6,7:Selected column 7,8:Selected column 8,9:Selected column 9,10:Selected column 10]
 preview_explode_gap_mm = 0; // [0:0.2:3]
 
 /* [Hidden] */
@@ -141,7 +146,15 @@ effective_front_rear_joiner_count=1;
 effective_left_right_joiner_count=1;
 effective_tray_height_mm=drawer_rim_height_mm+tray_extension_above_rim_mm;
 active_rim_height_mm=drawer_rim_height_mm;
-effective_chamfer_mm=chamfer_fit_mode==0 ? drawer_bottom_inside_radius_mm : bottom_chamfer_height_mm;
+// For a given rise and angle measured from the bed, horizontal run = rise/tan(angle).
+// At shallow angles R10 rise could require more width than exists between the
+// measured flat floor and top opening. In AUTO fit reduce the RISE (not the
+// requested angle) so the chamfer remains inside the measured drawer profile.
+// Reserve 0.5 mm per side for non-negative, slightly drafted walls.
+max_auto_chamfer_run_mm=max(0,(drawer_top_inner_width_mm-drawer_bottom_flat_width_mm)/2-0.5);
+effective_chamfer_mm=chamfer_fit_mode==0
+    ? min(drawer_bottom_inside_radius_mm,max_auto_chamfer_run_mm*tan(chamfer_angle_deg))
+    : bottom_chamfer_height_mm;
 outer_chamfer_run_mm=effective_chamfer_mm/tan(chamfer_angle_deg);
 join_chamfer_run_mm=join_edge_chamfer_height_mm/tan(chamfer_angle_deg);
 rim_lip_rise_mm=rim_overhang_mm*tan(chamfer_angle_deg);
@@ -196,7 +209,8 @@ assert(row_01_splits>0,"Row 1 (back) must start a tray group, not be zero.");
 assert(grid_rows>=1 && grid_rows<=10 && grid_columns>=1 && grid_columns<=10,"Grid limits 1..10.");
 assert(min([for (r=[1:grid_rows]) row_splits(r)])>=0,"Split count cannot be negative.");
 assert(max([for (r=[1:grid_rows]) row_splits(r)])<=grid_columns,"A row cannot have more subdivisions than grid_columns.");
-assert(drawer_draft_fit_mode==1 || measured_draft_per_side_mm>=0,"Drawer profile incompatible with chamfer; check widths and corner radius.");
+assert(drawer_draft_fit_mode==1 || measured_draft_per_side_mm>=-0.00001,
+       "Bottom chamfer reaches beyond the drawer profile. In MANUAL chamfer mode, lower the rise or increase the angle.");
 assert(drawer_top_inner_width_mm>drawer_bottom_flat_width_mm,"Top width must be larger than bottom flat width.");
 assert(effective_chamfer_mm>=0 && effective_chamfer_mm<drawer_rim_height_mm,"Chamfer must fit metal wall height.");
 assert(join_edge_chamfer_height_mm>=0 && join_edge_chamfer_height_mm<=effective_chamfer_mm,"Internal chamfer must be no larger than external chamfer.");
@@ -217,7 +231,8 @@ echo("DRAWER (top / bottom flat / floor corner R / depth / rim)",drawer_top_inne
 echo("GRID (columns / rows / row pitch)",grid_columns,grid_rows,logical_row_depth_mm);
 echo("ROW SPLITS (0 extends previous group)",[for(r=[1:grid_rows]) row_splits(r)]);
 echo("TRAY PROFILE (at chamfer width / at rim width / per-side draft)",measured_at_chamfer_width_mm,measured_at_rim_width_mm,measured_draft_per_side_mm);
-echo("BOTTOM (outside chamfer rise / join chamfer rise / shared slope / inside fillet)",effective_chamfer_mm,join_edge_chamfer_height_mm,chamfer_angle_deg,inside_fillet_radius_mm);
+echo("BOTTOM (effective chamfer rise / horizontal run / joining-edge rise / angle / fillet R)",
+     effective_chamfer_mm,outer_chamfer_run_mm,join_edge_chamfer_height_mm,chamfer_angle_deg,inside_fillet_radius_mm);
 echo("RIM (L/R/F/B, overhang)",rim_on_left,rim_on_right,rim_on_front,rim_on_rear,rim_overhang_mm);
 echo("CUTOUT BOUNDARIES PER ROW",[for(r=[1:grid_rows]) cutout_boundary_for_row(r)]);
 
@@ -391,6 +406,48 @@ assert(!(left_connector||right_connector) || len(y_joiner_stations_mm)<2 ||
         ],xstart,xend);
     }
 
+    // Remove the joining-edge elephant-foot relief AFTER the socket blocks
+    // have been unioned with the tray. This makes the 45-degree (or selected
+    // angle) undercut truly continuous, including beneath all socket blocks.
+    // The loose connector part itself is NOT altered by this subtraction.
+    module continuous_join_edge_relief() {
+        if(join_edge_chamfer_height_mm>0) {
+            h=join_edge_chamfer_height_mm;
+            r=join_chamfer_run_mm;
+            extra=max(2,r+1);
+            // Front: joining side y=0, inside direction +y.
+            if(!front_is_outer)
+                yz_prism([[-extra,-extra],[r+h*0.001,-extra],
+                          [r,0],[0,h],[-extra,h+extra]],
+                         -left_draft_mm-rim_overhang_mm-3,
+                         outer_width_mm+right_draft_mm+rim_overhang_mm+3);
+            // Rear: joining side y=outer_depth_mm, inside direction -y.
+            if(!rear_is_outer)
+                yz_prism([[outer_depth_mm+extra,-extra],
+                          [outer_depth_mm-r-h*0.001,-extra],
+                          [outer_depth_mm-r,0],
+                          [outer_depth_mm,h],
+                          [outer_depth_mm+extra,h+extra]],
+                         -left_draft_mm-rim_overhang_mm-3,
+                         outer_width_mm+right_draft_mm+rim_overhang_mm+3);
+            // Left: joining side x=0, inside direction +x.
+            if(!left_is_outer)
+                xz_prism([[-extra,-extra],[r+h*0.001,-extra],
+                          [r,0],[0,h],[-extra,h+extra]],
+                         -front_draft_mm-rim_overhang_mm-3,
+                         outer_depth_mm+rear_draft_mm+rim_overhang_mm+3);
+            // Right: joining side x=outer_width_mm, inside direction -x.
+            if(!right_is_outer)
+                xz_prism([[outer_width_mm+extra,-extra],
+                          [outer_width_mm-r-h*0.001,-extra],
+                          [outer_width_mm-r,0],
+                          [outer_width_mm,h],
+                          [outer_width_mm+extra,h+extra]],
+                         -front_draft_mm-rim_overhang_mm-3,
+                         outer_depth_mm+rear_draft_mm+rim_overhang_mm+3);
+        }
+    }
+
     difference() {
         // the outer body
         union() {
@@ -419,6 +476,8 @@ assert(!(left_connector||right_connector) || len(y_joiner_stations_mm)<2 ||
             }
         } // union
         union() {
+            // Cut after connector-block union, before STL export.
+            continuous_join_edge_relief();
             // Interior void: Minkowski rounding about a convex drafted inner core.
             // Vertical offset = base_thickness_mm, lateral offsets = wall_thickness_mm.
             // Derived r keeps the 45-degree outer chamfer to interior fillet
@@ -554,9 +613,24 @@ if(output_mode==0) {
     for(i=[0:connector_quantity-1]) translate([i*10,-20,0]) connector();
 } else if(output_mode==3) {
     for(i=[0:connector_quantity-1]) translate([i*10,-40,0]) connector_half();
+} else if(output_mode==1) {
+    if(selected_grid_row<1 || selected_grid_row>grid_rows) {
+        echo(str("SELECTION INVALID: Selected row ",selected_grid_row,
+                 " does not exist. Available rows: 1 to ",grid_rows,
+                 ". No tray geometry generated."));
+    } else {
+        part_start=group_start_for_row(selected_grid_row);
+        valid_columns=row_splits(part_start);
+        if(selected_grid_column<1 || selected_grid_column>valid_columns) {
+            echo(str("SELECTION INVALID: Selected column ",selected_grid_column,
+                     " does not exist in row ",selected_grid_row,
+                     ". Available columns: 1 to ",valid_columns,
+                     ". No tray geometry generated."));
+        } else {
+            draw_grid_tray(part_start,selected_grid_column);
+        }
+    }
 } else {
-    assert(selected_grid_row<=grid_rows,"Selected row exceeds grid_rows.");
-    part_start=group_start_for_row(selected_grid_row);
-    assert(selected_grid_column<=row_splits(part_start),"Selected column exceeds columns in selected row group.");
-    draw_grid_tray(part_start,selected_grid_column);
+    echo(str("SELECTION INVALID: Unknown output mode ",output_mode,
+             ". No geometry generated."));
 }
