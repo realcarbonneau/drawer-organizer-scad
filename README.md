@@ -16,7 +16,7 @@ Download the matching SCAD and JSON files into the **same directory**, open the 
 
 Example measured drawer: top opening **218 mm**, flat floor width **190 mm**, bottom corner radius **10 mm**, interior depth **475 mm**, rim height approximately **65 mm**, and tray extension **10 mm**. These dimensions remain approximate until physically verified.
 
-The default 6-row grid, \`1, 0, 3, 0, 0, 1\`, creates five parts: one full-width rear tray (rows 1–2), three long middle trays (rows 3–5), and one full-width front tray (row 6). **0 means continue the previous row's compartments.** Grid rows and columns are selectable with labeled dropdowns. Invalid selected parts print an explanatory message and generate no geometry.
+The default 6-row grid, `1, 0, 3, 0, 0, 1`, creates five parts: one full-width rear tray (rows 1–2), three long middle trays (rows 3–5), and one full-width front tray (row 6). **0 means continue the previous row's compartments.** Grid rows and columns are selectable with labeled dropdowns. Invalid selected parts print an explanatory message and generate no geometry.
 
 ### What v8 changes
 
@@ -43,17 +43,17 @@ Uses **Python 3 + pytest + trimesh**, with **OpenSCAD 2021.01** as the actual ge
 
 Install Python requirements from [requirements-dev.txt](requirements-dev.txt), install OpenSCAD, then run:
 
-\`\`\`sh
+```sh
 python -m pip install -r requirements-dev.txt
 make test      # Test source, presets, parameter combinations and STL geometry
 make build     # Render all sample tray STLs, joiners, and screenshots
 make check     # Both steps; the CI build command
-\`\`\`
+```
 
-On Linux, PNG snapshots require \`xvfb-run\` and a working OpenSCAD installation.
+On Linux, PNG snapshots require `xvfb-run` and a working OpenSCAD installation.
 
-[GitHub Actions](.github/workflows/ci.yml) runs \`make check\` on pushes and pull requests. The workflow publishes **STLs and PNG preview screenshots as a downloadable build artifact**; generated parts/images are not committed to the repository.
+[GitHub Actions](.github/workflows/ci.yml) runs `make check` on pushes and pull requests. The workflow publishes **STLs and PNG preview screenshots as a downloadable build artifact**; generated parts/images are not committed to the repository.
 
 ## Development and versions
 
-See [DEVELOPMENT.md](DEVELOPMENT.md). Each functional release increments the number, and only the current \`drawer-organizer-vN.scad\` and matching \`.json\` stay at repository root. Earlier releases remain in ordinary [Git history](https://github.com/realcarbonneau/drawer-organizer-scad/commits/main). No release ZIPs or \`versions/\` folder are maintained.
+See [DEVELOPMENT.md](DEVELOPMENT.md). Each functional release increments the number, and only the current `drawer-organizer-vN.scad` and matching `.json` stay at repository root. Earlier releases remain in ordinary [Git history](https://github.com/realcarbonneau/drawer-organizer-scad/commits/main). No release ZIPs or `versions/` folder are maintained.
