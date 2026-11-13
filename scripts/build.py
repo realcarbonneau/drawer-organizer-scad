@@ -65,7 +65,7 @@ def main() -> None:
     # than the printed trays, shrinking a model to just a few pixels.
     # Explicit 3D camera targets make each model fill the PNG without cropping.
     screenshots = {
-        "full-layout": ((94.5,250,37,58,0,35,1500),
+        "full-layout": ((107,250,37,58,0,35,1500),
                         {"Output_mode": 0, "Preview_separation_mm": 12}),
         "rear-tray": ((94.5,79,35,62,0,35,850),
                       {"Output_mode": 1, "Selected_row": 1, "Selected_column": 1}),

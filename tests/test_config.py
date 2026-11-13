@@ -13,7 +13,7 @@ from scripts.organizer_cli import default_parts,preset_parameters,release_paths
 def test_only_one_current_release_pair():
     source,preset=release_paths()
     assert source.stem==preset.stem
-    assert source.name=="drawer-organizer-v10.scad"
+    assert source.name=="drawer-organizer-v11.scad"
     assert json.loads(preset.read_text())["fileFormatVersion"]=="1"
 
 
@@ -67,11 +67,17 @@ def test_customizer_controls_and_defaults():
     assert params["Soft_edge_radius_mm"] == "0.6"
     assert params["Inner_bottom_radius_mm"] == "0"
     assert "Inner_bottom_radius_mm = 0; // [0:0.5:100]" in scad
+    assert "preview_loose_connectors();" in scad
     assert "module inner_corner_fillet_keepouts(" in scad
     assert "offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R)" not in scad
-    assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_X*0.65,CONNECTOR_FILLET_R);" in scad
+    assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_Z+B);" in scad
+    assert "connector_offset_circle_z(x,B)" in scad
+    assert "connector_offset_circle_z(x,B+SOCKET_TOP_CLEARANCE)" in scad
+    assert "inner_fillet_center_x(outer,is_x)" in scad
+    assert "connector_fillet_center_x()=inner_fillet_center_x(false,false)" in scad
+    assert "function inner_fillet_center_z() = B+INNER_BOTTOM_R;" in scad
+    assert "CONNECTOR_LOBE_REDUCTION" not in scad
     assert "INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);" in scad
-    assert "CONNECTOR_LOBE_REDUCTION" in scad
     assert params["Drawer_floor_corner_radius_mm"] == "10"
     assert "Outer_bottom_chamfer_max_rise_mm" not in params
     assert "Outer_bottom_chamfer_max_rise_mm" not in scad
@@ -116,7 +122,7 @@ def test_readme_visuals_are_camera_fitted_and_never_cropped():
     assert '"--autocenter", "--viewall"' in cli
     assert 'image_focus=focus' in build
     assert '"cutout-closeup"' in build
-    assert '"full-layout": ((94.5,250,37,58,0,35,1500)' in build
+    assert '"full-layout": ((107,250,37,58,0,35,1500)' in build
     assert '"front-tray": ((94.5,39.5,35,62,0,35,750)' in build
     assert 'verify_preview_framing(destination' in build
     assert "'cutout-closeup.png'" in gallery
@@ -160,8 +166,9 @@ def test_connector_clearance_semantics_and_independent_controls():
     assert "connector_clearance_mm" not in p
     assert "connector_clearance_mm" not in scad
     assert "SOCKET_SIDE_CLEARANCE=Connector_side_clearance_total_mm/2;" in scad
-    assert "baseline_male_cap_at(y)*connector_lobe_scale_at(y);" in scad
-    assert "connection_cap_at(y)+SOCKET_TOP_CLEARANCE;" in scad
+    assert "function connector_offset_circle_z(x,extra_radius)" in scad
+    assert "connector_offset_circle_z(x,B)" in scad
+    assert "connector_offset_circle_z(x,B+SOCKET_TOP_CLEARANCE)" in scad
     assert "PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+0.4" in scad
 
 
