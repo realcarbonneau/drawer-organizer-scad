@@ -360,8 +360,8 @@ def test_socket_profile_uses_actual_base_offset_not_wall_thickness(tmp_path):
         "Inner_bottom_radius_mm":20,
     })
     match=re.search(
-        r'"CONNECTOR ROOF CAPS \\(at lobe T\\+2 / T\\+4, female / male\\)", '
-        r'([\\d.e+-]+), ([\\d.e+-]+), ([\\d.e+-]+), ([\\d.e+-]+)',out)
+        r'"CONNECTOR ROOF CAPS \(at lobe T\+2 / T\+4, female / male\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
     assert match,out[-2500:]
     female,male=map(float,match.groups()[:2])
     # Echo samples T+2=6 mm. Actual inner wall starts at B=2 mm,
