@@ -162,7 +162,7 @@ def test_unfittable_drawer_chamfer_reports_no_geometry(tmp_path,radius,angle):
     assert path.stat().st_size<400
 
 
-@pytest.mark.parametrize("inner",[0,1,12,18,24,35])
+@pytest.mark.parametrize("inner",[0,1,12,18,20,24,30,35])
 def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,inner):
     out,path=render_csg(tmp_path,f"inner_bottom_radius_{inner}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
@@ -189,6 +189,38 @@ def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,in
         assert "Nothing rendered" not in out
         assert path.stat().st_size>1000
         assert trim==pytest.approx(min(0.75,max(0,inner-minimum)/minimum),abs=0.002)
+
+
+@pytest.mark.parametrize("radius",[20,30])
+def test_inner_bottom_fillets_have_no_square_transition_cliff(tmp_path,radius):
+    """No horizontal ledge may connect the rounded floor arc to a straight wall."""
+    mesh,out=render_stl(tmp_path,f"inner_fillet_continuity_{radius}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Inner_bottom_radius_mm":radius,
+    })
+    assert "INNER FLOOR FILLET DOES NOT FIT" not in out
+    assert mesh.body_count==1
+    # The narrow middle tray is 63 mm wide. A 30 mm radius must preserve
+    # a real curved floor even though 2*(radius+base_stock)>63.
+    section=mesh.section(
+        plane_origin=[0,(mesh.bounds[0,1]+mesh.bounds[1,1])/2,0],
+        plane_normal=[0,1,0],
+    )
+    assert section is not None
+    contours=section.discrete
+    assert contours
+    segments=np.concatenate([
+        np.column_stack((curve[:-1,0],curve[:-1,2],
+                         curve[1:,0],curve[1:,2]))
+        for curve in contours if len(curve)>1
+    ])
+    horizontal=(np.abs(segments[:,1]-segments[:,3])<0.03)
+    wide=(np.abs(segments[:,0]-segments[:,2])>0.3)
+    lower_wall=(segments[:,1]>10)&(segments[:,1]<radius+1.5)
+    assert not np.any(horizontal&wide&lower_wall), (
+        f"A square step is present inside the {radius} mm fillet: "
+        f"{segments[horizontal&wide&lower_wall]}"
+    )
 
 
 def test_radius_below_structural_minimum_cannot_change_the_stl(tmp_path):
