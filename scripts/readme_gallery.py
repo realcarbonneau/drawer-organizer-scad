@@ -82,7 +82,7 @@ def main():
     parser.add_argument('--output',type=Path,default=Path('docs/images'))
     args=parser.parse_args()
     args.output.mkdir(parents=True,exist_ok=True)
-    for name in ('full-layout','rear-tray','middle-tray','front-tray','dogbone'):
+    for name in ('full-layout','rear-tray','middle-tray','front-tray','dogbone','cutout-closeup'):
         if not (args.input/(name+'.png')).is_file():
             raise FileNotFoundError('Missing OpenSCAD screenshot: '+name+'.png')
     hero(args.input,args.output/'hero.png')
@@ -94,7 +94,7 @@ def main():
     sheet(args.output/'details.png',args.input,
           'Rounded access. Modular storage.',
           'A row-4 access opening with smooth tangent risers.',
-          ('middle-tray.png','Middle tray and cutout','20 mm transition diameter'),
+          ('cutout-closeup.png','Cutout — camera close-up','20 mm transition diameter'),
           ('front-tray.png','Full-width front tray','A separately printed section'))
     sheet(args.output/'connector.png',args.input,
           'The connector beneath the trays.',

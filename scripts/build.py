@@ -40,12 +40,14 @@ def main() -> None:
         "middle-tray": ((70, 0, 67), {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),
         "front-tray": ((62, 0, 35), {"Output_mode": 1, "Selected_row": 6, "Selected_column": 1}),
         "dogbone": ((58, 0, 35), {"Output_mode": 2, "Loose_connector_quantity": 1}),
+        "cutout-closeup": ((70, 0, 67), {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),
     }
     for name, (camera, selection) in screenshots.items():
         destination = args.output / "previews" / f"{name}.png"
         # More facets for screenshots alone; printable STL defaults are unchanged.
+        focus = (31.5, 118.5, 35, 70, 0, 67, 280) if name == "cutout-closeup" else None
         result = openscad_render(destination, {**selection, "Render_facets": 64},
-                                image_camera=camera)
+                                image_camera=camera, image_focus=focus)
         require_render_ok(result, destination)
         print(f"high-resolution preview {destination}")
     print(f"Built {len(parts)} trays and preview images from {source.name}")

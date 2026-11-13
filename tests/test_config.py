@@ -89,7 +89,10 @@ def test_readme_visuals_are_camera_fitted_and_never_cropped():
     build=(root/"scripts/build.py").read_text()
     assert '"--imgsize", "3200,2200"' in cli
     assert '"--autocenter", "--viewall"' in cli
-    assert 'image_camera=camera' in build
+    assert 'image_camera=camera, image_focus=focus' in build
+    assert '"cutout-closeup"' in build
+    assert 'focus = (31.5, 118.5, 35, 70, 0, 67, 280)' in build
+    assert "'cutout-closeup.png'" in gallery
     assert '"Render_facets": 64' in build
     assert "def image_contain(" in gallery
     assert "def image_crop(" not in gallery
