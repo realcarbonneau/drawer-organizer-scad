@@ -10,6 +10,17 @@
 - Use a concise commit title without model or AI attribution trailers.
 - Documentation and CI-only fixes may be committed without incrementing the functional model version.
 
+## Work-in-progress backup and recovery
+
+- **Commit and push early and regularly** to a dedicated work-in-progress branch (for example, `wip/v9-recovery`) during coding, geometry iteration, test development, and screenshot review. Do not wait for a finished release or a passing test suite.
+- Make a checkpoint after **each meaningful unit of progress**: a working geometry change, a new regression test, a set of reviewed screenshots, or before any risky refactor, lengthy render, or tool/environment transition.
+- Push the branch to GitHub immediately after each checkpoint. A local file or unpushed commit is **not** a reliable backup if a workspace or session fails.
+- Imperfect or failing work may be checkpointed on the WIP branch. Label it clearly as **WIP**, state known failures in the commit message or branch notes, and never present it as a validated release.
+- Keep test scripts, matching SCAD and JSON parameters, and relevant development documentation together in each checkpoint. Commit source and small text-based test fixtures; avoid committing large generated STL and screenshot artifacts unless needed to reproduce a defect. CI artifacts can preserve review renders.
+- Before resuming after an interruption, **inspect the remote branch first**, compare it with the local workspace, and continue from the latest recoverable checkpoint. Never overwrite newer remote changes.
+- Only promote reviewed and tested changes from the WIP branch to `main` with a normal commit. Preserve all history; do not squash, rebase, or force-push.
+- Continue iterating **within the same functional version number** while the user is reviewing screenshots. Increment the version only when the next functional release is approved.
+
 ## Geometry and UI conventions
 
 - Describe the grid from a **top view while standing at the front** of an open drawer.
