@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify-and-build:
@@ -22,14 +22,16 @@ jobs:
       - name: Install OpenSCAD and testing dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y openscad xvfb xauth
+          sudo apt-get install -y openscad xvfb xauth fonts-dejavu-core
           openscad --version
           python -m pip install -r requirements-dev.txt
           python -m pip check
           # Verify trimesh's optional graph backend before costly STL tests.
-          python -c "from scipy.sparse.csgraph import connected_components, depth_first_order; import trimesh; print('STL mesh graph dependencies OK')"
+          python -c "from scipy.sparse.csgraph import connected_components, depth_first_order; import networkx; from PIL import Image; import trimesh; print('Mesh analysis and gallery dependencies OK')"
       - name: Test and export STLs and preview screenshots
         run: make check
+      - name: Generate README product screenshot gallery
+        run: python -m scripts.readme_gallery --input build/previews --output docs/images
       - name: Upload rendered STLs and preview screenshots
         uses: actions/upload-artifact@v4
         with:
@@ -37,4 +39,15 @@ jobs:
           path: |
             build/*.stl
             build/previews/*.png
+            docs/images/*.png
           if-no-files-found: error
+      - name: Publish README gallery to main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/images/
+          if ! git diff --cached --quiet; then
+            git commit -m 'Refresh README screenshots [skip ci]'
+            git push origin HEAD:main
+          fi

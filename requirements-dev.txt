@@ -3,3 +3,5 @@ trimesh>=4,<5
 numpy>=1.26,<3
 # trimesh mesh components and plane sections require scipy.sparse.csgraph.
 scipy>=1.11,<2
+networkx>=3,<4
+Pillow>=10,<13
