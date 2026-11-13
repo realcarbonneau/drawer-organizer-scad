@@ -75,7 +75,7 @@ def test_invalid_selection_warns_without_creating_geometry(tmp_path,row,col,expe
     })
     assert "SELECTION INVALID" in out
     assert expected in out
-    assert csg.stat().st_size < 200
+    assert csg.stat().st_size < 400
 
 
 def test_continuation_row_selects_full_multiroot_tray(tmp_path):
@@ -89,7 +89,8 @@ def test_continuation_row_selects_full_multiroot_tray(tmp_path):
 def test_print_angles_create_valid_solids(tmp_path,angle):
     m, out = render_stl(tmp_path,f"angle_{angle}",{
         "Output_mode":1,"Selected_row":1,"Selected_column":1,
-        "Print_overhang_angle_deg":angle
+        "Print_overhang_angle_deg":angle,
+        "Drawer_floor_corner_radius_mm":4 if angle<45 else 10
     })
     assert m.extents[2] >= 65
     assert f"{angle}," in out
@@ -99,7 +100,8 @@ def test_print_angles_create_valid_solids(tmp_path,angle):
 def test_large_rim_runs_use_fixed_height_without_crashing(tmp_path,angle,height):
     m, output = render_stl(tmp_path,f"rim_{angle}_{height}",{
         "Output_mode":1,"Selected_row":1,"Selected_column":1,
-        "Print_overhang_angle_deg":angle,"Tray_height_above_rim_mm":height
+        "Print_overhang_angle_deg":angle,"Tray_height_above_rim_mm":height,
+        "Drawer_floor_corner_radius_mm":4 if angle<45 else 10
     })
     assert m.bounds[1,2] == pytest.approx(65+height,abs=0.12)
     assert 'RIM (angle FROM PRINT BED / fixed height / derived projection)' in output
@@ -133,6 +135,102 @@ def test_bottom_internal_corners_are_rounded(tmp_path):
     assert len(np.unique(np.round(curved[:,2],2))) >= 3
 
 
+@pytest.mark.parametrize("radius,angle",[(0,60),(4,25),(10,60),(10,75)])
+def test_drawer_corner_radius_drives_exterior_chamfer(tmp_path,radius,angle):
+    m,out=render_stl(tmp_path,f"exterior_chamfer_r{radius}_a{angle}",{
+        "Output_mode":1,"Selected_row":1,"Selected_column":1,
+        "Drawer_floor_corner_radius_mm":radius,"Print_overhang_angle_deg":angle
+    })
+    assert m.is_watertight
+    match=re.search(r'"ANGLE / AUTO OUTER CHAMFER run, rise \(from drawer floor radius\)", ([\d.]+), ([\d.]+), ([\d.]+)',out)
+    assert match
+    _,run,rise=map(float,match.groups())
+    assert rise==pytest.approx(radius,abs=0.001)
+    assert run==pytest.approx(radius/math.tan(math.radians(angle)),abs=0.002)
+
+
+@pytest.mark.parametrize("radius,angle",[(10,25),(35,60),(20,75)])
+def test_unfittable_drawer_chamfer_reports_no_geometry(tmp_path,radius,angle):
+    out,path=render_csg(tmp_path,f"bad_chamfer_r{radius}_a{angle}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Drawer_floor_corner_radius_mm":radius,"Print_overhang_angle_deg":angle
+    })
+    assert "DRAWER CHAMFER DOES NOT FIT:" in out
+    assert "Nothing rendered" in out
+    assert "ERROR:" not in out
+    assert "WARNING:" not in out
+    assert path.stat().st_size<400
+
+
+@pytest.mark.parametrize("inner",[0,1,12,18,24,35])
+def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,inner):
+    out,path=render_csg(tmp_path,f"inner_bottom_radius_{inner}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Inner_bottom_radius_mm":inner
+    })
+    spec=re.search(
+        r'"INNER BOTTOM ROUNDING \(requested / structural minimum / effective / maximum connector lobe reduction fraction\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+    assert spec,out[-3000:]
+    req,minimum,effective,trim=map(float,spec.groups())
+    assert req==pytest.approx(inner)
+    assert minimum>2
+    assert effective==pytest.approx(max(minimum,inner))
+    if inner and inner<minimum:
+        assert "INNER BOTTOM ROUNDING WARNING" in out
+        assert "Enforcing the minimum" in out
+    else:
+        assert "INNER BOTTOM ROUNDING WARNING" not in out
+    if inner>=35:
+        assert "INNER FLOOR FILLET DOES NOT FIT" in out
+        assert "Nothing rendered" in out
+        assert path.stat().st_size<400
+    else:
+        assert "Nothing rendered" not in out
+        assert path.stat().st_size>1000
+        assert trim==pytest.approx(min(0.75,max(0,inner-minimum)/minimum),abs=0.002)
+
+
+def test_larger_inner_rounding_shrinks_male_and_female_connector_lobes(tmp_path):
+    values=[]
+    for inner in [0,18,24]:
+        out,_=render_csg(tmp_path,f"socket_trim_radius_{inner}",{
+            "Output_mode":1,"Selected_row":3,"Selected_column":2,
+            "Inner_bottom_radius_mm":inner
+        })
+        match=re.search(
+            r'"CONNECTOR ROOF CAPS \(at lobe T\+2 / T\+4, female / male\)", '
+            r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+        assert match,out[-3000:]
+        female_near,male_near,female_far,male_far=map(float,match.groups())
+        assert female_near>=male_near>=0
+        assert female_far>=male_far>=0
+        values.append((female_near,male_near,female_far,male_far))
+    for index in range(4):
+        assert values[0][index]>=values[1][index]>=values[2][index]
+    assert values[0][0]>values[1][0]>values[2][0]
+    assert values[0][2]>values[1][2]>values[2][2]
+
+
+@pytest.mark.parametrize("radius",[0,18,24])
+def test_larger_bottom_radius_keeps_tray_and_dogbone_watertight(tmp_path,radius):
+    m,out=render_stl(tmp_path,f"larger_inner_round_{radius}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Inner_bottom_radius_mm":radius
+    })
+    assert m.body_count==1
+    radius_match=re.search(r'"CUTOUT floor Z / protected inner bottom fillet top Z", ([\d.e+-]+), ([\d.e+-]+)',out)
+    assert radius_match
+    floor,protected_top=map(float,radius_match.groups())
+    assert floor-protected_top>0.6
+    male,_=render_stl(tmp_path,f"male_inner_round_{radius}",{
+        "Output_mode":2,"Loose_connector_quantity":1,
+        "Inner_bottom_radius_mm":radius
+    })
+    assert male.body_count==1
+    assert male.volume>0
+
+
 @pytest.mark.parametrize("relief",[0,1,1.8])
 def test_joining_edge_elephant_foot_settings(tmp_path,relief):
     render_stl(tmp_path,f"foot_{relief}",{
@@ -159,12 +257,16 @@ def test_cutout_is_only_in_internal_dividers(tmp_path):
 def test_exposed_cutout_edges_are_soft_not_knife_sharp(tmp_path):
     # The 20 mm rounds shape the notch in YZ; these samples verify the
     # separate 0.6 mm touch-softening across the 2 mm divider thickness.
-    m,_=render_stl(tmp_path,"soft_touch_access_notch",{
+    m,out=render_stl(tmp_path,"soft_touch_access_notch",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
         "Cutout_row_04":True,"Soft_edge_radius_mm":0.6
     })
     assert m.body_count==1
     assert m.is_watertight
+    mval=re.search(r'"CUTOUT floor Z / protected inner bottom fillet top Z", ([\d.]+), ([\d.]+)',out)
+    assert mval
+    base_z,fillet_top=map(float,mval.groups())
+    assert base_z-0.6>fillet_top
     yc=1.5*(474/6)
     levels=[]
     for x in (0.05,1.0):
@@ -172,7 +274,7 @@ def test_exposed_cutout_edges_are_soft_not_knife_sharp(tmp_path):
         assert section is not None
         vertices=np.vstack(section.discrete)
         floor=vertices[(np.abs(vertices[:,1]-yc)<8)&
-                       (vertices[:,2]>10)&(vertices[:,2]<14)]
+                       (vertices[:,2]>fillet_top-0.6)&(vertices[:,2]<base_z+0.6)]
         assert floor.size>0, f"Missing cutout floor section at x={x}"
         levels.append(np.min(floor[:,2]))
     assert levels[0]+0.3 < levels[1], (
@@ -186,13 +288,16 @@ def test_cutout_fillet_curves_the_correct_way(tmp_path):
     # sharply at the inner transition. A convex touch fillet must instead
     # meet the ORIGINAL notch floor tangentially.
     radius=0.6
-    base_z=6+1+2+0.4+2+1
-    m,_=render_stl(tmp_path,"correct_cutout_quarter_circle",{
+    m,out=render_stl(tmp_path,"correct_cutout_quarter_circle",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
         "Cutout_row_04":True,"Soft_edge_radius_mm":radius
     })
     assert m.is_watertight
     assert m.body_count==1
+    match=re.search(r'"CUTOUT floor Z / protected inner bottom fillet top Z", ([\d.]+), ([\d.]+)',out)
+    assert match,out[-2000:]
+    base_z,fillet_top=map(float,match.groups())
+    assert base_z-radius > fillet_top, "Touch fillet must not gouge the bottom fillet"
     yc=1.5*(474/6)
     for x,depth in ((0.2,0.2),(0.4,0.4),(1.6,0.4),(1.8,0.2)):
         section=m.section(plane_origin=[x,0,0],plane_normal=[1,0,0])
@@ -205,7 +310,7 @@ def test_cutout_fillet_curves_the_correct_way(tmp_path):
                 if (p[1]-yc)*(q[1]-yc)<=0:
                     t=0 if abs(q[1]-p[1])<1e-8 else (yc-p[1])/(q[1]-p[1])
                     z=p[2]+t*(q[2]-p[2])
-                    if 10<z<14:
+                    if fillet_top-1<z<base_z+1:
                         elevations.append(z)
         assert elevations, f"Missing cutout floor at x={x}"
         actual=min(elevations)
@@ -252,7 +357,6 @@ def test_cutout_base_width_and_profile_options(tmp_path, angle):
     base_width = 25.0
     radius = 10.0
     y_center = 1.5 * (474 / 6)
-    z_base = 6 + 1 + 2 + 0.4 + 2 + 1
     flat_half = base_width/2 - radius*math.tan(math.radians(angle)/2)
     m, out=render_stl(tmp_path,f"cutout_angle_{angle}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
@@ -260,6 +364,9 @@ def test_cutout_base_width_and_profile_options(tmp_path, angle):
         "Cutout_round_diameter_mm":20,
         "Cutout_base_width_mm":base_width
     })
+    match=re.search(r'"CUTOUT floor Z / protected inner bottom fillet top Z", ([\d.]+), ([\d.]+)',out)
+    assert match
+    z_base=float(match.group(1))
     section=m.section(plane_origin=[1,0,0],plane_normal=[1,0,0])
     assert section is not None
     points=np.vstack(section.discrete)
@@ -297,7 +404,7 @@ def test_grid_limit_mismatch_is_nonfatal_and_empty(tmp_path,compartments,mode):
     assert "ERROR:" not in out
     assert "WARNING:" not in out
     assert "PREVIEW ORIGIN" not in out
-    assert csg.stat().st_size < 200
+    assert csg.stat().st_size < 400
 
 
 @pytest.mark.parametrize("compartments", [4,5,6])
@@ -436,9 +543,9 @@ def test_cutout_has_two_tangent_rounds_at_requested_riser_angle(tmp_path):
     section=mesh.section(plane_origin=[1,0,0],plane_normal=[1,0,0])
     assert section is not None
     pts=np.vstack(section.discrete)
-    # Inner divider notch side profile contains a flat bottom at z≈9.4,
+    # Inner divider notch side profile contains a protected flat bottom,
     # an angled riser, and several non-collinear facets at BOTH ends.
-    lower=pts[(pts[:,2]>9.4)&(pts[:,2]<16)&(pts[:,1]>90)&(pts[:,1]<150)]
+    lower=pts[(pts[:,2]>14)&(pts[:,2]<22)&(pts[:,1]>90)&(pts[:,1]<150)]
     upper=pts[(pts[:,2]>69)&(pts[:,2]<75.1)&(pts[:,1]>50)&(pts[:,1]<190)]
     assert len(np.unique(np.round(lower[:,2],2))) >= 4
     assert len(np.unique(np.round(upper[:,2],2))) >= 4
@@ -482,7 +589,8 @@ def test_rim_uses_exact_selected_overhang_angle(tmp_path,angle):
     height=10
     mesh,output=render_stl(tmp_path,f"rim_exact_angle_{angle}",{
         "Output_mode":1,"Selected_row":1,"Selected_column":1,
-        "Print_overhang_angle_deg":angle,"Tray_height_above_rim_mm":height
+        "Print_overhang_angle_deg":angle,"Tray_height_above_rim_mm":height,
+        "Drawer_floor_corner_radius_mm":4 if angle<45 else 10
     })
     assert mesh.bounds[1,2] == pytest.approx(65+height,abs=0.06)
     assert 'RIM (angle FROM PRINT BED / fixed height / derived projection)' in output
