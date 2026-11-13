@@ -51,7 +51,8 @@ row_10_splits = 0; // [0:Continue previous,1:1 compartment,2:2 compartments,3:3 
 /* [03 - Drawer, rim, print slopes and shared tray geometry] */
 // Angle from horizontal, shared by all ramps, beveled entry and bottom chamfers.
 print_overhang_angle_deg = 60; // [25:1:75]
-// Upper tray wall height above the metal rim, excluding any extra rise needed for rim flare.
+// Upper height when NO rim flare is enabled. With a flared rim, height is
+// DERIVED from projection and print angle, so the rim cannot silently steepen.
 tray_height_above_rim_mm = 10; // [0:0.5:50]
 // Lip flares outward immediately at the metal rim, WITHOUT a vertical gap.
 rim_left = true;
@@ -166,12 +167,14 @@ CHAMFER_X=min(max(0,SIDE_EXPAND-0.4),outer_bottom_chamfer_max_rise_mm/tan(ALPHA)
 CHAMFER_Z=CHAMFER_X*tan(ALPHA);
 JOIN_Z=join_edge_elephant_foot_mm;
 JOIN_X=JOIN_Z/tan(ALPHA);
-// An enabled rim is ONE straight outward slope, from metal rim level
-// directly to the top surface. No straight vertical return after the slope.
-// Actual rim angle may become STEEPER than the minimum printing angle to
-// maintain a requested above-rim height with a short horizontal projection.
-HAS_RIM=rim_left||rim_right||rim_front||rim_rear;
-LIP_Z=HAS_RIM ? max(tray_height_above_rim_mm,rim_projection_mm*tan(ALPHA)) : tray_height_above_rim_mm;
+// A flared rim is ONE straight outward slope with the specified angle:
+// rise = outward projection * tan(angle-from-print-bed). Previously max(...)
+// overrode the slope when the independent above-rim height was larger, so
+// 3 mm / 10 mm / 60 deg silently yielded a 73.3-degree lip. Keeping BOTH
+// projection and slope exact means its height must be calculated instead.
+// Without a flare, the user-configured above-rim height is used unchanged.
+HAS_RIM=rim_projection_mm>0 && (rim_left||rim_right||rim_front||rim_rear);
+LIP_Z=HAS_RIM ? rim_projection_mm*tan(ALPHA) : tray_height_above_rim_mm;
 ZTOP=H+LIP_Z;
 ROW_DEPTH=DY/grid_rows;
 // Nominal logical-grid pitch, before exterior drafts, fillets and wall stock.
@@ -330,24 +333,27 @@ module safe_inner_2d(bottom_cutoff) {
 // We retain the eroded + uniformly FILLETED cavity at the BOTTOM; above the
 // fillet's endpoint the cross-section is analytic and has ONE intended kink.
 SIDE_K=(SIDE_EXPAND-CHAMFER_X)/max(0.01,H-CHAMFER_Z);
-LIP_K=rim_projection_mm/max(0.01,LIP_Z);
+LIP_K=HAS_RIM ? 1/tan(ALPHA) : 0;
+// At very low angles and tiny projections, the ramp can be shorter than
+// the 2-mm base thickness; still give the inside a short, continuous slope.
+INNER_LIP_DELAY=min(B,max(0,LIP_Z/2));
 function inner_x_left_at(z,outer,rim)=
     !outer ? B :
-    (rim && rim_projection_mm>0 && LIP_Z>B) ?
-        (z<=H+B
+    (rim && HAS_RIM) ?
+        (z<=H+INNER_LIP_DELAY
           ? -SIDE_EXPAND-(z-H)*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K)
-          : -SIDE_EXPAND-B*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K)-(z-H-B)*LIP_K)
+          : -SIDE_EXPAND-INNER_LIP_DELAY*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K)-(z-H-INNER_LIP_DELAY)*LIP_K)
         : (z<=H
           ? -SIDE_EXPAND-(z-H)*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K)
           : -SIDE_EXPAND+B*sqrt(1+SIDE_K*SIDE_K));
 function inner_y_front_at(z,outer,rim)=
     !outer ? B :
-    (rim && rim_projection_mm>0 && LIP_Z>B && z>H+B)
-       ? B-(z-H-B)*LIP_K : B;
+    (rim && HAS_RIM && z>H+INNER_LIP_DELAY)
+       ? B-(z-H-INNER_LIP_DELAY)*LIP_K : B;
 module analytic_upper_cavity(w,left_outer,right_outer,left_rim,right_rim,is_x=true,zstart=43) {
     zlast=ZTOP+101;
     za=min(ZTOP-E,H);
-    zb=min(ZTOP-E,H+B);
+    zb=min(ZTOP-E,H+INNER_LIP_DELAY);
     lp=[for(z=[zstart,za,zb,zlast])
          [is_x?inner_x_left_at(z,left_outer,left_rim):inner_y_front_at(z,left_outer,left_rim),z]];
     rp=[for(z=[zstart,za,zb,zlast])
@@ -781,6 +787,12 @@ module all_trays() {
 // ----------- Output and non-fatal invalid selection handling -----------
 echo("DRAWER v9 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / OUTER CHAMFER run, rise / lip projection, rise",ALPHA,CHAMFER_X,CHAMFER_Z,rim_projection_mm,LIP_Z);
+echo("RIM (angle FROM PRINT BED / calculated rise / actual above-rim height)",
+     HAS_RIM ? atan(LIP_Z/rim_projection_mm) : 0, LIP_Z, ZTOP-H);
+if(HAS_RIM && abs(tray_height_above_rim_mm-LIP_Z)>0.05)
+    echo(str("RIM NOTE: with a flare, actual rise is projection*tan(angle) = ",
+             LIP_Z, " mm, not the unflared height setting (",
+             tray_height_above_rim_mm, " mm)."));
 echo("CONNECTOR CLEARANCES (total side / each side / top)",
      connector_side_clearance_total_mm, SOCKET_SIDE_CLEARANCE, SOCKET_TOP_CLEARANCE);
 echo("CONNECTOR ROOF CAPS (at seam)",connection_cap_at(0),socket_roof_safe_cap_at(0));
