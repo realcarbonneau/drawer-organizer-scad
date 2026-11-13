@@ -162,7 +162,7 @@ def test_unfittable_drawer_chamfer_reports_no_geometry(tmp_path,radius,angle):
     assert path.stat().st_size<400
 
 
-@pytest.mark.parametrize("inner",[0,1,12,18,24,35])
+@pytest.mark.parametrize("inner",[0,1,12,18,20,24,30,35,62])
 def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,inner):
     out,path=render_csg(tmp_path,f"inner_bottom_radius_{inner}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
@@ -181,7 +181,7 @@ def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,in
         assert "Enforcing the minimum" in out
     else:
         assert "INNER BOTTOM ROUNDING WARNING" not in out
-    if inner>=35:
+    if inner>=62:
         assert "INNER FLOOR FILLET DOES NOT FIT" in out
         assert "Nothing rendered" in out
         assert path.stat().st_size<400
@@ -189,6 +189,39 @@ def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,in
         assert "Nothing rendered" not in out
         assert path.stat().st_size>1000
         assert trim==pytest.approx(min(0.75,max(0,inner-minimum)/minimum),abs=0.002)
+
+
+@pytest.mark.parametrize("radius",[20,30])
+def test_inner_bottom_arcs_remain_circular_without_square_ledges(tmp_path,radius):
+    # A fixed 16-mm transition once clipped the R20 curve with a square
+    # horizontal shelf; an R30 opening used to be rejected or filled solid.
+    mesh,out=render_stl(tmp_path,f"continuous_bottom_radius_{radius}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Inner_bottom_radius_mm":radius
+    })
+    assert mesh.body_count==1
+    assert mesh.is_watertight
+    section=mesh.section(plane_origin=[0,60,0],plane_normal=[0,1,0])
+    assert section is not None
+    points=np.vstack(section.discrete)
+    # The left divider has an exact 2 mm offset and vertical inner wall.
+    # Its fillet circle has center (B+R, B+R), radius R.
+    c=2+radius
+    arc=points[(points[:,0]>2.15)&(points[:,0]<radius+1)&
+               (points[:,2]>2.1)&(points[:,2]<radius+1.9)]
+    assert len(arc)>=15
+    radial=np.sqrt((arc[:,0]-c)**2+(arc[:,2]-c)**2)
+    assert np.max(np.abs(radial-radius))<0.045, (
+        f"The inner fillet must remain a true circular arc for R{radius}"
+    )
+    # At the narrowest 63-mm tray, R30 consumes the 59-mm clear floor,
+    # but must retain a cavity down to approximately the 2-mm base.
+    if radius==30:
+        center=points[(np.abs(points[:,0]-31.5)<1)&(points[:,2]>1)]
+        assert len(center)>0
+        assert np.min(center[:,2])<2.15
+        assert mesh.volume<300_000, "Do not fill the cavity with solid material"
+        assert "INNER BOTTOM FILLET NOTE" in out
 
 
 def test_radius_below_structural_minimum_cannot_change_the_stl(tmp_path):
@@ -238,7 +271,7 @@ def test_larger_inner_rounding_shrinks_male_and_female_connector_lobes(tmp_path)
     assert values[0][2]>values[1][2]>values[2][2]
 
 
-@pytest.mark.parametrize("radius",[0,18,24])
+@pytest.mark.parametrize("radius",[0,18,20,24,30])
 def test_larger_bottom_radius_keeps_tray_and_dogbone_watertight(tmp_path,radius):
     m,out=render_stl(tmp_path,f"larger_inner_round_{radius}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
