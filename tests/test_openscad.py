@@ -39,6 +39,11 @@ def preview_positions(messages):
             for r,c,x,y,w,d in re.findall(p, messages)}
 
 
+def preview_connector_positions(messages):
+    p = r'ECHO: "PREVIEW LOOSE CONNECTOR \(index, x, y\)", (\d+), ([\d.e+-]+), ([\d.e+-]+)'
+    return [(int(i),float(x),float(y)) for i,x,y in re.findall(p,messages)]
+
+
 @pytest.mark.parametrize("gap", [0, 1, 12, 50])
 def test_preview_separation_is_one_constant_gap_between_tray_edges(tmp_path, gap):
     output, _ = render_csg(tmp_path, f"preview_{gap}", {
@@ -52,6 +57,39 @@ def test_preview_separation_is_one_constant_gap_between_tray_edges(tmp_path, gap
     assert m3[0] - (m2[0] + m2[2]) == pytest.approx(gap, abs=0.01)
     assert rear[1] - (m1[1] + m1[3]) == pytest.approx(gap, abs=0.01)
     assert m1[1] - (front[1] + front[3]) == pytest.approx(gap, abs=0.01)
+
+
+@pytest.mark.parametrize("quantity,gap", [(1,0),(8,0),(8,12),(60,50)])
+def test_full_preview_shows_loose_dogbones_in_right_hand_y_column(tmp_path,quantity,gap):
+    out,path=render_csg(tmp_path,f"preview_connectors_{quantity}_{gap}",{
+        "Output_mode":0,"Loose_connector_quantity":quantity,
+        "Preview_separation_mm":gap
+    })
+    connectors=preview_connector_positions(out)
+    assert len(connectors)==quantity
+    assert [i for i,_,_ in connectors]==list(range(1,quantity+1))
+    xs=[x for _,x,_ in connectors]
+    ys=[y for _,_,y in connectors]
+    assert max(xs)-min(xs)<0.001, "Connectors must occupy one Y-aligned column"
+    # The rightmost tray side expands 14 mm at the rim plus an outer lip run.
+    # The three-column group has one full preview gap on its right.
+    rim_right=189+14+10/math.tan(math.radians(60))+gap
+    head_radius=3.0
+    assert min(xs)-head_radius>=rim_right+5.9
+    assert (ys[0]+ys[-1])/2==pytest.approx((474+2*gap)/2,abs=0.01)
+    if quantity>1:
+        head_in=2+math.sqrt(3**2-2**2)
+        pitch=2*(head_in+head_radius)+4
+        assert np.allclose(np.diff(ys),-pitch,atol=0.002)
+    assert path.stat().st_size>1000
+
+
+@pytest.mark.parametrize("mode",[1,2])
+def test_loose_connector_preview_column_is_exclusive_to_full_layout(tmp_path,mode):
+    out,_=render_csg(tmp_path,f"no_preview_connectors_mode_{mode}",{
+        "Output_mode":mode,"Loose_connector_quantity":8
+    })
+    assert "PREVIEW LOOSE CONNECTOR" not in out
 
 
 @pytest.mark.parametrize("row,col", [(1,1),(3,1),(3,2),(3,3),(6,1)])

@@ -912,6 +912,33 @@ module all_trays() {
         }
 }
 
+// Full-layout ONLY: show the requested loose connector quantity in one
+// non-overlapping column parallel to Y, to the right of ALL tray groups.
+// Include the largest preview column separation and the outer lip projection
+// so even the rightmost flared rim cannot touch the loose dogbones.
+function preview_group_count()=len([for(r=[1:Grid_rows]) if(splits_at(r)>0) r]);
+function preview_max_columns()=max([for(r=[1:Grid_rows]) splits_at(r)]);
+function preview_connector_pitch()=2*(HEAD_IN+HEAD_R)+4;
+function preview_connector_x()=
+    W0+SIDE_EXPAND+(Rim_right?RIM_PROJECTION:0)
+    +(preview_max_columns()-1)*Preview_separation_mm/2
+    +max(6,Preview_separation_mm)+HEAD_R;
+function preview_connector_y_center()=
+    (DY+(preview_group_count()-1)*Preview_separation_mm
+       +(Rim_rear?RIM_PROJECTION:0)-(Rim_front?RIM_PROJECTION:0))/2;
+module preview_loose_connectors() {
+    x=preview_connector_x();
+    yc=preview_connector_y_center();
+    pitch=preview_connector_pitch();
+    for(i=[0:Loose_connector_quantity-1]) {
+        y=yc+((Loose_connector_quantity-1)/2-i)*pitch;
+        echo("PREVIEW LOOSE CONNECTOR (index, x, y)",i+1,x,y);
+        translate([x,y,0])
+            color([0.96,0.68,0.34])
+                loose_dogbone();
+    }
+}
+
 // ----------- Output and non-fatal invalid selection handling -----------
 echo("DRAWER v10 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / AUTO OUTER CHAMFER run, rise (from drawer floor radius)",ALPHA,CHAMFER_X,CHAMFER_Z);
@@ -990,6 +1017,7 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
              "Nothing rendered."));
 } else if(Output_mode==0) {
     all_trays();
+    preview_loose_connectors();
 } else if(Output_mode==1) {
     if(Selected_row<1||Selected_row>Grid_rows)
         echo(str("SELECTION INVALID: Row ",Selected_row," does not exist (1..",Grid_rows,"). Nothing drawn."));

@@ -14,7 +14,7 @@ A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Pr
 
 ![Five-tray arrangement and full-width rear tray, generated from the actual CAD model](docs/images/layout.png)
 
-Use the **Continue previous** dropdown option to extend the preceding tray group. To request 4, 5, or 6 compartments in a row, first increase **Grid columns** to at least that number. If a row exceeds the grid size, OpenSCAD prints a helpful message and draws nothing instead of failing an assertion. In the example, rows 1–2 form the rear tray, rows 3–5 form three middle trays, and row 6 forms the front tray. Looking down into the open drawer, row 1 is at the **rear** and column 1 is on the **left**.
+Use the **Continue previous** dropdown option to extend the preceding tray group. To request 4, 5, or 6 compartments in a row, first increase **Grid columns** to at least that number. If a row exceeds the grid size, OpenSCAD prints a helpful message and draws nothing instead of failing an assertion. In the example, rows 1–2 form the rear tray, rows 3–5 form three middle trays, and row 6 forms the front tray. Looking down into the open drawer, row 1 is at the **rear** and column 1 is on the **left**. In **Full layout preview**, the `Loose_connector_quantity` setting also shows that many separate dogbones in a single vertical column to the right of the trays. Their centers follow the Y axis with at least 4 mm between adjacent connector tips, and the column clears the outside rim and any preview separation. The selected-tray and loose-connector-only STL export modes are unchanged. Large quantities may extend beyond the layout's front/rear boundaries rather than overlap.
 
 | Group | Trays | Approximate nominal floor footprint |
 | --- | ---: | ---: |

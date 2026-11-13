@@ -65,6 +65,8 @@ def test_customizer_controls_and_defaults():
     assert params["Base_thickness_mm"] == "2"
     assert params["Wall_thickness_mm"] == "2"
     assert params["Soft_edge_radius_mm"] == "0.6"
+    assert params["Loose_connector_quantity"] == "8"
+    assert "preview_loose_connectors();" in scad
     assert params["Inner_bottom_radius_mm"] == "0"
     assert "Inner_bottom_radius_mm = 0; // [0:0.5:40]" in scad
     assert "half_open_inner_2d(span,true)" in scad
