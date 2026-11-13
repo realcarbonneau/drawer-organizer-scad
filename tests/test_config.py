@@ -33,20 +33,22 @@ def test_default_grid_and_row_continuations():
 
 def test_invalid_grid_first_row_rejected():
     with pytest.raises(ValueError,match="row 1"):
-        default_parts({"Grid_rows":"1","Row_01":"0"})
+        default_parts({"Grid_rows":"1","Grid_columns":"1","Row_01":"0"})
 
 
 def test_one_by_one_grid_is_valid():
-    assert default_parts({"Grid_rows":"1","Row_01":"1"})==[(1,1)]
+    assert default_parts({"Grid_rows":"1","Grid_columns":"1","Row_01":"1"})==[(1,1)]
 
 
-@pytest.mark.parametrize("compartments", [3,4,5,6,10])
-def test_row_split_independent_of_column_limit(compartments):
+@pytest.mark.parametrize("compartments", [4,5,6])
+def test_row_split_requires_sufficient_grid_columns(compartments):
     _,preset=release_paths()
     params=preset_parameters(preset)
     params["Row_03"]=str(compartments)
-    parts=default_parts(params)
-    assert [c for r,c in parts if r==3] == list(range(1,compartments+1))
+    with pytest.raises(ValueError,match="row 3"):
+        default_parts(params)
+    params["Grid_columns"]=str(compartments)
+    assert [c for r,c in default_parts(params) if r==3] == list(range(1,compartments+1))
 
 
 def test_customizer_controls_and_defaults():
@@ -71,8 +73,8 @@ def test_customizer_controls_and_defaults():
     assert "Cutout_riser_angle_deg = 75;" in scad
     assert "Cutout_base_width_mm = 25;" in scad
     assert not re.search(r"Cutout_(?:base_width_mm|riser_angle_deg)\\s*=\\s*[^;]+;\\s*//\\s*\\[",scad)
-    assert "Grid_columns" not in scad
-    assert "Grid_columns" not in params
+    assert "Grid_columns = 3; // [1:1:10]" in scad
+    assert params["Grid_columns"] == "3"
     for key in ("connector_entry_bevel_mm","connector_head_diameter_mm",
                 "connector_lobe_inset_mm","cutout_after_column_row_03"):
         assert key not in params

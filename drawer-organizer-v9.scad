@@ -19,7 +19,8 @@ Drawer_rim_height_mm = 65; // [20:1:200]
 Drawer_total_clearance_mm = 1; // [0:0.1:6]
 
 /* [02 - Drawer logical grid] */
-// Each row independently chooses 1 to 10 compartments; no separate column limit.
+// Maximum compartments allowed in any row; increase when a row needs more.
+Grid_columns = 3; // [1:1:10]
 // Rear to front.
 Grid_rows = 6; // [1:1:10]
 Row_01 = 1; // [1:1 compartment,2:2 compartments,3:3 compartments,4:4 compartments,5:5 compartments,6:6 compartments,7:7 compartments,8:8 compartments,9:9 compartments,10:10 compartments]
@@ -149,9 +150,7 @@ RIM_PROJECTION=HAS_RIM ? LIP_Z/tan(ALPHA) : 0;
 ZTOP=H+LIP_Z;
 ROW_DEPTH=DY/Grid_rows;
 // Nominal logical-grid pitch, before exterior drafts, fillets and wall stock.
-// The largest row split defines the logical column pitch for reporting.
-GRID_COLUMNS=max([for(r=[0:Grid_rows-1]) row_values[r]]);
-GRID_UNIT_WIDTH=W0/GRID_COLUMNS;
+GRID_UNIT_WIDTH=W0/Grid_columns;
 WEB_R=Connector_center_thickness_mm/2;
 HEAD_R=Connector_center_thickness_mm/2+Connector_diameter_protrusion_mm;
 // In the XY silhouette each circular lobe meets the rectangular center
@@ -199,7 +198,7 @@ function group_end(start) = min(concat([for(k=[1:Grid_rows]) if(k>start && split
 function group_depth(start)=(group_end(start)-start+1)*ROW_DEPTH;
 function group_y(start)=(Grid_rows-group_end(start))*ROW_DEPTH;
 function group_count(row)=splits_at(group_start(row));
-function is_standalone()=Grid_rows==1&&Row_01==1;
+function is_standalone()=Grid_rows==1&&Grid_columns==1&&Row_01==1;
 // Fixed target pitch. If a segment has >=2 pitches, use two joiners at half
 // pitch from each end, leaving the excess length as symmetric end margins.
 // With only one joiner, it is centered. No extra count controls are necessary.
@@ -221,9 +220,12 @@ function is_join(side,outer) = (is_standalone() && Manual_joiner_override)
     ? (side=="left"?Manual_join_left:side=="right"?Manual_join_right:side=="front"?Manual_join_front:Manual_join_rear)
     : Connectors_enabled && !outer;
 
-assert(Grid_rows>=1&&Grid_rows<=10,"Grid_rows must be 1..10.");
+assert(Grid_rows>=1&&Grid_rows<=10&&Grid_columns>=1&&Grid_columns<=10,"Grid rows and columns must be 1..10.");
 assert(Row_01>=1,"Row 1 must start a tray group.");
 assert(min([for(r=[1:Grid_rows]) splits_at(r)])>=0&&max([for(r=[1:Grid_rows]) splits_at(r)])<=10,"Each row must have 0..10 compartments.");
+// A row may request more than the configured grid width, but that is a
+// user-fixable configuration mismatch, not a fatal assertion.
+GRID_OVERFLOW_ROWS=[for(r=[1:Grid_rows]) if(splits_at(r)>Grid_columns) r];
 assert(Drawer_top_width_mm>Drawer_floor_width_mm,"Top opening must exceed flat floor width.");
 assert(W0>10&&DY>20&&H>15&&B>0&&T>0&&H>B+5,"Drawer dimensions or thicknesses are invalid.");
 assert(ALPHA>=20&&ALPHA<85,"Printing angle must be between 20 and 85 degrees.");
@@ -807,7 +809,13 @@ for(r=[1:Grid_rows]) if(splits_at(r)>0)
          W0/splits_at(r),group_depth(r));
 echo("GRID rear->front",[for(r=[1:Grid_rows]) splits_at(r)]);
 
-if(Output_mode==0) {
+if(len(GRID_OVERFLOW_ROWS)>0) {
+    for(r=GRID_OVERFLOW_ROWS)
+        echo(str("GRID SIZE MISMATCH: Row ",r," requests ",splits_at(r),
+                 " compartments, but Grid_columns is ",Grid_columns,
+                 ". Increase Grid_columns to at least ",splits_at(r),
+                 " (or reduce Row_",r,"). Nothing rendered."));
+} else if(Output_mode==0) {
     all_trays();
 } else if(Output_mode==1) {
     if(Selected_row<1||Selected_row>Grid_rows)

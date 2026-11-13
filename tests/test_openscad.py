@@ -205,9 +205,24 @@ def test_cutout_accepts_zero_gap_and_unrestricted_low_angle(tmp_path,gap,angle):
 
 
 @pytest.mark.parametrize("compartments", [4,5,6])
-def test_more_compartments_than_previous_grid_limit(tmp_path,compartments):
-    out,_=render_csg(tmp_path,f"grid_{compartments}",{
-        "Output_mode":0,"Row_03":compartments
+@pytest.mark.parametrize("mode", [0,1,2])
+def test_grid_limit_mismatch_is_nonfatal_and_empty(tmp_path,compartments,mode):
+    out,csg=render_csg(tmp_path,f"grid_mismatch_{compartments}_{mode}",{
+        "Output_mode":mode,"Row_03":compartments
+    })
+    assert f"Row 3 requests {compartments}" in out
+    assert "Increase Grid_columns to at least" in out
+    assert "Nothing rendered" in out
+    assert "ERROR:" not in out
+    assert "WARNING:" not in out
+    assert "PREVIEW ORIGIN" not in out
+    assert csg.stat().st_size < 200
+
+
+@pytest.mark.parametrize("compartments", [4,5,6])
+def test_larger_grid_splits_render_when_grid_increased(tmp_path,compartments):
+    out,_=render_csg(tmp_path,f"grid_supported_{compartments}",{
+        "Output_mode":0,"Grid_columns":compartments,"Row_03":compartments
     })
     positions=preview_positions(out)
     assert len([k for k in positions if k[0]==3])==compartments
@@ -216,7 +231,7 @@ def test_more_compartments_than_previous_grid_limit(tmp_path,compartments):
 
 def test_six_compartment_tray_renders_watertight(tmp_path):
     m,_=render_stl(tmp_path,"six_compartment_middle",{
-        "Row_03":6,"Output_mode":1,
+        "Grid_columns":6,"Row_03":6,"Output_mode":1,
         "Selected_row":3,"Selected_column":6
     })
     assert m.is_watertight

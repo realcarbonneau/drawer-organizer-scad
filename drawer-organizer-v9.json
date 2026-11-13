@@ -8,6 +8,7 @@
       "Drawer_inside_length_mm": "475",
       "Drawer_rim_height_mm": "65",
       "Drawer_total_clearance_mm": "1",
+      "Grid_columns": "3",
       "Grid_rows": "6",
       "Row_01": "1",
       "Row_02": "0",

@@ -4,7 +4,7 @@
 
 **Parametric · Modular · 3D-printable · OpenSCAD 2021.01**
 
-A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Print each compartment separately, then connect neighboring trays with removable dogbones inserted from underneath. The default example builds **five trays** across **6 logical rows**; each row independently selects up to 10 compartments (3 in the default middle group).
+A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Print each compartment separately, then connect neighboring trays with removable dogbones inserted from underneath. The default example builds **five trays** in a **3-column × 6-row logical grid**.
 
 **[Open the v9 model](drawer-organizer-v9.scad)** · **[Matching Customizer preset](drawer-organizer-v9.json)** · **[Development guidelines](DEVELOPMENT.md)**
 
@@ -14,7 +14,7 @@ A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Pr
 
 ![Five-tray arrangement and full-width rear tray, generated from the actual CAD model](docs/images/layout.png)
 
-Use the **Continue previous** dropdown option to extend the preceding tray group. Row splits can be increased to 4, 5, 6, or more without changing a separate column-limit setting. In the example, rows 1–2 form the rear tray, rows 3–5 form three middle trays, and row 6 forms the front tray. Looking down into the open drawer, row 1 is at the **rear** and column 1 is on the **left**.
+Use the **Continue previous** dropdown option to extend the preceding tray group. To request 4, 5, or 6 compartments in a row, first increase **Grid columns** to at least that number. If a row exceeds the grid size, OpenSCAD prints a helpful message and draws nothing instead of failing an assertion. In the example, rows 1–2 form the rear tray, rows 3–5 form three middle trays, and row 6 forms the front tray. Looking down into the open drawer, row 1 is at the **rear** and column 1 is on the **left**.
 
 | Group | Trays | Approximate nominal floor footprint |
 | --- | ---: | ---: |

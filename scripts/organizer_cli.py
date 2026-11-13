@@ -46,12 +46,13 @@ def preset_parameters(json_file: Path, name: str = PRESET_NAME) -> dict[str, str
 def default_parts(parameters: dict[str, str]) -> list[tuple[int, int]]:
     """Return (starting row, column) for each tray in rear-to-front order."""
     rows = int(parameters["Grid_rows"])
-    if not 1 <= rows <= 10:
-        raise ValueError("Grid rows must be 1..10")
+    columns = int(parameters["Grid_columns"])
+    if not 1 <= rows <= 10 or not 1 <= columns <= 10:
+        raise ValueError("Grid dimensions must be 1..10")
     parts = []
     for row in range(1, rows + 1):
         n = int(parameters[f"Row_{row:02d}"])
-        if not 0 <= n <= 10 or (row == 1 and n == 0):
+        if not 0 <= n <= columns or (row == 1 and n == 0):
             raise ValueError(f"Invalid grid row {row}: {n}")
         if n:
             parts.extend((row, col) for col in range(1, n + 1))
