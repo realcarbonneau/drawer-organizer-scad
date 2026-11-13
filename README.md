@@ -31,7 +31,7 @@ The estimated **clear** space for a logical cell is about **59 × 75 mm**, befor
 
 The trays default to **2 mm walls and base**, **0.6 mm soft exposed-edge rounding**, and a shared calculated bottom interior fillet. The outer sidewalls taper to suit the measured drawer, while the front/rear outer ends stay vertical. The outer rim can flare outward while the inner rim follows the same slope without an extra vertical return.
 
-One checkbox per logical row enables cutouts along interior dividers. **Row 4 is enabled** in the example. The default cutout has a **25 mm base width**, two tangent blends of **20 mm rounding diameter**, and a **60° straight riser**; the riser angle can be adjusted.
+One checkbox per logical row enables cutouts along interior dividers. **Row 4 is enabled** in the example. The default cutout has a **25 mm base width**, two tangent blends of **20 mm rounding diameter**, and a **75° straight riser**; the riser angle can be adjusted. The 25 mm measurement is the **unrounded flat base**, between the first lower-rounding tangent points. Rounded shoulders widen the opening above that base; with the default dimensions, the top opening is approximately **89 mm** (and still **65 mm at 90°**). The Customizer angle for these access notches is independent of the print-overhang angle.
 
 ### Rim angle and tray height
 
