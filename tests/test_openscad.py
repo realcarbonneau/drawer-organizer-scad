@@ -39,6 +39,11 @@ def preview_positions(messages):
             for r,c,x,y,w,d in re.findall(p, messages)}
 
 
+def preview_connector_positions(messages):
+    p = r'ECHO: "PREVIEW LOOSE CONNECTOR \(index, x, y\)", (\d+), ([\d.e+-]+), ([\d.e+-]+)'
+    return [(int(i),float(x),float(y)) for i,x,y in re.findall(p,messages)]
+
+
 @pytest.mark.parametrize("gap", [0, 1, 12, 50])
 def test_preview_separation_is_one_constant_gap_between_tray_edges(tmp_path, gap):
     output, _ = render_csg(tmp_path, f"preview_{gap}", {
@@ -52,6 +57,39 @@ def test_preview_separation_is_one_constant_gap_between_tray_edges(tmp_path, gap
     assert m3[0] - (m2[0] + m2[2]) == pytest.approx(gap, abs=0.01)
     assert rear[1] - (m1[1] + m1[3]) == pytest.approx(gap, abs=0.01)
     assert m1[1] - (front[1] + front[3]) == pytest.approx(gap, abs=0.01)
+
+
+@pytest.mark.parametrize("quantity,gap", [(1,0),(8,0),(8,12),(60,50)])
+def test_full_preview_shows_loose_dogbones_in_right_hand_y_column(tmp_path,quantity,gap):
+    out,path=render_csg(tmp_path,f"preview_connectors_{quantity}_{gap}",{
+        "Output_mode":0,"Loose_connector_quantity":quantity,
+        "Preview_separation_mm":gap
+    })
+    connectors=preview_connector_positions(out)
+    assert len(connectors)==quantity
+    assert [i for i,_,_ in connectors]==list(range(1,quantity+1))
+    xs=[x for _,x,_ in connectors]
+    ys=[y for _,_,y in connectors]
+    assert max(xs)-min(xs)<0.001, "Connectors must occupy one Y-aligned column"
+    # The rightmost tray side expands 14 mm at the rim plus an outer lip run.
+    # The three-column group has one full preview gap on its right.
+    rim_right=189+14+10/math.tan(math.radians(60))+gap
+    head_radius=3.0
+    assert min(xs)-head_radius>=rim_right+5.9
+    assert (ys[0]+ys[-1])/2==pytest.approx((474+2*gap)/2,abs=0.01)
+    if quantity>1:
+        head_in=2+math.sqrt(3**2-2**2)
+        pitch=2*(head_in+head_radius)+4
+        assert np.allclose(np.diff(ys),-pitch,atol=0.002)
+    assert path.stat().st_size>1000
+
+
+@pytest.mark.parametrize("mode",[1,2])
+def test_loose_connector_preview_column_is_exclusive_to_full_layout(tmp_path,mode):
+    out,_=render_csg(tmp_path,f"no_preview_connectors_mode_{mode}",{
+        "Output_mode":mode,"Loose_connector_quantity":8
+    })
+    assert "PREVIEW LOOSE CONNECTOR" not in out
 
 
 @pytest.mark.parametrize("row,col", [(1,1),(3,1),(3,2),(3,3),(6,1)])
@@ -163,18 +201,18 @@ def test_unfittable_drawer_chamfer_reports_no_geometry(tmp_path,radius,angle):
 
 
 @pytest.mark.parametrize("inner",[0,1,12,18,20,24,30,35,62])
-def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,inner):
+def test_inner_bottom_radius_enforces_chamfer_protected_minimum(tmp_path,inner):
     out,path=render_csg(tmp_path,f"inner_bottom_radius_{inner}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
         "Inner_bottom_radius_mm":inner
     })
     spec=re.search(
-        r'"INNER BOTTOM ROUNDING \(requested / structural minimum / effective / maximum connector lobe reduction fraction\)", '
-        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+        r'"INNER BOTTOM ROUNDING \(requested / chamfer-protected minimum / effective\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
     assert spec,out[-3000:]
-    req,minimum,effective,trim=map(float,spec.groups())
+    req,minimum,effective=map(float,spec.groups())
     assert req==pytest.approx(inner)
-    assert minimum>2
+    assert minimum==pytest.approx(12)
     assert effective==pytest.approx(max(minimum,inner))
     if inner and inner<minimum:
         assert "INNER BOTTOM ROUNDING WARNING" in out
@@ -188,7 +226,7 @@ def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,in
     else:
         assert "Nothing rendered" not in out
         assert path.stat().st_size>1000
-        assert trim==pytest.approx(min(0.75,max(0,inner-minimum)/minimum),abs=0.002)
+        assert "CONNECTOR_LOBE_REDUCTION" not in out
 
 
 @pytest.mark.parametrize("radius",[20,30])
@@ -239,7 +277,7 @@ def test_radius_below_structural_minimum_cannot_change_the_stl(tmp_path):
     assert np.allclose(clamped.bounds,automatic.bounds,atol=0.00001)
 
 
-def test_connector_male_mesh_volume_shrinks_with_larger_floor_fillet(tmp_path):
+def test_connector_male_mesh_volume_grows_with_larger_floor_fillet(tmp_path):
     volumes=[]
     for radius in (0,18,24):
         m,_=render_stl(tmp_path,f"male_volume_radius_{radius}",{
@@ -247,10 +285,10 @@ def test_connector_male_mesh_volume_shrinks_with_larger_floor_fillet(tmp_path):
             "Inner_bottom_radius_mm":radius
         })
         volumes.append(m.volume)
-    assert volumes[0]>volumes[1]>volumes[2]>0
+    assert 0<volumes[0]<volumes[1]<volumes[2]
 
 
-def test_larger_inner_rounding_shrinks_male_and_female_connector_lobes(tmp_path):
+def test_larger_inner_rounding_expands_male_and_female_connector_lobes(tmp_path):
     values=[]
     for inner in [0,18,24]:
         out,_=render_csg(tmp_path,f"socket_trim_radius_{inner}",{
@@ -266,9 +304,74 @@ def test_larger_inner_rounding_shrinks_male_and_female_connector_lobes(tmp_path)
         assert female_far>=male_far>=0
         values.append((female_near,male_near,female_far,male_far))
     for index in range(4):
-        assert values[0][index]>=values[1][index]>=values[2][index]
-    assert values[0][0]>values[1][0]>values[2][0]
-    assert values[0][2]>values[1][2]>values[2][2]
+        assert values[0][index]<=values[1][index]<=values[2][index]
+    assert values[0][0]<values[1][0]<=values[2][0]
+    assert values[0][2]<values[1][2]<=values[2][2]
+    for female_near,male_near,female_far,male_far in values:
+        assert male_near<=6 and male_far<=6
+        assert female_near<=7 and female_far<=7
+        if male_near>0: assert female_near-male_near>=0.999
+        if male_far>0: assert female_far-male_far>=0.999
+
+
+@pytest.mark.parametrize("outer_radius,expected",[(0,2),(4,6),(10,12)])
+def test_chamfer_alone_determines_minimum_radius(tmp_path,outer_radius,expected):
+    output,_=render_csg(tmp_path,f"chamfer_min_{outer_radius}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Drawer_floor_corner_radius_mm":outer_radius,
+    })
+    match=re.search(
+        r'"INNER BOTTOM ROUNDING \(requested / chamfer-protected minimum / effective\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',output)
+    assert match,output
+    assert float(match.group(2))==pytest.approx(expected)
+
+
+@pytest.mark.parametrize("radius",[12,18,20,24,30])
+def test_socket_roof_and_male_follow_two_exact_fillet_offsets(tmp_path,radius):
+    out,_=render_csg(tmp_path,f"fillet_offsets_{radius}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Inner_bottom_radius_mm":radius,
+    })
+    match=re.search(
+        r'"CONNECTOR ROOF CAPS \(at lobe T\+2 / T\+4, female / male\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+    assert match
+    values=list(map(float,match.groups()))
+    for u,female,male in ((2,values[0],values[1]),(4,values[2],values[3])):
+        # Exact normal offsets of the inner concave quarter circle; the
+        # female roof has B stock, the male has B+top-clearance stock.
+        def cap(stock,max_height):
+            return min(max_height,max(0,2+radius-
+                math.sqrt((radius+stock)**2-(radius-u)**2)))
+        assert female==pytest.approx(cap(2,7),abs=0.012)
+        assert male==pytest.approx(cap(3,6),abs=0.012)
+        if male>0:
+            assert female-male>=0.999
+
+
+def test_socket_profile_uses_actual_base_offset_not_wall_thickness(tmp_path):
+    # The cavity is eroded by B. T controls the nominal connector geometry,
+    # but must not move the fillet profile inwards when T differs from B.
+    out,_=render_csg(tmp_path,"unequal_base_and_wall",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Base_thickness_mm":2,"Wall_thickness_mm":4,
+        "Inner_bottom_radius_mm":20,
+    })
+    match=re.search(
+        r'"CONNECTOR ROOF CAPS \(at lobe T\+2 / T\+4, female / male\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+    assert match,out[-2500:]
+    female,male=map(float,match.groups()[:2])
+    # Echo samples T+2=6 mm. Actual inner wall starts at B=2 mm,
+    # so the circular profile is sampled 4 mm into the fillet, not 2.
+    R=20
+    u=4
+    expected_female=22-math.sqrt((R+2)**2-(R-u)**2)
+    expected_male=22-math.sqrt((R+3)**2-(R-u)**2)
+    assert female==pytest.approx(expected_female,abs=0.01)
+    assert male==pytest.approx(expected_male,abs=0.01)
+    assert female-male>=1
 
 
 @pytest.mark.parametrize("radius",[0,18,20,24,30])
