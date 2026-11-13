@@ -191,6 +191,32 @@ def test_inner_bottom_radius_enforces_minimum_and_connector_priority(tmp_path,in
         assert trim==pytest.approx(min(0.75,max(0,inner-minimum)/minimum),abs=0.002)
 
 
+def test_radius_below_structural_minimum_cannot_change_the_stl(tmp_path):
+    automatic,_=render_stl(tmp_path,"inner_radius_auto_identical",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Inner_bottom_radius_mm":0
+    })
+    clamped,out=render_stl(tmp_path,"inner_radius_clamped_identical",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Inner_bottom_radius_mm":1
+    })
+    assert "INNER BOTTOM ROUNDING WARNING" in out
+    assert len(automatic.faces)==len(clamped.faces)
+    assert clamped.volume==pytest.approx(automatic.volume,abs=0.001)
+    assert np.allclose(clamped.bounds,automatic.bounds,atol=0.00001)
+
+
+def test_connector_male_mesh_volume_shrinks_with_larger_floor_fillet(tmp_path):
+    volumes=[]
+    for radius in (0,18,24):
+        m,_=render_stl(tmp_path,f"male_volume_radius_{radius}",{
+            "Output_mode":2,"Loose_connector_quantity":1,
+            "Inner_bottom_radius_mm":radius
+        })
+        volumes.append(m.volume)
+    assert volumes[0]>volumes[1]>volumes[2]>0
+
+
 def test_larger_inner_rounding_shrinks_male_and_female_connector_lobes(tmp_path):
     values=[]
     for inner in [0,18,24]:
