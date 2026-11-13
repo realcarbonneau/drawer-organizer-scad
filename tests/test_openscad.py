@@ -854,3 +854,29 @@ def test_full_tray_and_socket_share_exact_circle_center(tmp_path,radius):
     assert inner==pytest.approx(radius)
     assert socket-inner==pytest.approx(2)
     assert male-socket==pytest.approx(1)
+
+@pytest.mark.parametrize("radius",[12,20,30])
+def test_male_connector_actual_mesh_has_same_center_and_larger_radius(tmp_path,radius):
+    """Verify the actual printed male STL, not only the analytic echo."""
+    model,preset=release_paths()
+    marker="// ----------- Output and non-fatal invalid selection handling -----------"
+    fixture=tmp_path/"actual_male_fixture.scad"
+    fixture.write_text(model.read_text().split(marker,1)[0]+"\nloose_dogbone();\n")
+    path=tmp_path/f"actual_male_r{radius}.stl"
+    proc=openscad_render(path,{"Inner_bottom_radius_mm":radius},source=fixture,preset=preset)
+    require_render_ok(proc,path)
+    mesh=trimesh.load(path,force="mesh",process=True)
+    assert mesh.is_watertight and mesh.volume>0
+    assert mesh.bounds[1,2]==pytest.approx(6,abs=0.01)
+    section=mesh.section(plane_origin=[0,0,0],plane_normal=[1,0,0])
+    assert section is not None
+    coords=np.vstack(section.discrete)
+    xs=np.round(coords[:,1],5)
+    top=np.array([(v,coords[xs==v,2].max()) for v in np.unique(xs)])
+    arc=top[(top[:,0]>=0)&(top[:,0]<7.24)&(top[:,1]>0.15)&(top[:,1]<5.98)]
+    if radius==30:
+        assert len(arc)==0  # full-height head after adequate fillet stock
+    else:
+        assert len(arc)>=10
+        fitted=np.hypot(arc[:,0]-(radius+2),arc[:,1]-(radius+2))
+        assert np.max(np.abs(fitted-(radius+3)))<0.07
