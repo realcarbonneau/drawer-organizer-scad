@@ -351,6 +351,30 @@ def test_socket_roof_and_male_follow_two_exact_fillet_offsets(tmp_path,radius):
             assert female-male>=0.999
 
 
+def test_socket_profile_uses_actual_base_offset_not_wall_thickness(tmp_path):
+    # The cavity is eroded by B. T controls the nominal connector geometry,
+    # but must not move the fillet profile inwards when T differs from B.
+    out,_=render_csg(tmp_path,"unequal_base_and_wall",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Base_thickness_mm":2,"Wall_thickness_mm":4,
+        "Inner_bottom_radius_mm":20,
+    })
+    match=re.search(
+        r'"CONNECTOR ROOF CAPS \\(at lobe T\\+2 / T\\+4, female / male\\)", '
+        r'([\\d.e+-]+), ([\\d.e+-]+), ([\\d.e+-]+), ([\\d.e+-]+)',out)
+    assert match,out[-2500:]
+    female,male=map(float,match.groups()[:2])
+    # Echo samples T+2=6 mm. Actual inner wall starts at B=2 mm,
+    # so the circular profile is sampled 4 mm into the fillet, not 2.
+    R=20
+    u=4
+    expected_female=22-math.sqrt((R+2)**2-(R-u)**2)
+    expected_male=22-math.sqrt((R+3)**2-(R-u)**2)
+    assert female==pytest.approx(expected_female,abs=0.01)
+    assert male==pytest.approx(expected_male,abs=0.01)
+    assert female-male>=1
+
+
 @pytest.mark.parametrize("radius",[0,18,24])
 def test_larger_bottom_radius_keeps_tray_and_dogbone_watertight(tmp_path,radius):
     m,out=render_stl(tmp_path,f"larger_inner_round_{radius}",{

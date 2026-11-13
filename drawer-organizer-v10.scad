@@ -547,14 +547,16 @@ module full_dogbone_2d(clearance=0) {
 }
 // Both connector envelopes use the ACTUAL effective lower fillet radius.
 // The inner void boundary in a seam-normal section is a quarter circle:
-//   centre (T+R, B+R), radius R = INNER_BOTTOM_R.
+//   centre (B+R, B+R), radius R = INNER_BOTTOM_R.
+// The cavity wall is eroded by B, NOT T. For a non-default wall thickness,
+// using T as the profile origin would cut into the actual cavity.
 // Its inward offsets by B and B+SOCKET_TOP_CLEARANCE are exact concentric
 // arcs, not an arbitrary vertical scaling or a second guessed fillet.
 // This preserves >= B solid material (in true normal distance) above the
 // female socket, with >= SOCKET_TOP_CLEARANCE above the male connector.
 // Increasing R therefore retains MORE connector material, never less.
 function fillet_offset_cap_at(y,stock) =
-    let(u=max(0,y)-T, R=INNER_BOTTOM_R,
+    let(u=max(0,y)-B, R=INNER_BOTTOM_R,
         h=B+R, radial=R+stock, across=R-u)
     u<=-stock ? h :
     u>=R ? 0 :
@@ -570,7 +572,7 @@ function connection_cap_at(y) =
 // zero-height, non-manifold end wedge. At normal radii this cut is outside
 // the dogbone's XY footprint and changes nothing.
 function male_envelope_end_y() =
-    max(0.01,T+INNER_BOTTOM_R-
+    max(0.01,B+INNER_BOTTOM_R-
         sqrt(2*(INNER_BOTTOM_R+B)*SOCKET_TOP_CLEARANCE+
              SOCKET_TOP_CLEARANCE*SOCKET_TOP_CLEARANCE)-0.05);
 module connector_height_envelope(full=true) {
@@ -592,9 +594,9 @@ module connector_height_envelope(full=true) {
             polygon(concat(
                 [[0,-0.02]],[[0,socket_roof_safe_cap_at(0)]],
                 [for(i=[0:steps])
-                    let(y=(T+R)*i/steps)
+                    let(y=(B+R)*i/steps)
                     [y,socket_roof_safe_cap_at(y)]],
-                [[T+R+1,-0.02]]));
+                [[B+R+1,-0.02]]));
 }
 // One closed polyhedron per female pocket: rectangular stem, rounded lobe,
 // and the SAME calculated roof-height envelope used by the male dogbone.
