@@ -98,9 +98,11 @@ def test_readme_visuals_are_camera_fitted_and_never_cropped():
     build=(root/"scripts/build.py").read_text()
     assert '"--imgsize", "3200,2200"' in cli
     assert '"--autocenter", "--viewall"' in cli
-    assert 'image_camera=camera, image_focus=focus' in build
+    assert 'image_focus=focus' in build
     assert '"cutout-closeup"' in build
-    assert 'focus = (31.5, 118.5, 35, 70, 0, 67, 280)' in build
+    assert '"full-layout": ((94.5,250,37,58,0,35,1500)' in build
+    assert '"front-tray": ((94.5,39.5,35,62,0,35,750)' in build
+    assert 'verify_preview_framing(destination' in build
     assert "'cutout-closeup.png'" in gallery
     assert '"Render_facets": 64' in build
     assert "def image_contain(" in gallery
@@ -108,6 +110,29 @@ def test_readme_visuals_are_camera_fitted_and_never_cropped():
     assert ".crop(" not in gallery
     assert "min(size[0]/im.width,size[1]/im.height,1.0)" in gallery
     assert "SCALE=2" in gallery
+
+
+def test_preview_frame_validator_catches_tiny_and_clipped_models(tmp_path):
+    from PIL import Image, ImageDraw
+    from scripts.build import verify_preview_framing
+
+    image=Image.new("RGB",(1000,700),(247,247,247))
+    d=ImageDraw.Draw(image)
+    p=tmp_path/"framing.png"
+
+    d.rectangle((495,345,505,355),fill=(45,66,91))
+    image.save(p)
+    with pytest.raises(RuntimeError,match="too small"):
+        verify_preview_framing(p)
+
+    d.rectangle((275,200,725,525),fill=(45,66,91))
+    image.save(p)
+    verify_preview_framing(p)
+
+    d.rectangle((0,200,725,525),fill=(45,66,91))
+    image.save(p)
+    with pytest.raises(RuntimeError,match="clipped"):
+        verify_preview_framing(p)
 
 
 def test_connector_clearance_semantics_and_independent_controls():
