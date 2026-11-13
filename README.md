@@ -75,3 +75,8 @@ On Linux, headless PNG generation requires `xvfb` and `xauth`. The Python depend
 GitHub Actions runs the OpenSCAD geometry tests and builds the **five tray STLs, dogbone connector STL, preview PNGs and README gallery**. Download them as artifacts from the latest successful [workflow run](https://github.com/realcarbonneau/drawer-organizer-scad/actions). The four images in [docs/images](docs/images) are generated from the actual OpenSCAD previews on successful main-branch builds.
 
 The test suite checks mesh validity, geometry variants and connector parameters. **Real-world connector fit, wall thickness at every parameter combination and F5 orbiting speed still require manual testing.**
+
+
+### Native OpenSCAD preview
+
+The same model geometry is used in F5 and F6. There are **no** automatic `render()` calls or separate low-detail preview shapes: OpenSCAD's interface remains responsible for previewing and final rendering. The underside socket geometry is constructed as a single capped solid so the full five-tray scene can be previewed without CSG normalization overflow. F5 rotation speed still depends on your graphics driver and machine.

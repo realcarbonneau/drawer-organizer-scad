@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 import trimesh
 
-from scripts.organizer_cli import openscad_render, require_render_ok
+from scripts.organizer_cli import openscad_render, require_render_ok, release_paths
 
 
 def render_stl(tmp_path, name, overrides):
@@ -222,24 +222,26 @@ def test_facet_range_compiles_without_warnings(tmp_path,facets):
     assert "WARNING:" not in output
 
 
-def test_f5_preview_is_normalized_to_five_cached_trays(tmp_path):
-    """F5-style preview must not expand into an empty/huge OpenCSG tree."""
+def test_f5_preview_uses_original_geometry_without_forced_render(tmp_path):
+    """F5 must display all trays without forcing CGAL render or overflowing OpenCSG."""
     path=tmp_path/"full-preview.png"
     proc=openscad_render(path,{"output_mode":0,"preview_separation_mm":12})
     require_render_ok(proc,path)
     text=proc.stdout+proc.stderr
     assert "CSG normalization resulted in an empty tree" not in text
-    assert re.search(r"Normalized (?:CSG )?tree has 5 elements",text), text[-1000:]
+    match=re.search(r"Normalized (?:CSG )?tree has (\\d+) elements",text)
+    assert match and 10 < int(match.group(1)) < 10000, text[-1000:]
     assert path.stat().st_size>5000
 
 
-def test_f5_preview_is_one_cached_part(tmp_path):
+def test_f5_preview_is_unforced_for_selected_part(tmp_path):
     path=tmp_path/"single-preview.png"
     proc=openscad_render(path,{"output_mode":1,"selected_row":3,"selected_column":2})
     require_render_ok(proc,path)
     text=proc.stdout+proc.stderr
     assert "CSG normalization resulted in an empty tree" not in text
-    assert re.search(r"Normalized (?:CSG )?tree has 1 elements",text), text[-1000:]
+    match=re.search(r"Normalized (?:CSG )?tree has (\\d+) elements",text)
+    assert match and 10 < int(match.group(1)) < 10000, text[-1000:]
     assert path.stat().st_size>5000
 
 
@@ -318,3 +320,13 @@ def test_connector_uses_full_6mm_height_under_7mm_blind_pocket(tmp_path):
     male_cap,female_cap=map(float,m.groups())
     assert male_cap==pytest.approx(6.0)
     assert female_cap-male_cap==pytest.approx(1.0)
+
+
+def test_single_geometry_path_and_openscad_controls_f5_f6():
+    source,_=release_paths()
+    scad=source.read_text()
+    assert "if($preview)" not in scad
+    assert "render(convexity" not in scad
+    assert "fast_preview_tray" not in scad
+    assert "module socket_opening_3d()" in scad
+    assert "polyhedron(points=pts,faces=faces" in scad

@@ -556,13 +556,42 @@ module connector_height_envelope(full=true) {
                 [for(i=[0:steps]) let(y=T+R*i/steps)
                     [y,socket_roof_safe_cap_at(y)]],[[T+R+1,-0.02]]));
 }
+// One closed polyhedron per female pocket: rectangular stem, rounded lobe,
+// and the SAME calculated roof-height envelope used by the male dogbone.
+// This is not a preview approximation. F5 and F6 evaluate this exact object.
+// Avoid intersecting two high-facet CSG extrusions for every socket: five
+// trays with many separate intersections previously overflowed the OpenCSG
+// normalizer (>100,000 nodes) when all parts were previewed together.
+function socket_half_width_at(y) =
+    max(y<=HEAD_IN ? WEB_R+SOCKET_SIDE_CLEARANCE : 0,
+        abs(y-HEAD_IN)<SOCKET_R ?
+            sqrt(max(0,SOCKET_R*SOCKET_R-(y-HEAD_IN)*(y-HEAD_IN))) : 0);
+function socket_y_samples() =
+    let(n=max(12,ceil(render_facets)),
+        transition=HEAD_IN-sqrt(max(0,SOCKET_R*SOCKET_R-(WEB_R+SOCKET_SIDE_CLEARANCE)*(WEB_R+SOCKET_SIDE_CLEARANCE))),
+        tip=HEAD_IN+SOCKET_R-0.0001)
+    concat([for(j=[0:n]) transition*j/n],
+           [for(j=[1:n]) transition+(HEAD_IN-transition)*j/n],
+           [for(j=[1:n]) HEAD_IN+(tip-HEAD_IN)*j/n]);
+function socket_vertex(i,k,ys) =
+    let(y=ys[i],w=socket_half_width_at(y),h=socket_roof_safe_cap_at(y))
+    k==0 ? [-w,y,-E] :
+    k==1 ? [w,y,-E] :
+    k==2 ? [-w,y,h] : [w,y,h];
 module socket_opening_3d() {
-    intersection() {
-        translate([0,0,-E]) linear_extrude(height=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+E)
-            half_dogbone_2d(SOCKET_SIDE_CLEARANCE);
-        // Only what fits beneath the B-thick interior bottom is removed.
-        connector_height_envelope(false);
-    }
+    ys=socket_y_samples();
+    n=len(ys);
+    pts=[for(i=[0:n-1],k=[0:3]) socket_vertex(i,k,ys)];
+    faces=concat(
+       [for(i=[0:n-2]) each [
+          [4*i+0,4*(i+1)+0,4*(i+1)+1,4*i+1],
+          [4*i+2,4*i+3,4*(i+1)+3,4*(i+1)+2],
+          [4*i+1,4*(i+1)+1,4*(i+1)+3,4*i+3],
+          [4*i+0,4*i+2,4*(i+1)+2,4*(i+1)+0]]],
+       [[0,1,3,2],
+        [4*(n-1)+1,4*(n-1)+0,4*(n-1)+2,4*(n-1)+3]]
+    );
+    polyhedron(points=pts,faces=faces,convexity=10);
 }
 module edge_station(side,at) {
     if(side=="front") translate([at,0,0]) children();
@@ -725,13 +754,10 @@ module one_tray(start,col,report=true) {
     }
 }
 
-// OpenCSG F5 normalizer expands nested offset/intersection/subtraction
-// combinations exponentially. Rendering the FINAL one-tray boundary once
-// gives a single cached polyhedron to the preview scene, instead of
-// >100,000 CSG leaves. F6 exports the normal (exact) one_tray geometry.
+// One geometry definition for both preview and final render. OpenSCAD's
+// own F5/F6 controls decide the evaluation mode; never force render().
 module display_tray(start,col,report=true) {
-    if($preview) render(convexity=10) one_tray(start,col,report);
-    else one_tray(start,col,report);
+    one_tray(start,col,report);
 }
 // Count tray GROUP boundaries in front of (closer to the viewer than) this group.
 // Separation is applied once PER TRAY JOIN, not once per logical row.

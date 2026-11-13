@@ -15,7 +15,7 @@
 - Outer left/right side tapers must fit the metal-sided drawer. Front/rear ends have no metal-side taper. Exterior lip ramp starts at drawer rim; inner ramp starts one base thickness higher and stays sloped through the top.
 - The rounded access cutout has a specified BASE width, two smooth tangent R10 transitions by default, a configurable 45°–90° riser, and is controlled by an on/off checkbox for each row on interior dividers only.
 - The dogbone uses two round heads plus a rectangular center and presses upward from underneath. No socket mouth chamfer or locking feature. Keep a blind roof, floor clearance, and adequate wall stock.
-- Avoid repeated high-complexity CSG preview nodes; cache a completed solid per tray in `$preview` and maintain a fast F6 render. Test F5 preview node/solid counts separately from camera orbit performance, which needs manual UI inspection.
+- Preserve ONE identical geometry path for both OpenSCAD F5 preview and F6 render. Do not call `render()` automatically, and do not implement a simplified `$preview` model. Avoid multiplying intersections in repeatable features (e.g. each female socket is a single manifold polyhedron), and test F5 CSG normalization without claiming this measures interactive orbit performance.
 
 ## Quality and review checks
 
