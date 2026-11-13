@@ -11,7 +11,9 @@
 // Inner width across the TOP of the metal drawer.
 Drawer_top_width_mm = 218; // [60:1:1000]
 Drawer_floor_width_mm = 190; // [50:1:1000]
-// Approximate floor-to-side corner radius of the metal drawer.
+// Metal drawer's floor-to-side inside radius. Determines the lower EXTERIOR
+// clearance chamfer height together with Print_overhang_angle_deg.
+// If its required chamfer cannot fit the measured drawer, no model is drawn.
 Drawer_floor_corner_radius_mm = 10; // [0:0.5:35]
 Drawer_inside_length_mm = 475; // [60:1:1200]
 Drawer_rim_height_mm = 65; // [20:1:200]
@@ -44,9 +46,6 @@ Rim_left = true;
 Rim_right = true;
 Rim_front = false;
 Rim_rear = false;
-// Maximum rise of the lower EXTERIOR chamfer in AUTO fit mode.
-// Its actual rise may be reduced to maintain the requested print angle.
-Outer_bottom_chamfer_max_rise_mm = 10; // [0:0.5:30]
 // Bottom elephant-foot relief along joining edges, excluding connector mouths.
 Join_edge_elephant_foot_mm = 1; // [0:0.1:4]
 
@@ -55,9 +54,14 @@ Join_edge_elephant_foot_mm = 1; // [0:0.1:4]
 Base_thickness_mm = 2.0; // [0.8:0.1:5]
 // Additional reinforcements around the dogbone sockets use this thickness.
 Wall_thickness_mm = 2.0; // [0.8:0.1:5]
-// Same bottom INSIDE rounding on all four sides. Automatically sized to
-// preserve the minimum base thickness at the exterior bottom chamfer.
-// Exposed edges are capped below half the material thickness.
+// Requested shared INSIDE floor-to-wall fillet radius (mm).
+// Zero = automatically use the structural minimum derived from the connector
+// sockets, minimum floor stock, and lower exterior chamfer. A smaller nonzero
+// radius cannot compromise the minimum thickness: it will be raised to the
+// structural minimum and a warning is echoed. A larger radius fills more of
+// the tray floor corner and automatically shortens connector head pockets.
+Inner_bottom_radius_mm = 0;
+// Soft touch rounding of exposed top edges and the divider cutout ridge.
 Soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 
 /* [04 - Connector specifications] */
@@ -134,10 +138,12 @@ B=Base_thickness_mm;
 T=Wall_thickness_mm;
 SIDE_EXPAND=(WT-W0)/2;
 ALPHA=Print_overhang_angle_deg;
-// For a ramp of horizontal travel X and angle A, vertical rise = X*tan(A).
-// Auto fit limits travel to half of the drawer's actual measured widening.
-CHAMFER_X=min(max(0,SIDE_EXPAND-0.4),Outer_bottom_chamfer_max_rise_mm/tan(ALPHA));
-CHAMFER_Z=CHAMFER_X*tan(ALPHA);
+// The metal floor rounding decides the required lower exterior chamfer rise.
+// Its run is determined ONLY by the specified print overhang angle. Never
+// quietly clamp the requested geometry: impossible fit gets an echo and no
+// geometry (see the explicit configuration checks at the output stage).
+CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm);
+CHAMFER_X=CHAMFER_Z/tan(ALPHA);
 JOIN_Z=Join_edge_elephant_foot_mm;
 JOIN_X=JOIN_Z/tan(ALPHA);
 // The print angle and specified tray height are the ONLY independent rim
@@ -188,8 +194,32 @@ LOBE_REACH=max(0,HEAD_IN+HEAD_R+SOCKET_SIDE_CLEARANCE-T);
 // to preserve B mm of material above the blind pocket everywhere.
 LOBE_TIP_STOCK=min(CONNECTOR_HEIGHT,0.8)+SOCKET_TOP_CLEARANCE+0.25;
 CONNECTOR_FILLET_R=LOBE_REACH+LOBE_TIP_STOCK+sqrt(2*LOBE_REACH*LOBE_TIP_STOCK);
-INNER_BOTTOM_R=max(B,CHAMFER_X*0.65,CONNECTOR_FILLET_R);
+// This structural minimum is NEVER user-overridable. The explicit request
+// may only make the fillet larger. Zero is an intentional automatic setting.
+INNER_BOTTOM_R_MIN=max(B,CHAMFER_X*0.65,CONNECTOR_FILLET_R);
+INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);
+INNER_BOTTOM_R_CLAMPED=Inner_bottom_radius_mm!=0 &&
+    Inner_bottom_radius_mm<INNER_BOTTOM_R_MIN-0.00001;
+EXTRA_INNER_BOTTOM_R=max(0,INNER_BOTTOM_R-INNER_BOTTOM_R_MIN);
+// Extra inner rounding takes priority over connector lobe volume. Shorten the
+// blind socket AND the matching male lobe cap progressively toward the head;
+// never deepen a socket merely because more fillet stock becomes available.
+CONNECTOR_LOBE_REDUCTION=min(0.75,EXTRA_INNER_BOTTOM_R/max(0.00001,INNER_BOTTOM_R_MIN));
 SOFT_R=min(max(0,Soft_edge_radius_mm),max(0,min(B,T)/2-0.1));
+// The radius-derived exterior chamfer must not pass through the measured
+// metal wall or consume the straight wall above it. The inner bottom fillet
+// must fit between the sides of the narrowest compartment, with B stock.
+CHAMFER_FIT_ERROR=CHAMFER_Z>=H-2*B ||
+    CHAMFER_X>=SIDE_EXPAND-0.4 || CHAMFER_Z>SIDE_EXPAND;
+MIN_TRAY_WIDTH=min([for(r=[1:Grid_rows]) if(splits_at(r)>0) W0/splits_at(r)]);
+MIN_TRAY_DEPTH=ROW_DEPTH;
+INNER_FLOOR_FIT_ERROR=2*(B+INNER_BOTTOM_R)>=min(MIN_TRAY_WIDTH,MIN_TRAY_DEPTH);
+// Cutout floors are above the larger inner-bottom radius and the convex
+// 0.6 mm edge blend, never carved through them. For an active cutout there
+// must also be a useful opening above its lowest point.
+function cutout_floor_z()=max(PAD_HEIGHT+B+1,B+INNER_BOTTOM_R+SOFT_R+2*E);
+CUTOUT_HEADROOM_ERROR=len([for(r=[1:Grid_rows]) if(cutout_values[r-1] && group_count(r)>1) r])>0 &&
+    cutout_floor_z()>=ZTOP-2*B;
 
 function splits_at(row) = row_values[row-1];
 function notch_at(row) = cutout_values[row-1];
@@ -245,7 +275,7 @@ assert(JOIN_Z<=B,"Elephant foot relief must be no deeper than the base thickness
 // these sections also produces a CONTINUOUS parallel sloped inner lip.
 function lip_run_at_z(z)=HAS_RIM ? (z-H)/tan(ALPHA) : 0;
 function left_profile(outside, rim, top_extra=0)=
-    outside ? concat([[0,0],[-CHAMFER_X,CHAMFER_Z],[-SIDE_EXPAND,H]],
+    outside ? concat([[0,0]],CHAMFER_Z>0 ? [[-CHAMFER_X,CHAMFER_Z]] : [],[[-SIDE_EXPAND,H]],
               [[-SIDE_EXPAND-(rim?lip_run_at_z(ZTOP+top_extra):0),ZTOP+top_extra]])
             : [[JOIN_X,0],[0,JOIN_Z],[0,ZTOP+top_extra]];
 function right_profile(w,outside,rim,top_extra=0)=
@@ -502,19 +532,26 @@ module full_dogbone_2d(clearance=0) {
 // plus XY clearance: a blind underside cut, not a raised internal floor pad.
 // The analytic cap is a conservative approximation of the R fillet above the
 // B-thick floor. A safety margin absorbs tessellation and socket clearance.
-// Conservative upper bound on socket roof depth, already including the
-// minimum B-mm solid layer under the inner tray fillet. The pocket never
-// exceeds this bound, even when the requested vertical clearance is high.
-function socket_roof_safe_cap_at(y) =
-    let(t=max(0,(abs(y)-T)/INNER_BOTTOM_R),
-        stock=max(0,INNER_BOTTOM_R*(1-sqrt(max(0,2*t-t*t)))-0.25))
+// Conservative roof cap based on the GUARANTEED minimum fillet. Larger
+// requested inner radii must NEVER deepen the underside pocket: instead,
+// scale the original male lobe cap down continuously without shifting the
+// original zero-height tangent. The female roof follows with its full user
+// top clearance; this is important for both printability and assembly.
+function baseline_socket_roof_at(y) =
+    let(offset=max(0,abs(y)-T),t=offset/INNER_BOTTOM_R_MIN,
+        stock=max(0,INNER_BOTTOM_R_MIN*(1-sqrt(max(0,2*t-t*t)))-0.25))
     abs(y)<=T ? CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE :
     t>=1 ? 0 : min(CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE,stock);
-// The male is shortened by the full requested top clearance from the
-// corresponding female socket cap. At its flat center it retains the
-// specified CONNECTOR_HEIGHT; towards the lobes it follows the floor fillet.
+function connector_lobe_scale_at(y) =
+    1-CONNECTOR_LOBE_REDUCTION*min(1,max(0,(abs(y)-T)/max(0.00001,LOBE_REACH)));
+function baseline_male_cap_at(y) =
+    max(0,min(CONNECTOR_HEIGHT,baseline_socket_roof_at(y)-SOCKET_TOP_CLEARANCE));
 function connection_cap_at(y) =
-    max(0,min(CONNECTOR_HEIGHT,socket_roof_safe_cap_at(y)-SOCKET_TOP_CLEARANCE));
+    baseline_male_cap_at(y)*connector_lobe_scale_at(y);
+function socket_roof_safe_cap_at(y) =
+    let(raw=baseline_socket_roof_at(y))
+    raw<=SOCKET_TOP_CLEARANCE ? raw :
+    connection_cap_at(y)+SOCKET_TOP_CLEARANCE;
 module connector_height_envelope(full=true) {
     R=INNER_BOTTOM_R;
     // Match the cap to the display facet budget instead of oversampling at
@@ -639,6 +676,8 @@ module join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
 // theoretical sharp corners of the requested base opening OUTWARD into the
 // notch: the input is the gap BEFORE rounding, not the finished flat width.
 // The remaining flat is allowed to shrink to zero without rejecting inputs.
+// The bottom cavity fillet has priority: the cutout never removes it.
+// The convex ridge roundover remains clear of the bottom fillet.
 function cutout_angle(a)=max(0,min(90,a));
 function cutout_effective_r(zbase,ztop,width,a)=
     let(ang=cutout_angle(a),base=max(0,width))
@@ -663,7 +702,7 @@ function cutout_right_side(width,zbase,ztop,r,a,n=12)=
         [for(i=[0:n]) let(t=90+ang-ang*i/n)
           [upper_x+r*cos(t),upper_z+r*sin(t)]]);
 module access_notch_profile_2d(width,top_height) {
-    zbase=PAD_HEIGHT+B+1;
+    zbase=cutout_floor_z();
     ztop=top_height;
     base=max(0,width);
     ang=cutout_angle(Cutout_riser_angle_deg);
@@ -703,7 +742,7 @@ function cutout_touch_clearance(u,r) =
     r<=0 ? 0 : r-sqrt(max(0,2*r*u-u*u));
 // An ordered 2D outline of the notch, without repeated corner vertices.
 function cutout_outline(width,top_height,n) =
-    let(zbase=PAD_HEIGHT+B+1,ztop=top_height,
+    let(zbase=cutout_floor_z(),ztop=top_height,
         base=max(0,width),ang=cutout_angle(Cutout_riser_angle_deg),
         r=cutout_effective_r(zbase,ztop,base,ang),
         right=cutout_right_side(base,zbase,ztop,r,ang,n),
@@ -850,15 +889,27 @@ module all_trays() {
 
 // ----------- Output and non-fatal invalid selection handling -----------
 echo("DRAWER v9 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
-echo("ANGLE / OUTER CHAMFER run, rise",ALPHA,CHAMFER_X,CHAMFER_Z);
+echo("ANGLE / AUTO OUTER CHAMFER run, rise (from drawer floor radius)",ALPHA,CHAMFER_X,CHAMFER_Z);
+echo("DRAWER FLOOR radius / REQUIRED exterior chamfer rise",Drawer_floor_corner_radius_mm,CHAMFER_Z);
 echo("RIM (angle FROM PRINT BED / fixed height / derived projection)",
      HAS_RIM ? ALPHA : 0, LIP_Z, RIM_PROJECTION);
 echo("CONNECTOR CLEARANCES (total side / each side / top)",
      Connector_side_clearance_total_mm, SOCKET_SIDE_CLEARANCE, SOCKET_TOP_CLEARANCE);
 echo("CONNECTOR ROOF CAPS (at seam)",connection_cap_at(0),socket_roof_safe_cap_at(0));
+echo("CONNECTOR ROOF CAPS (at lobe T+2 / T+4, female / male)",
+     socket_roof_safe_cap_at(T+2),connection_cap_at(T+2),
+     socket_roof_safe_cap_at(T+4),connection_cap_at(T+4));
 echo("BASE MIN THICKNESS / BOTTOM INNER R / WALL REINFORCEMENT",B,INNER_BOTTOM_R,T);
+echo("INNER BOTTOM ROUNDING (requested / structural minimum / effective / maximum connector lobe reduction fraction)",
+     Inner_bottom_radius_mm,INNER_BOTTOM_R_MIN,INNER_BOTTOM_R,CONNECTOR_LOBE_REDUCTION);
+if(INNER_BOTTOM_R_CLAMPED)
+    echo(str("INNER BOTTOM ROUNDING WARNING - requested ",Inner_bottom_radius_mm,
+             " mm is below the structural minimum ",INNER_BOTTOM_R_MIN,
+             " mm. Enforcing the minimum to protect floor thickness and socket roofs; " ,
+             "smaller requests have no effect."));
+echo("CUTOUT floor Z / protected inner bottom fillet top Z",cutout_floor_z(),B+INNER_BOTTOM_R);
 // Report the entered pre-rounding gap as well as the finished dimensions.
-let(z0=PAD_HEIGHT+B+1,
+let(z0=cutout_floor_z(),
     ang=cutout_angle(Cutout_riser_angle_deg),
     base=max(0,Cutout_base_width_mm),
     radius=cutout_effective_r(z0,ZTOP,base,ang),
@@ -889,6 +940,26 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
                  " compartments, but Grid_columns is ",Grid_columns,
                  ". Increase Grid_columns to at least ",splits_at(r),
                  " (or reduce Row_",r,"). Nothing rendered."));
+} else if(CHAMFER_FIT_ERROR) {
+    echo(str("DRAWER CHAMFER DOES NOT FIT: The drawer floor radius of ",
+             Drawer_floor_corner_radius_mm," mm at ",ALPHA," degrees requires ",
+             CHAMFER_X," mm horizontal run and ",CHAMFER_Z,
+             " mm rise. Available side widening is ",SIDE_EXPAND,
+             " mm at drawer rim height ",H,
+             " mm. Adjust the drawer floor radius, measured widths, rim height, " ,
+             "or print overhang angle. Nothing rendered."));
+} else if(INNER_FLOOR_FIT_ERROR) {
+    echo(str("INNER FLOOR FILLET DOES NOT FIT: Connector socket clearance and " ,
+             "floor stock require an inner radius of ",INNER_BOTTOM_R,
+             " mm; smallest tray width is ",MIN_TRAY_WIDTH,
+             " mm. Reduce the requested radius, change compartments/connector " ,
+             "dimensions. Nothing rendered."));
+} else if(CUTOUT_HEADROOM_ERROR) {
+    echo(str("CUTOUT DOES NOT FIT: Connector roofs and protected inner-bottom " ,
+             "rounding require a cutout floor of at least ",cutout_floor_z(),
+             " mm, but the tray top is ",ZTOP,
+             " mm. Increase drawer rim height or reduce connector height/rounding. " ,
+             "Nothing rendered."));
 } else if(Output_mode==0) {
     all_trays();
 } else if(Output_mode==1) {

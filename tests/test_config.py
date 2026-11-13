@@ -65,6 +65,17 @@ def test_customizer_controls_and_defaults():
     assert params["Base_thickness_mm"] == "2"
     assert params["Wall_thickness_mm"] == "2"
     assert params["Soft_edge_radius_mm"] == "0.6"
+    assert params["Inner_bottom_radius_mm"] == "0"
+    assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_X*0.65,CONNECTOR_FILLET_R);" in scad
+    assert "INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);" in scad
+    assert "CONNECTOR_LOBE_REDUCTION" in scad
+    assert params["Drawer_floor_corner_radius_mm"] == "10"
+    assert "Outer_bottom_chamfer_max_rise_mm" not in params
+    assert "Outer_bottom_chamfer_max_rise_mm" not in scad
+    assert "CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm);" in scad
+    assert "CHAMFER_X=CHAMFER_Z/tan(ALPHA);" in scad
+    assert "CHAMFER_FIT_ERROR" in scad
+    assert "function cutout_floor_z()" in scad
     assert params["Cutout_row_04"] == "true"
     assert "Connector_center_thickness_mm" in params
     assert "Connector_height_mm" in params
@@ -146,7 +157,8 @@ def test_connector_clearance_semantics_and_independent_controls():
     assert "connector_clearance_mm" not in p
     assert "connector_clearance_mm" not in scad
     assert "SOCKET_SIDE_CLEARANCE=Connector_side_clearance_total_mm/2;" in scad
-    assert "socket_roof_safe_cap_at(y)-SOCKET_TOP_CLEARANCE" in scad
+    assert "baseline_male_cap_at(y)*connector_lobe_scale_at(y);" in scad
+    assert "connection_cap_at(y)+SOCKET_TOP_CLEARANCE;" in scad
     assert "PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+0.4" in scad
 
 
