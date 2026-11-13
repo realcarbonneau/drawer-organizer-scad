@@ -72,7 +72,8 @@ def test_customizer_controls_and_defaults():
     assert params["Cutout_riser_angle_deg"] == "75"
     assert "Cutout_riser_angle_deg = 75;" in scad
     assert "Cutout_base_width_mm = 25;" in scad
-    assert not re.search(r"Cutout_(?:base_width_mm|riser_angle_deg)\\s*=\\s*[^;]+;\\s*//\\s*\\[",scad)
+    assert "Cutout_base_width_mm = 25; // [" not in scad
+    assert "Cutout_riser_angle_deg = 75; // [" not in scad
     assert "Grid_columns = 3; // [1:1:10]" in scad
     assert params["Grid_columns"] == "3"
     for key in ("connector_entry_bevel_mm","connector_head_diameter_mm",
