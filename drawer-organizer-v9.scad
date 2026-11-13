@@ -90,11 +90,11 @@ Cutout_row_07 = false;
 Cutout_row_08 = false;
 Cutout_row_09 = false;
 Cutout_row_10 = false;
-// Width of the bottom opening, before the rounded risers widen it.
+// Minimum flat notch width between the lower arc tangencies; rounding widens outward.
 Cutout_base_width_mm = 25; // [8:1:65]
 Cutout_round_diameter_mm = 20; // [0:1:40]
 // Angle measured from horizontal.
-Cutout_riser_angle_deg = 60; // [45:1:90]
+Cutout_riser_angle_deg = 75; // [45:1:90]
 
 /* [06 - Standalone tray (optional)] */
 // Only applies when the grid is one row by one column.
@@ -635,8 +635,9 @@ module join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
 // a safe height ABOVE the socket-pad ROOF, so connectors keep their stock.
 // Ends broaden outwards at Print_overhang_angle_deg, then remain vertical.
 // Circular tangent construction, not a generic polygon offset.
-// The lower R-arc leaves the FLAT base horizontally, meets the straight
-// riser at the selected angle, and the upper R-arc meets the top surface
+// The lower R-arc starts OUTSIDE the complete flat base width and meets the
+// riser at the selected angle: no part of either round removes base width.
+// The upper R-arc meets the top surface
 // horizontally again. Both transitions use the same user-selected diameter.
 // The LEFT edge mirrors the RIGHT edge, so the notch is symmetric.
 function cutout_effective_r(zbase,ztop) =
@@ -763,6 +764,15 @@ echo("CONNECTOR CLEARANCES (total side / each side / top)",
      Connector_side_clearance_total_mm, SOCKET_SIDE_CLEARANCE, SOCKET_TOP_CLEARANCE);
 echo("CONNECTOR ROOF CAPS (at seam)",connection_cap_at(0),socket_roof_safe_cap_at(0));
 echo("BASE MIN THICKNESS / BOTTOM INNER R / WALL REINFORCEMENT",B,INNER_BOTTOM_R,T);
+// Report actual notch spans, since roundovers enlarge the visible opening.
+// Base width is the flat segment; the riser and top spans must be larger.
+let(z0=PAD_HEIGHT+B+1,
+    radius=cutout_effective_r(z0,ZTOP),
+    side=cutout_right_side(Cutout_base_width_mm,z0,ZTOP,radius,Cutout_riser_angle_deg))
+    echo("CUTOUT widths (flat base / lower risers / top opening, mm)",
+         Cutout_base_width_mm,
+         Cutout_base_width_mm+2*radius*sin(Cutout_riser_angle_deg),
+         2*side[len(side)-1][0]);
 echo("DOGBONE max height / lobe diameter / straight center length / interior bottom R",
      CONNECTOR_HEIGHT,2*HEAD_R,CONNECTOR_STRAIGHT_LENGTH,INNER_BOTTOM_R);
 // Explain the logical pitch independently of the per-row split count.
