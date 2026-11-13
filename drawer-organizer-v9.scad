@@ -769,7 +769,10 @@ module access_notch_3d(xcenter,ycenter) {
         rotate([0,0,90]) rotate([90,0,0]) {
             linear_extrude(height=span,convexity=8)
                 access_notch_profile_2d(Cutout_base_width_mm,ZTOP);
-            if(SOFT_R>0 && Cutout_base_width_mm>0 && cutout_angle(Cutout_riser_angle_deg)>0) {
+            // Degenerate very narrow gaps / near-horizontal risers still
+            // render with the original unrounded edge, rather than CGAL
+            // self-intersections. User input itself is never limited.
+            if(SOFT_R>0 && Cutout_base_width_mm>=1 && cutout_angle(Cutout_riser_angle_deg)>=3) {
                 soft_cutout_face_3d(1,+1);
                 soft_cutout_face_3d(1+T,-1);
             }

@@ -85,7 +85,7 @@ def test_customizer_controls_and_defaults():
 def test_cutout_soft_touch_roundover_tracks_the_same_radius():
     source,_=release_paths()
     scad=source.read_text()
-    assert "if(SOFT_R>0 && Cutout_base_width_mm>0" in scad
+    assert "if(SOFT_R>0 && Cutout_base_width_mm>=1" in scad
     assert "function cutout_touch_clearance(u,r)" in scad
     assert "soft_cutout_face_3d(1,+1)" in scad
     assert "soft_cutout_face_3d(1+T,-1)" in scad

@@ -207,6 +207,19 @@ def test_cutout_fillet_curves_the_correct_way(tmp_path):
             f"Incorrect cutout edge curvature at x={x}: {actual} vs {expected}")
 
 
+@pytest.mark.parametrize("gap,angle", [(0.05,75),(0.5,75),(25,1),(25,2)])
+def test_extreme_cutout_inputs_render_without_cgal_errors(tmp_path,gap,angle):
+    # No minimum on the user controls. The touch fillet is omitted where
+    # its 3D construction would self-intersect; the notch still renders.
+    m,_=render_stl(tmp_path,f"extreme_gap_{gap}_angle_{angle}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Cutout_row_04":True,"Cutout_base_width_mm":gap,
+        "Cutout_riser_angle_deg":angle
+    })
+    assert m.is_watertight
+    assert m.body_count==1
+
+
 @pytest.mark.parametrize("diameter", [0,20])
 def test_cutout_touches_remain_watertight_without_profile_rounding(tmp_path,diameter):
     m,_=render_stl(tmp_path,f"cutout_diameter_{diameter}",{
