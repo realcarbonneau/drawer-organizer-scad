@@ -13,7 +13,7 @@ from scripts.organizer_cli import default_parts,preset_parameters,release_paths
 def test_only_one_current_release_pair():
     source,preset=release_paths()
     assert source.stem==preset.stem
-    assert source.name=="drawer-organizer-v10.scad"
+    assert source.name=="drawer-organizer-v11.scad"
     assert json.loads(preset.read_text())["fileFormatVersion"]=="1"
 
 
@@ -71,8 +71,11 @@ def test_customizer_controls_and_defaults():
     assert "module inner_corner_fillet_keepouts(" in scad
     assert "offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R)" not in scad
     assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_Z+B);" in scad
-    assert "fillet_offset_cap_at(y,B)" in scad
-    assert "fillet_offset_cap_at(y,B+SOCKET_TOP_CLEARANCE)" in scad
+    assert "connector_offset_circle_z(x,B)" in scad
+    assert "connector_offset_circle_z(x,B+SOCKET_TOP_CLEARANCE)" in scad
+    assert "inner_fillet_center_x(outer,is_x)" in scad
+    assert "connector_fillet_center_x()=inner_fillet_center_x(false,false)" in scad
+    assert "function inner_fillet_center_z() = B+INNER_BOTTOM_R;" in scad
     assert "CONNECTOR_LOBE_REDUCTION" not in scad
     assert "INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);" in scad
     assert params["Drawer_floor_corner_radius_mm"] == "10"
@@ -163,9 +166,9 @@ def test_connector_clearance_semantics_and_independent_controls():
     assert "connector_clearance_mm" not in p
     assert "connector_clearance_mm" not in scad
     assert "SOCKET_SIDE_CLEARANCE=Connector_side_clearance_total_mm/2;" in scad
-    assert "function fillet_offset_cap_at(y,stock)" in scad
-    assert "fillet_offset_cap_at(y,B)" in scad
-    assert "fillet_offset_cap_at(y,B+SOCKET_TOP_CLEARANCE)" in scad
+    assert "function connector_offset_circle_z(x,extra_radius)" in scad
+    assert "connector_offset_circle_z(x,B)" in scad
+    assert "connector_offset_circle_z(x,B+SOCKET_TOP_CLEARANCE)" in scad
     assert "PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+0.4" in scad
 
 
