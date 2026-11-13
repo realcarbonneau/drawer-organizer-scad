@@ -164,27 +164,78 @@ def test_cutout_on_single_column_row_is_noop(tmp_path):
     assert m.is_watertight
 
 
-def test_cutout_base_width_and_profile_options(tmp_path):
-    # The stated 25 mm minimum belongs to the flat bottom segment. The lower
-    # and upper fillets widen the notch beyond this span, including at 90 deg.
-    y_center = 1.5 * (474 / 6)  # Row 4 cutout in the rows 3-5 tray
-    z_base = 6 + 1 + 2 + 0.4 + 2 + 1  # Pocket envelope + base + 1 mm
-    for angle in (45,60,75,90):
-        m, out=render_stl(tmp_path,f"cutout_angle_{angle}",{
-            "Output_mode":1,"Selected_row":3,"Selected_column":2,
-            "Cutout_row_04":True,"Cutout_riser_angle_deg":angle,
-            "Cutout_round_diameter_mm":20
-        })
-        assert m.is_watertight
-        section=m.section(plane_origin=[1,0,0],plane_normal=[1,0,0])
-        assert section is not None
-        points=np.vstack(section.discrete)
-        for y in (y_center-12.5,y_center+12.5):
-            assert np.any((np.abs(points[:,1]-y)<0.07) &
-                          (np.abs(points[:,2]-z_base)<0.07)), (
-                f"At {angle} deg, the flat 25 mm base must remain outside both rounds"
-            )
-        assert 'CUTOUT widths (flat base / lower risers / top opening, mm)' in out
+@pytest.mark.parametrize("angle", [45,60,75,90])
+def test_cutout_base_width_and_profile_options(tmp_path, angle):
+    # The 25 mm setting is the unrounded intersection of the two risers
+    # with the floor. Lower arc tangent points move inward after rounding.
+    base_width = 25.0
+    radius = 10.0
+    y_center = 1.5 * (474 / 6)
+    z_base = 6 + 1 + 2 + 0.4 + 2 + 1
+    flat_half = base_width/2 - radius*math.tan(math.radians(angle)/2)
+    m, out=render_stl(tmp_path,f"cutout_angle_{angle}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Cutout_row_04":True,"Cutout_riser_angle_deg":angle,
+        "Cutout_round_diameter_mm":20,
+        "Cutout_base_width_mm":base_width
+    })
+    section=m.section(plane_origin=[1,0,0],plane_normal=[1,0,0])
+    assert section is not None
+    points=np.vstack(section.discrete)
+    for y in (y_center-flat_half,y_center+flat_half):
+        assert np.any((np.abs(points[:,1]-y)<0.07) &
+                      (np.abs(points[:,2]-z_base)<0.07)), (
+            f"At {angle} degrees the rounded floor must start inside the pre-rounding gap"
+        )
+    # Tangent-to-riser coordinates extrapolate to exactly half of entered gap.
+    lower_y = flat_half+radius*math.sin(math.radians(angle))
+    lower_z = radius*(1-math.cos(math.radians(angle)))
+    assert lower_y-lower_z/math.tan(math.radians(angle)) == pytest.approx(base_width/2)
+    assert 'CUTOUT widths (pre-rounding base / flat floor / lower risers / top opening, mm)' in out
+
+
+@pytest.mark.parametrize("gap,angle", [(0,0),(0,75),(25,0),(25,1)])
+def test_cutout_accepts_zero_gap_and_unrestricted_low_angle(tmp_path,gap,angle):
+    m,_=render_stl(tmp_path,f"notch_gap_{gap}_angle_{angle}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Cutout_row_04":True,
+        "Cutout_base_width_mm":gap,"Cutout_riser_angle_deg":angle
+    })
+    assert m.is_watertight
+
+
+@pytest.mark.parametrize("compartments", [4,5,6])
+@pytest.mark.parametrize("mode", [0,1,2])
+def test_grid_limit_mismatch_is_nonfatal_and_empty(tmp_path,compartments,mode):
+    out,csg=render_csg(tmp_path,f"grid_mismatch_{compartments}_{mode}",{
+        "Output_mode":mode,"Row_03":compartments
+    })
+    assert f"Row 3 requests {compartments}" in out
+    assert "Increase Grid_columns to at least" in out
+    assert "Nothing rendered" in out
+    assert "ERROR:" not in out
+    assert "WARNING:" not in out
+    assert "PREVIEW ORIGIN" not in out
+    assert csg.stat().st_size < 200
+
+
+@pytest.mark.parametrize("compartments", [4,5,6])
+def test_larger_grid_splits_render_when_grid_increased(tmp_path,compartments):
+    out,_=render_csg(tmp_path,f"grid_supported_{compartments}",{
+        "Output_mode":0,"Grid_columns":compartments,"Row_03":compartments
+    })
+    positions=preview_positions(out)
+    assert len([k for k in positions if k[0]==3])==compartments
+    assert (3,compartments) in positions
+
+
+def test_six_compartment_tray_renders_watertight(tmp_path):
+    m,_=render_stl(tmp_path,"six_compartment_middle",{
+        "Grid_columns":6,"Row_03":6,"Output_mode":1,
+        "Selected_row":3,"Selected_column":6
+    })
+    assert m.is_watertight
+    assert m.body_count==1
 
 
 def test_shared_wall_and_floor_thickness_defaults(tmp_path):

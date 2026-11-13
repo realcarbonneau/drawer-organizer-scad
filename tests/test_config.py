@@ -40,6 +40,17 @@ def test_one_by_one_grid_is_valid():
     assert default_parts({"Grid_rows":"1","Grid_columns":"1","Row_01":"1"})==[(1,1)]
 
 
+@pytest.mark.parametrize("compartments", [4,5,6])
+def test_row_split_requires_sufficient_grid_columns(compartments):
+    _,preset=release_paths()
+    params=preset_parameters(preset)
+    params["Row_03"]=str(compartments)
+    with pytest.raises(ValueError,match="row 3"):
+        default_parts(params)
+    params["Grid_columns"]=str(compartments)
+    assert [c for r,c in default_parts(params) if r==3] == list(range(1,compartments+1))
+
+
 def test_customizer_controls_and_defaults():
     source,preset=release_paths()
     scad=source.read_text()
@@ -59,7 +70,12 @@ def test_customizer_controls_and_defaults():
     assert "Connector_height_mm" in params
     assert "Cutout_round_diameter_mm" in params
     assert params["Cutout_riser_angle_deg"] == "75"
-    assert "Cutout_riser_angle_deg = 75; // [45:1:90]" in scad
+    assert "Cutout_riser_angle_deg = 75;" in scad
+    assert "Cutout_base_width_mm = 25;" in scad
+    assert "Cutout_base_width_mm = 25; // [" not in scad
+    assert "Cutout_riser_angle_deg = 75; // [" not in scad
+    assert "Grid_columns = 3; // [1:1:10]" in scad
+    assert params["Grid_columns"] == "3"
     for key in ("connector_entry_bevel_mm","connector_head_diameter_mm",
                 "connector_lobe_inset_mm","cutout_after_column_row_03"):
         assert key not in params
