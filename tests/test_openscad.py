@@ -165,13 +165,26 @@ def test_cutout_on_single_column_row_is_noop(tmp_path):
 
 
 def test_cutout_base_width_and_profile_options(tmp_path):
-    for angle in (45,60,90):
-        m,_=render_stl(tmp_path,f"cutout_angle_{angle}",{
+    # The stated 25 mm minimum belongs to the flat bottom segment. The lower
+    # and upper fillets widen the notch beyond this span, including at 90 deg.
+    y_center = 1.5 * (474 / 6)  # Row 4 cutout in the rows 3-5 tray
+    z_base = 6 + 1 + 2 + 0.4 + 2 + 1  # Pocket envelope + base + 1 mm
+    for angle in (45,60,75,90):
+        m, out=render_stl(tmp_path,f"cutout_angle_{angle}",{
             "Output_mode":1,"Selected_row":3,"Selected_column":2,
             "Cutout_row_04":True,"Cutout_riser_angle_deg":angle,
             "Cutout_round_diameter_mm":20
         })
         assert m.is_watertight
+        section=m.section(plane_origin=[1,0,0],plane_normal=[1,0,0])
+        assert section is not None
+        points=np.vstack(section.discrete)
+        for y in (y_center-12.5,y_center+12.5):
+            assert np.any((np.abs(points[:,1]-y)<0.07) &
+                          (np.abs(points[:,2]-z_base)<0.07)), (
+                f"At {angle} deg, the flat 25 mm base must remain outside both rounds"
+            )
+        assert 'CUTOUT widths (flat base / lower risers / top opening, mm)' in out
 
 
 def test_shared_wall_and_floor_thickness_defaults(tmp_path):
