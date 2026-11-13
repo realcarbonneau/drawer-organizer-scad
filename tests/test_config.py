@@ -71,7 +71,7 @@ def test_customizer_controls_and_defaults():
     assert "Inner_bottom_radius_mm = 0; // [0:0.5:40]" in scad
     assert "half_open_inner_2d(span,true)" in scad
     assert "half_open_inner_2d(span,false)" in scad
-    assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_Z);" in scad
+    assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_Z+B);" in scad
     assert "fillet_offset_cap_at(y,B)" in scad
     assert "fillet_offset_cap_at(y,B+SOCKET_TOP_CLEARANCE)" in scad
     assert "CONNECTOR_LOBE_REDUCTION" not in scad

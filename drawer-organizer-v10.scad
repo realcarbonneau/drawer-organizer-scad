@@ -188,11 +188,14 @@ PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+0.4; // design env
 // filleted. Erosion guarantees at least B of stock from every outside surface,
 // including the sloping lower chamfer. Keep the inner fillet's wall tangency
 // above the chamfer crest by this same stock:
-//     inner tangent z = B + R >= CHAMFER_Z + B => R >= CHAMFER_Z.
+// To retain a full B-thick safety band over the outer chamfer crest,
+// require the fillet wall tangent at least 2*B above that crest:
+//     inner tangent z = B + R >= CHAMFER_Z + 2*B
+//     hence R >= CHAMFER_Z + B.
 // R >= B also keeps a positive, stable rounded transition with no chamfer.
 // Connector settings do NOT determine the minimum radius. They only determine
 // how the final radius cuts the male and female profile envelopes.
-INNER_BOTTOM_R_MIN=max(B,CHAMFER_Z);
+INNER_BOTTOM_R_MIN=max(B,CHAMFER_Z+B);
 INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);
 INNER_BOTTOM_R_CLAMPED=Inner_bottom_radius_mm!=0 &&
     Inner_bottom_radius_mm<INNER_BOTTOM_R_MIN-0.00001;

@@ -212,7 +212,7 @@ def test_inner_bottom_radius_enforces_chamfer_protected_minimum(tmp_path,inner):
     assert spec,out[-3000:]
     req,minimum,effective=map(float,spec.groups())
     assert req==pytest.approx(inner)
-    assert minimum==pytest.approx(max(2,10))
+    assert minimum==pytest.approx(max(2,10+2))
     assert effective==pytest.approx(max(minimum,inner))
     if inner and inner<minimum:
         assert "INNER BOTTOM ROUNDING WARNING" in out
@@ -315,7 +315,7 @@ def test_larger_inner_rounding_expands_male_and_female_connector_lobes(tmp_path)
             assert female_far-male_far>=0.999
 
 
-@pytest.mark.parametrize("outer_radius,expected",[(0,2),(4,4),(10,10)])
+@pytest.mark.parametrize("outer_radius,expected",[(0,2),(4,6),(10,12)])
 def test_chamfer_alone_determines_minimum_radius(tmp_path,outer_radius,expected):
     output,_=render_csg(tmp_path,f"chamfer_min_{outer_radius}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
@@ -328,7 +328,7 @@ def test_chamfer_alone_determines_minimum_radius(tmp_path,outer_radius,expected)
     assert float(match.group(2))==pytest.approx(expected)
 
 
-@pytest.mark.parametrize("radius",[10,12,18,20,24,30])
+@pytest.mark.parametrize("radius",[12,18,20,24,30])
 def test_socket_roof_and_male_follow_two_exact_fillet_offsets(tmp_path,radius):
     out,_=render_csg(tmp_path,f"fillet_offsets_{radius}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
