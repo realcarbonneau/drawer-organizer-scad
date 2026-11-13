@@ -75,7 +75,7 @@ def test_customizer_controls_and_defaults():
     assert "fillet_offset_cap_at(y,B+SOCKET_TOP_CLEARANCE)" in scad
     assert "CONNECTOR_LOBE_REDUCTION" not in scad
     assert "INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);" in scad
-        assert params["Drawer_floor_corner_radius_mm"] == "10"
+    assert params["Drawer_floor_corner_radius_mm"] == "10"
     assert "Outer_bottom_chamfer_max_rise_mm" not in params
     assert "Outer_bottom_chamfer_max_rise_mm" not in scad
     assert "CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm);" in scad
