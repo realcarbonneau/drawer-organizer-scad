@@ -1,12 +1,12 @@
 # Drawer Organizer
 
-![Drawer Organizer v9 — a product-style overview made from an actual OpenSCAD screenshot](docs/images/hero.png)
+![Drawer Organizer v10 — a product-style overview made from an actual OpenSCAD screenshot](docs/images/hero.png)
 
 **Parametric · Modular · 3D-printable · OpenSCAD 2021.01**
 
 A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Print each compartment separately, then connect neighboring trays with removable dogbones inserted from underneath. The default example builds **five trays** in a **3-column × 6-row logical grid**.
 
-**[Open the v9 model](drawer-organizer-v9.scad)** · **[Matching Customizer preset](drawer-organizer-v9.json)** · **[Development guidelines](DEVELOPMENT.md)**
+**[Open the v10 model](drawer-organizer-v10.scad)** · **[Matching Customizer preset](drawer-organizer-v10.json)** · **[Development guidelines](DEVELOPMENT.md)**
 
 > These are high-resolution, camera-fitted captures of the actual OpenSCAD model, not photographs of manufactured parts. Screenshots are resized down with antialiasing, never enlarged from crops. Always test fit and material strength on your own printer.
 
@@ -58,7 +58,7 @@ These allowances enlarge **the female pocket only**. The male retains its nomina
 
 ## Get started
 
-1. Save [drawer-organizer-v9.scad](drawer-organizer-v9.scad) and [drawer-organizer-v9.json](drawer-organizer-v9.json) together.
+1. Save [drawer-organizer-v10.scad](drawer-organizer-v10.scad) and [drawer-organizer-v10.json](drawer-organizer-v10.json) together.
 2. Open the SCAD file in **OpenSCAD 2021.01** and select **Kitchen cutlery drawer** in the Customizer.
 3. Adjust the drawer dimensions and row/column splits. Select a tray by row and column.
 4. Press **F6** to render, export that tray's STL, and print. Repeat for the other trays and loose dogbones.

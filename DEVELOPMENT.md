@@ -2,7 +2,7 @@
 
 ## Version and Git policies
 
-- Use `drawer-organizer-vN.scad` and `drawer-organizer-vN.json` together. Increase **N** once for each new functional release; **remain on v9 throughout the current screenshot-led review iterations**. Documentation/checkpoint commits do not increment the functional version.
+- Use `drawer-organizer-vN.scad` and `drawer-organizer-vN.json` together. Increase **N** once for each new functional release; **v10 is the current release; keep subsequent refinements on v10 until the next functional release is explicitly requested**. Documentation/checkpoint commits do not increment the functional version.
 - Maintain only the latest SCAD/JSON pair at the branch root; older work belongs to Git history, **not a `versions/` directory**. Do not generate release ZIPs; use GitHub's repository download.
 - Keep unfinished geometry on WIP branches. Promote reviewed releases to the default `main` branch. Release a WIP branch as a **single squash-equivalent commit** on the existing `main` parent when requested, without rewriting previous `main` history or adding `Co-authored-by` trailers.
 - **Push a checkpoint frequently**, not just when a release is ready: after meaningful implementation milestones, before major refactors, and before expensive renders/testing. A WIP checkpoint may contain an incomplete design, but describe its status plainly. After any sync interruption, inspect the branch and resume from the newest surviving checkpoint.
@@ -25,11 +25,11 @@
 4. Test rim angles 25°/35°/45°/60°/75° and independent tray heights 10/18 mm; verify that projection is derived from height / tan(angle). Test cutouts at 0°/45°/60°/75°/90° and gap=0, row splits 4/5/6 both with matching and insufficient Grid_columns (non-fatal empty geometry), preview gaps 0/1/12/50 mm, invalid selections, and 1×1 grid.
 5. Push WIP commits during implementation, including screenshots or CI preview artifacts, before further modifications. Use `main` for completed releases and WIP branches for later experimental iterations.
 6. A watertight STL alone does **not** prove clearance, print quality, wall minimum everywhere, or the physical snap-fit; verify with physical test prints.
-### v9 connector checkpoint
+### v10 connector checkpoint
 
-Use `Connector_center_thickness_mm = 4`, `Connector_diameter_protrusion_mm = 1` (radius increase on **each** side, yielding a 6 mm lobe), and `Connector_height_mm = 6`. The free straight section is 2× the 2 mm tray wall, so each tray receives 2 mm of the center bar. Render real STLs and verify pocket clearance before promoting v9.
+Use `Connector_center_thickness_mm = 4`, `Connector_diameter_protrusion_mm = 1` (radius increase on **each** side, yielding a 6 mm lobe), and `Connector_height_mm = 6`. The free straight section is 2× the 2 mm tray wall, so each tray receives 2 mm of the center bar. Render real STLs and verify pocket clearance before promoting v10.
 
-## v9 connector tolerance controls
+## v10 connector tolerance controls
 
 - `Connector_side_clearance_total_mm = 0.2`: female cavity is **0.1 mm larger on each side**, not 0.2 mm per side. Male dimensions remain unchanged.
 - `Connector_top_clearance_mm = 1`: female roof is **1 mm higher** than the matching truncated male top wherever the connector has solid height; still a blind underside pocket.

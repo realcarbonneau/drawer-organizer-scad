@@ -1,4 +1,4 @@
-// DRAWER ORGANIZER v9
+// DRAWER ORGANIZER v10
 // Independent parametric model for a measured, metal-sided kitchen drawer.
 // OpenSCAD 2021.01; no libraries or external geometry required.
 //
@@ -888,7 +888,7 @@ module all_trays() {
 }
 
 // ----------- Output and non-fatal invalid selection handling -----------
-echo("DRAWER v9 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
+echo("DRAWER v10 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / AUTO OUTER CHAMFER run, rise (from drawer floor radius)",ALPHA,CHAMFER_X,CHAMFER_Z);
 echo("DRAWER FLOOR radius / REQUIRED exterior chamfer rise",Drawer_floor_corner_radius_mm,CHAMFER_Z);
 echo("RIM (angle FROM PRINT BED / fixed height / derived projection)",
