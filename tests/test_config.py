@@ -63,7 +63,7 @@ def test_customizer_controls_and_defaults():
                 "connector_lobe_inset_mm","cutout_after_column_row_03"):
         assert key not in params
     for i in range(1,11):
-        assert params[f"cutout_row_{i:02d}"] in ("true","false")
+        assert params[f"Cutout_row_{i:02d}"] in ("true","false")
 
 def test_connector_clearance_semantics_and_independent_controls():
     source,preset=release_paths()
