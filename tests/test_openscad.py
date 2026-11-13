@@ -800,3 +800,57 @@ def test_customizer_sentence_case_controls_without_redundant_row_descriptions():
     assert all(x[0].isupper() for x in params)
     assert 'Row_03' not in scad.lower()
     assert 'rim_projection_mm' not in scad.lower()
+
+
+@pytest.mark.parametrize("radius",[12,20,30])
+def test_socket_roof_is_actual_concentric_circle_in_exported_mesh(tmp_path,radius):
+    """The rendered cutter, not merely the echo, must share the tray-filleting center."""
+    model,preset=release_paths()
+    marker="// ----------- Output and non-fatal invalid selection handling -----------"
+    source=model.read_text()
+    assert marker in source
+    # Exercise exactly the socket module used inside actual trays, without
+    # requiring a separate multi-minute full-tray Boolean for every radius.
+    fixture=tmp_path/"actual_socket_fixture.scad"
+    fixture.write_text(source.split(marker,1)[0]+"\nsocket_opening_3d();\n")
+    path=tmp_path/f"actual_socket_r{radius}.stl"
+    proc=openscad_render(path,{"Inner_bottom_radius_mm":radius},source=fixture,preset=preset)
+    require_render_ok(proc,path)
+    mesh=trimesh.load(path,force="mesh",process=True)
+    assert mesh.is_watertight
+    # Cutter native local Y is the perpendicular distance into the tray.
+    cross=mesh.section(plane_origin=[0,0,0],plane_normal=[1,0,0])
+    assert cross is not None
+    points=np.vstack(cross.discrete)
+    xs=np.round(points[:,1],5)
+    roof=np.array([(x,points[xs==x,2].max()) for x in np.unique(xs)])
+    R=radius
+    cx=2+R
+    cz=2+R
+    # The opening is flat at Z=7 wherever the roof would otherwise exceed
+    # the configured maximum. Only the visible curved portion is fitted.
+    curved=roof[(roof[:,1]>0.15)&(roof[:,1]<6.98)&(roof[:,0]>0.1)&(roof[:,0]<7.3)]
+    if radius==30:
+        assert len(curved)==0, "R30 must retain its full 7 mm socket roof"
+        assert roof[:,1].max()==pytest.approx(7,abs=0.01)
+    else:
+        assert len(curved)>=10
+        fitted=np.hypot(curved[:,0]-cx,curved[:,1]-cz)
+        assert np.max(np.abs(fitted-(R+2)))<0.06
+
+
+@pytest.mark.parametrize("radius",[12,20,30])
+def test_full_tray_and_socket_share_exact_circle_center(tmp_path,radius):
+    out,_=render_csg(tmp_path,f"circle_center_r{radius}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Inner_bottom_radius_mm":radius})
+    match=re.search(
+        r'"CONCENTRIC FILLET CENTER \(X, Z\) / RADII \(inner, socket, male\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+    assert match,out[-2500:]
+    cx,cz,inner,socket,male=map(float,match.groups())
+    assert cx==pytest.approx(radius+2)
+    assert cz==pytest.approx(radius+2)
+    assert inner==pytest.approx(radius)
+    assert socket-inner==pytest.approx(2)
+    assert male-socket==pytest.approx(1)
