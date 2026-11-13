@@ -25,6 +25,9 @@ jobs:
           sudo apt-get install -y openscad xvfb xauth
           openscad --version
           python -m pip install -r requirements-dev.txt
+          python -m pip check
+          # Verify trimesh's optional graph backend before costly STL tests.
+          python -c "from scipy.sparse.csgraph import connected_components, depth_first_order; import trimesh; print('STL mesh graph dependencies OK')"
       - name: Test and export STLs and preview screenshots
         run: make check
       - name: Upload rendered STLs and preview screenshots
