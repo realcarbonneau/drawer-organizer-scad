@@ -4,7 +4,7 @@
 
 **Parametric · Modular · 3D-printable · OpenSCAD 2021.01**
 
-A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Print each compartment separately, then connect neighboring trays with removable dogbones inserted from underneath. The default example builds **five trays** from a **3-column × 6-row logical grid**.
+A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Print each compartment separately, then connect neighboring trays with removable dogbones inserted from underneath. The default example builds **five trays** across **6 logical rows**; each row independently selects up to 10 compartments (3 in the default middle group).
 
 **[Open the v9 model](drawer-organizer-v9.scad)** · **[Matching Customizer preset](drawer-organizer-v9.json)** · **[Development guidelines](DEVELOPMENT.md)**
 
@@ -14,7 +14,7 @@ A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Pr
 
 ![Five-tray arrangement and full-width rear tray, generated from the actual CAD model](docs/images/layout.png)
 
-Use the **Continue previous** dropdown option to extend the preceding tray group. In the example, rows 1–2 form the rear tray, rows 3–5 form three middle trays, and row 6 forms the front tray. Looking down into the open drawer, row 1 is at the **rear** and column 1 is on the **left**.
+Use the **Continue previous** dropdown option to extend the preceding tray group. Row splits can be increased to 4, 5, 6, or more without changing a separate column-limit setting. In the example, rows 1–2 form the rear tray, rows 3–5 form three middle trays, and row 6 forms the front tray. Looking down into the open drawer, row 1 is at the **rear** and column 1 is on the **left**.
 
 | Group | Trays | Approximate nominal floor footprint |
 | --- | ---: | ---: |
@@ -31,7 +31,7 @@ The estimated **clear** space for a logical cell is about **59 × 75 mm**, befor
 
 The trays default to **2 mm walls and base**, **0.6 mm soft exposed-edge rounding**, and a shared calculated bottom interior fillet. The outer sidewalls taper to suit the measured drawer, while the front/rear outer ends stay vertical. The outer rim can flare outward while the inner rim follows the same slope without an extra vertical return.
 
-One checkbox per logical row enables cutouts along interior dividers. **Row 4 is enabled** in the example. The default cutout has a **25 mm base width**, two tangent blends of **20 mm rounding diameter**, and a **75° straight riser**; the riser angle can be adjusted. The 25 mm measurement is the **unrounded flat base**, between the first lower-rounding tangent points. Rounded shoulders widen the opening above that base; with the default dimensions, the top opening is approximately **89 mm** (and still **65 mm at 90°**). The Customizer angle for these access notches is independent of the print-overhang angle.
+One checkbox per logical row enables cutouts along interior dividers. **Row 4 is enabled** in the example. The default cutout has a **25 mm base width**, two tangent blends of **20 mm rounding diameter**, and a **75° straight riser**; the riser angle can be adjusted. The 25 mm measurement is the **unrounded base gap** where the straight risers would intersect the cutout floor *before* the 20 mm-diameter fillets are added. The rounded flat floor is narrower (about **9.6 mm** at 75°), and the top opening is about **74 mm** with the defaults. The base gap and riser angle have unrestricted numeric inputs, including zero; extreme angles are handled with a safe geometry fallback. The Customizer angle for these access notches is independent of the print-overhang angle.
 
 ### Rim angle and tray height
 

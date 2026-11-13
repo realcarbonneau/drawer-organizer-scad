@@ -19,7 +19,7 @@ Drawer_rim_height_mm = 65; // [20:1:200]
 Drawer_total_clearance_mm = 1; // [0:0.1:6]
 
 /* [02 - Drawer logical grid] */
-Grid_columns = 3; // [1:1:10]
+// Each row independently chooses 1 to 10 compartments; no separate column limit.
 // Rear to front.
 Grid_rows = 6; // [1:1:10]
 Row_01 = 1; // [1:1 compartment,2:2 compartments,3:3 compartments,4:4 compartments,5:5 compartments,6:6 compartments,7:7 compartments,8:8 compartments,9:9 compartments,10:10 compartments]
@@ -90,11 +90,11 @@ Cutout_row_07 = false;
 Cutout_row_08 = false;
 Cutout_row_09 = false;
 Cutout_row_10 = false;
-// Minimum flat notch width between the lower arc tangencies; rounding widens outward.
-Cutout_base_width_mm = 25; // [8:1:65]
+// Unrounded base gap, where the straight risers meet the notch floor.
+Cutout_base_width_mm = 25;
 Cutout_round_diameter_mm = 20; // [0:1:40]
-// Angle measured from horizontal.
-Cutout_riser_angle_deg = 75; // [45:1:90]
+// Riser angle from horizontal; the input has no minimum.
+Cutout_riser_angle_deg = 75;
 
 /* [06 - Standalone tray (optional)] */
 // Only applies when the grid is one row by one column.
@@ -149,7 +149,9 @@ RIM_PROJECTION=HAS_RIM ? LIP_Z/tan(ALPHA) : 0;
 ZTOP=H+LIP_Z;
 ROW_DEPTH=DY/Grid_rows;
 // Nominal logical-grid pitch, before exterior drafts, fillets and wall stock.
-GRID_UNIT_WIDTH=W0/Grid_columns;
+// The largest row split defines the logical column pitch for reporting.
+GRID_COLUMNS=max([for(r=[0:Grid_rows-1]) row_values[r]]);
+GRID_UNIT_WIDTH=W0/GRID_COLUMNS;
 WEB_R=Connector_center_thickness_mm/2;
 HEAD_R=Connector_center_thickness_mm/2+Connector_diameter_protrusion_mm;
 // In the XY silhouette each circular lobe meets the rectangular center
@@ -197,7 +199,7 @@ function group_end(start) = min(concat([for(k=[1:Grid_rows]) if(k>start && split
 function group_depth(start)=(group_end(start)-start+1)*ROW_DEPTH;
 function group_y(start)=(Grid_rows-group_end(start))*ROW_DEPTH;
 function group_count(row)=splits_at(group_start(row));
-function is_standalone()=Grid_rows==1&&Grid_columns==1&&Row_01==1;
+function is_standalone()=Grid_rows==1&&Row_01==1;
 // Fixed target pitch. If a segment has >=2 pitches, use two joiners at half
 // pitch from each end, leaving the excess length as symmetric end margins.
 // With only one joiner, it is centered. No extra count controls are necessary.
@@ -219,9 +221,9 @@ function is_join(side,outer) = (is_standalone() && Manual_joiner_override)
     ? (side=="left"?Manual_join_left:side=="right"?Manual_join_right:side=="front"?Manual_join_front:Manual_join_rear)
     : Connectors_enabled && !outer;
 
-assert(Grid_columns>=1&&Grid_columns<=10&&Grid_rows>=1&&Grid_rows<=10,"Grid range must be 1..10.");
+assert(Grid_rows>=1&&Grid_rows<=10,"Grid_rows must be 1..10.");
 assert(Row_01>=1,"Row 1 must start a tray group.");
-assert(min([for(r=[1:Grid_rows]) splits_at(r)])>=0&&max([for(r=[1:Grid_rows]) splits_at(r)])<=Grid_columns,"A row split exceeds Grid_columns.");
+assert(min([for(r=[1:Grid_rows]) splits_at(r)])>=0&&max([for(r=[1:Grid_rows]) splits_at(r)])<=10,"Each row must have 0..10 compartments.");
 assert(Drawer_top_width_mm>Drawer_floor_width_mm,"Top opening must exceed flat floor width.");
 assert(W0>10&&DY>20&&H>15&&B>0&&T>0&&H>B+5,"Drawer dimensions or thicknesses are invalid.");
 assert(ALPHA>=20&&ALPHA<85,"Printing angle must be between 20 and 85 degrees.");
@@ -233,7 +235,7 @@ assert(Connector_diameter_protrusion_mm>0 && Connector_center_thickness_mm>=2,
 assert(CONNECTOR_HEIGHT>=1 && CONNECTOR_HEIGHT < H-2*B,
        "Connector height must fit underneath the tray walls.");
 assert(JOIN_Z<=B,"Elephant foot relief must be no deeper than the base thickness.");
-// Notch width is clipped to each row's room; no hard failure on a short row.
+// Cutouts are clipped by the divider geometry; no restriction on entered gap.
 
 // ----------- 2D section profiles; generated from the measured drawer -----------
 // Each profile is a closed XY polygon where (x,z) or (y,z) become its axes.
@@ -631,47 +633,62 @@ module join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
     }
 }
 
-// Rounded shoulders and controlled print slope. Notch reaches down to
-// a safe height ABOVE the socket-pad ROOF, so connectors keep their stock.
-// Ends broaden outwards at Print_overhang_angle_deg, then remain vertical.
-// Circular tangent construction, not a generic polygon offset.
-// The lower R-arc starts OUTSIDE the complete flat base width and meets the
-// riser at the selected angle: no part of either round removes base width.
-// The upper R-arc meets the top surface
-// horizontally again. Both transitions use the same user-selected diameter.
-// The LEFT edge mirrors the RIGHT edge, so the notch is symmetric.
-function cutout_effective_r(zbase,ztop) =
-    let(a=Cutout_riser_angle_deg)
+// Notch floor clears the underside connector roofs. Fillets round the
+// theoretical sharp corners of the requested base opening OUTWARD into the
+// notch: the input is the gap BEFORE rounding, not the finished flat width.
+// The remaining flat is allowed to shrink to zero without rejecting inputs.
+function cutout_angle(a)=max(0,min(90,a));
+function cutout_effective_r(zbase,ztop,width,a)=
+    let(ang=cutout_angle(a),base=max(0,width))
     min(max(0,Cutout_round_diameter_mm/2),
-        max(0,(ztop-zbase-0.5)/(2*(1-cos(a)))));
-function cutout_right_side(width,zbase,ztop,r,a,n=12) =
-    let(ang=max(45,min(90,a)),
+        max(0,(ztop-zbase-0.5)/max(0.00001,2*(1-cos(ang)))),
+        base/max(0.00001,2*tan(ang/2)));
+function cutout_run(dz,ang)=
+    ang<=0 ? DY+10 : min(DY+10,dz/max(0.00001,tan(ang)));
+function cutout_right_side(width,zbase,ztop,r,a,n=12)=
+    let(ang=cutout_angle(a),
         dz=max(0,(ztop-zbase)-2*r*(1-cos(ang))),
-        slope_dx=dz/max(0.001,tan(ang)),
-        upper_x=width/2 + 2*r*sin(ang)+slope_dx,
+        slope_dx=cutout_run(dz,ang),
+        base_x=max(0,width)/2-r*tan(ang/2),
+        upper_x=base_x+2*r*sin(ang)+slope_dx,
         upper_z=ztop-r,
-        base_x=width/2,
         low_cz=zbase+r)
     concat(
-        // Bottom R: tangent to horizontal, then tangent to inclined riser.
+        // Bottom arc is tangent to the floor, then to the inclined riser.
         [for(i=[0:n]) let(t=-90+ang*i/n)
-          [base_x+r*cos(t), low_cz+r*sin(t)]],
-        // Top R: tangent to inclined riser, then tangent to horizontal top.
+          [base_x+r*cos(t),low_cz+r*sin(t)]],
+        // Top arc is tangent to the same riser, then the top surface.
         [for(i=[0:n]) let(t=90+ang-ang*i/n)
           [upper_x+r*cos(t),upper_z+r*sin(t)]]);
 module access_notch_profile_2d(width,top_height) {
     zbase=PAD_HEIGHT+B+1;
     ztop=top_height;
-    r=cutout_effective_r(zbase,ztop);
+    base=max(0,width);
+    ang=cutout_angle(Cutout_riser_angle_deg);
+    r=cutout_effective_r(zbase,ztop,base,ang);
     n=max(8,ceil(Render_facets*0.65));
-    right=cutout_right_side(width,zbase,ztop,r,Cutout_riser_angle_deg,n);
-    left=[for(j=[len(right)-1:-1:0]) [-right[j][0],right[j][1]]];
-    x_top=right[len(right)-1][0];
-    // Cutter is open beyond the tray roof; the vertical lines here are
-    // ABOVE the physical tray, not unwanted vertical edges inside it.
-    polygon(concat(
-        [[-width/2,zbase]], right,
-        [[x_top,top_height+6],[-x_top,top_height+6]],left));
+    if(ang<=0) {
+        // Zero degrees means no rising edge. Clear the full divider above
+        // the notch floor without dividing the tray floor itself.
+        extent=DY+base+20;
+        polygon([[-extent,zbase],[extent,zbase],
+                 [extent,ztop+6],[-extent,ztop+6]]);
+    } else if(r<=0.00001) {
+        // For zero gap/rounding, use two straight edges instead of
+        // coincident zero-radius arc vertices.
+        x0=base/2;
+        xtop=x0+cutout_run(ztop-zbase,ang);
+        polygon([[-x0,zbase],[x0,zbase],[xtop,ztop],
+                 [xtop,ztop+6],[-xtop,ztop+6],[-xtop,ztop]]);
+    } else {
+        right=cutout_right_side(base,zbase,ztop,r,ang,n);
+        left=[for(j=[len(right)-1:-1:0]) [-right[j][0],right[j][1]]];
+        x_top=right[len(right)-1][0];
+        x_flat=base/2-r*tan(ang/2);
+        polygon(concat(
+            [[-x_flat,zbase]],right,
+            [[x_top,ztop+6],[-x_top,ztop+6]],left));
+    }
 }
 
 // Project the 2D (y,z) notch completely through the joining-wall thickness.
@@ -764,15 +781,17 @@ echo("CONNECTOR CLEARANCES (total side / each side / top)",
      Connector_side_clearance_total_mm, SOCKET_SIDE_CLEARANCE, SOCKET_TOP_CLEARANCE);
 echo("CONNECTOR ROOF CAPS (at seam)",connection_cap_at(0),socket_roof_safe_cap_at(0));
 echo("BASE MIN THICKNESS / BOTTOM INNER R / WALL REINFORCEMENT",B,INNER_BOTTOM_R,T);
-// Report actual notch spans, since roundovers enlarge the visible opening.
-// Base width is the flat segment; the riser and top spans must be larger.
+// Report the entered pre-rounding gap as well as the finished dimensions.
 let(z0=PAD_HEIGHT+B+1,
-    radius=cutout_effective_r(z0,ZTOP),
-    side=cutout_right_side(Cutout_base_width_mm,z0,ZTOP,radius,Cutout_riser_angle_deg))
-    echo("CUTOUT widths (flat base / lower risers / top opening, mm)",
-         Cutout_base_width_mm,
-         Cutout_base_width_mm+2*radius*sin(Cutout_riser_angle_deg),
-         2*side[len(side)-1][0]);
+    ang=cutout_angle(Cutout_riser_angle_deg),
+    base=max(0,Cutout_base_width_mm),
+    radius=cutout_effective_r(z0,ZTOP,base,ang),
+    side=cutout_right_side(base,z0,ZTOP,radius,ang))
+    echo("CUTOUT widths (pre-rounding base / flat floor / lower risers / top opening, mm)",
+         base,
+         max(0,base-2*radius*tan(ang/2)),
+         max(0,base-2*radius*tan(ang/2))+2*radius*sin(ang),
+         ang<=0 ? 2*(DY+base+20) : 2*side[len(side)-1][0]);
 echo("DOGBONE max height / lobe diameter / straight center length / interior bottom R",
      CONNECTOR_HEIGHT,2*HEAD_R,CONNECTOR_STRAIGHT_LENGTH,INNER_BOTTOM_R);
 // Explain the logical pitch independently of the per-row split count.
