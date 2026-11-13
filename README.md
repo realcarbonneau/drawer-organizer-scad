@@ -1,6 +1,6 @@
 # Drawer Organizer — v9 geometry review
 
-Parametric 3D-printable drawer trays for metal-sided kitchen drawers, authored in OpenSCAD 2021.01. **v9 is a work-in-progress on `wip/v9-recovery`; `main` remains the published v8 release pending screenshot review.**
+Parametric 3D-printable drawer trays for metal-sided kitchen drawers, authored in OpenSCAD 2021.01. **v9 is the current release on `main`.**
 
 ## Review files
 
@@ -46,3 +46,7 @@ make check
 ```
 
 The suite exercises the five default trays, connectors, invalid selections, rim and chamfer parameters, row-4 cutouts, both tangent radii, top XY corner rounding, inner rim start height, and F5 cached preview. Generated STL/PNG files are build artifacts, not a substitute for physical inspection.
+## Independent connector fit clearances
+
+The **male** dogbone keeps its nominal shape: 4 mm center thickness, 6 mm lobe diameter, 4 mm straight span and 6 mm maximum height. The **female socket** adds **0.2 mm total side clearance** (0.1 mm each opposing side) and **1 mm vertical top clearance** beneath its blind roof. The socket's cut-out follows the rounded-base-derived safe roof cap with the extra top clearance while preserving the modeled minimum material thickness. Test print a connector and socket before relying on press fit.
+

@@ -87,9 +87,13 @@ connector_diameter_protrusion_mm = 1; // [0.25:0.25:5]
 // Maximum vertical connector height. The two lobes are progressively trimmed
 // to follow the bottom inside fillet and preserve stock above each blind socket.
 connector_height_mm = 6; // [1:0.2:8]
-// Each half is a straight-sided pocket: only clearance is added; NO
-// locking taper, mouth flare, entry bevel, or internal socket chamfer.
-connector_clearance_mm = 0.2; // [0:0.05:0.6]
+// TOTAL side clearance across two opposing faces: 0.2 mm means 0.1 mm
+// radial allowance on EACH side of the female pocket, not 0.2 per side.
+connector_side_clearance_total_mm = 0.2; // [0:0.05:1]
+// Vertical air gap ABOVE the male connector (under its blind socket roof).
+// Kept independently from side clearance for printer overhang quality.
+connector_top_clearance_mm = 1; // [0:0.1:3]
+// No locking taper, mouth flare, entry bevel, or internal socket chamfer.
 // Connector count is automatically inferred from adjoining-edge length.
 // All actual shared edges get matching blind underside sockets.
 connectors_enabled = true;
@@ -188,9 +192,11 @@ CONNECTOR_HEIGHT=connector_height_mm;
 // Pocket opens ONLY at Z=0 and stops at CONNECTOR_HEIGHT.
 // A closed ROOF at least B thick remains above it. The lower 2D contour
 // is a clean circle-rectangle-circle shape with no retention undercuts.
-SOCKET_R=HEAD_R+connector_clearance_mm;
+SOCKET_SIDE_CLEARANCE=connector_side_clearance_total_mm/2;
+SOCKET_TOP_CLEARANCE=connector_top_clearance_mm;
+SOCKET_R=HEAD_R+SOCKET_SIDE_CLEARANCE;
 SOCKET_STOCK=max(B,T);
-PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_STOCK+0.4; // design envelope; NO inside pads
+PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+0.4; // design envelope; NO inside pads
 // Use B for MINIMUM stock and a visibly rounded interior junction.
 // Filleting a concave cavity corner REMOVES void, not solid, so it cannot
 // violate the base thickness below the fillet or the normal wall offset.
@@ -201,8 +207,11 @@ PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_STOCK+0.4; // design envelope; NO inside pads
 // WITHOUT raising localized socket pads into the usable tray cavity.
 // With k=reach beyond wall and h=height needed at lobe tip, a fillet
 // radius R >= k+h+sqrt(2*k*h) provides that much stock above the floor.
-LOBE_REACH=max(0,HEAD_IN+HEAD_R+connector_clearance_mm-T);
-LOBE_TIP_STOCK=min(CONNECTOR_HEIGHT,0.8)+0.25;
+LOBE_REACH=max(0,HEAD_IN+HEAD_R+SOCKET_SIDE_CLEARANCE-T);
+// Leave one whole millimetre of vertical socket clearance ALSO at the
+// furthest ends of the lobes; derive a uniformly larger inner bottom fillet
+// to preserve B mm of material above the blind pocket everywhere.
+LOBE_TIP_STOCK=min(CONNECTOR_HEIGHT,0.8)+SOCKET_TOP_CLEARANCE+0.25;
 CONNECTOR_FILLET_R=LOBE_REACH+LOBE_TIP_STOCK+sqrt(2*LOBE_REACH*LOBE_TIP_STOCK);
 INNER_BOTTOM_R=max(B,CHAMFER_X*0.65,CONNECTOR_FILLET_R);
 SOFT_R=min(max(0,soft_edge_radius_mm),max(0,min(B,T)/2-0.1));
@@ -243,6 +252,8 @@ assert(drawer_top_width_mm>drawer_floor_width_mm,"Top opening must exceed flat f
 assert(W0>10&&DY>20&&H>15&&B>0&&T>0&&H>B+5,"Drawer dimensions or thicknesses are invalid.");
 assert(ALPHA>=20&&ALPHA<85,"Printing angle must be between 20 and 85 degrees.");
 assert(connector_spacing_mm>=2*(HEAD_R+T+2)&&connector_spacing_mm>0,"Connector spacing is too short for dogbone heads.");
+assert(connector_side_clearance_total_mm>=0 && connector_top_clearance_mm>=0,
+       "Connector clearances must not be negative.");
 assert(connector_diameter_protrusion_mm>0 && connector_center_thickness_mm>=2,
        "Dogbone lobe diameter protrusion must be positive.");
 assert(CONNECTOR_HEIGHT>=1 && CONNECTOR_HEIGHT < H-2*B,
@@ -511,11 +522,19 @@ module full_dogbone_2d(clearance=0) {
 // plus XY clearance: a blind underside cut, not a raised internal floor pad.
 // The analytic cap is a conservative approximation of the R fillet above the
 // B-thick floor. A safety margin absorbs tessellation and socket clearance.
-function connection_cap_at(y) =
+// Conservative upper bound on socket roof depth, already including the
+// minimum B-mm solid layer under the inner tray fillet. The pocket never
+// exceeds this bound, even when the requested vertical clearance is high.
+function socket_roof_safe_cap_at(y) =
     let(t=max(0,(abs(y)-T)/INNER_BOTTOM_R),
-        rounded_stock=max(0,INNER_BOTTOM_R*(1-sqrt(max(0,2*t-t*t)))-0.25))
-    abs(y)<=T ? CONNECTOR_HEIGHT :
-    t>=1 ? 0 : min(CONNECTOR_HEIGHT,rounded_stock);
+        stock=max(0,INNER_BOTTOM_R*(1-sqrt(max(0,2*t-t*t)))-0.25))
+    abs(y)<=T ? CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE :
+    t>=1 ? 0 : min(CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE,stock);
+// The male is shortened by the full requested top clearance from the
+// corresponding female socket cap. At its flat center it retains the
+// specified CONNECTOR_HEIGHT; towards the lobes it follows the floor fillet.
+function connection_cap_at(y) =
+    max(0,min(CONNECTOR_HEIGHT,socket_roof_safe_cap_at(y)-SOCKET_TOP_CLEARANCE));
 module connector_height_envelope(full=true) {
     R=INNER_BOTTOM_R;
     // Match the cap to the display facet budget instead of oversampling at
@@ -533,14 +552,14 @@ module connector_height_envelope(full=true) {
                     [[T+R+1,-0.02]]));
     else rotate([90,0,90])
         linear_extrude(height=200,center=true,convexity=5)
-            polygon(concat([[0,-0.02]],[[0,CONNECTOR_HEIGHT]],
+            polygon(concat([[0,-0.02]],[[0,CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE]],
                 [for(i=[0:steps]) let(y=T+R*i/steps)
-                    [y,connection_cap_at(y)]],[[T+R+1,-0.02]]));
+                    [y,socket_roof_safe_cap_at(y)]],[[T+R+1,-0.02]]));
 }
 module socket_opening_3d() {
     intersection() {
-        translate([0,0,-E]) linear_extrude(height=CONNECTOR_HEIGHT+E)
-            half_dogbone_2d(connector_clearance_mm);
+        translate([0,0,-E]) linear_extrude(height=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+E)
+            half_dogbone_2d(SOCKET_SIDE_CLEARANCE);
         // Only what fits beneath the B-thick interior bottom is removed.
         connector_height_envelope(false);
     }
@@ -594,7 +613,7 @@ module join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
       // Keep the full-width vertical web opening of each underside socket.
       // The protected region is only about one web width across each joint.
       if(connectors_enabled) {
-        keep=WEB_R+connector_clearance_mm+0.6;
+        keep=WEB_R+SOCKET_SIDE_CLEARANCE+0.6;
         if(front_join) for(p=front_stations)
             translate([p-keep,-JOIN_X-2,-E]) cube([2*keep,2*JOIN_X+4,JOIN_Z+2*E]);
         if(rear_join) for(p=rear_stations)
@@ -736,6 +755,9 @@ module all_trays() {
 // ----------- Output and non-fatal invalid selection handling -----------
 echo("DRAWER v9 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / OUTER CHAMFER run, rise / lip projection, rise",ALPHA,CHAMFER_X,CHAMFER_Z,rim_projection_mm,LIP_Z);
+echo("CONNECTOR CLEARANCES (total side / each side / top)",
+     connector_side_clearance_total_mm, SOCKET_SIDE_CLEARANCE, SOCKET_TOP_CLEARANCE);
+echo("CONNECTOR ROOF CAPS (at seam)",connection_cap_at(0),socket_roof_safe_cap_at(0));
 echo("BASE MIN THICKNESS / BOTTOM INNER R / WALL REINFORCEMENT",B,INNER_BOTTOM_R,T);
 echo("DOGBONE max height / lobe diameter / straight center length / interior bottom R",
      CONNECTOR_HEIGHT,2*HEAD_R,CONNECTOR_STRAIGHT_LENGTH,INNER_BOTTOM_R);

@@ -32,7 +32,6 @@
       "base_thickness_mm": "2",
       "wall_thickness_mm": "2",
       "connector_spacing_mm": "59",
-      "connector_clearance_mm": "0.2",
       "output_mode": "0",
       "selected_row": "1",
       "selected_column": "1",
@@ -49,11 +48,13 @@
       "cutout_row_09": "false",
       "cutout_row_10": "false",
       "connector_center_thickness_mm": "4",
-      "connector_height_mm": "4",
+      "connector_height_mm": "6",
       "cutout_round_diameter_mm": "20",
       "cutout_riser_angle_deg": "60",
       "soft_edge_radius_mm": "0.6",
-      "connector_diameter_protrusion_mm": "1"
+      "connector_diameter_protrusion_mm": "1",
+      "connector_side_clearance_total_mm": "0.2",
+      "connector_top_clearance_mm": "1"
     }
   }
 }

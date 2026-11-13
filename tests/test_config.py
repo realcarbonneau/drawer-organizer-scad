@@ -64,3 +64,15 @@ def test_customizer_controls_and_defaults():
         assert key not in params
     for i in range(1,11):
         assert params[f"cutout_row_{i:02d}"] in ("true","false")
+
+def test_connector_clearance_semantics_and_independent_controls():
+    source,preset=release_paths()
+    scad=source.read_text()
+    p=preset_parameters(preset)
+    assert p["connector_side_clearance_total_mm"]=="0.2"
+    assert p["connector_top_clearance_mm"]=="1"
+    assert "connector_clearance_mm" not in p
+    assert "connector_clearance_mm" not in scad
+    assert "SOCKET_SIDE_CLEARANCE=connector_side_clearance_total_mm/2;" in scad
+    assert "socket_roof_safe_cap_at(y)-SOCKET_TOP_CLEARANCE" in scad
+    assert "PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+0.4" in scad

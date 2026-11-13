@@ -295,3 +295,26 @@ def test_cutout_has_two_tangent_rounds_at_requested_riser_angle(tmp_path):
     upper=pts[(pts[:,2]>69)&(pts[:,2]<75.1)&(pts[:,1]>50)&(pts[:,1]<190)]
     assert len(np.unique(np.round(lower[:,2],2))) >= 4
     assert len(np.unique(np.round(upper[:,2],2))) >= 4
+
+@pytest.mark.parametrize("side,top", [(0,0),(0.2,1.0),(0.6,1.5)])
+def test_independent_connector_clearances_keep_blind_sockets_watertight(tmp_path, side, top):
+    mesh,output=render_stl(tmp_path,f"socket_side{side}_top{top}",{
+        "output_mode":1,"selected_row":1,"selected_column":1,
+        "connector_side_clearance_total_mm":side,
+        "connector_top_clearance_mm":top
+    })
+    assert mesh.body_count==1
+    assert "CONNECTOR CLEARANCES (total side / each side / top)" in output
+    assert mesh.bounds[1,2]>=74.9
+
+def test_connector_uses_full_6mm_height_under_7mm_blind_pocket(tmp_path):
+    male,output=render_stl(tmp_path,"male_nominal_top_clearance",{
+        "output_mode":2,"loose_connector_quantity":1
+    })
+    assert male.bounds[1,2]==pytest.approx(6.0,abs=0.05)
+    import re
+    m=re.search(r'"CONNECTOR ROOF CAPS \(at seam\)", ([\d.]+), ([\d.]+)',output)
+    assert m,output[-2000:]
+    male_cap,female_cap=map(float,m.groups())
+    assert male_cap==pytest.approx(6.0)
+    assert female_cap-male_cap==pytest.approx(1.0)

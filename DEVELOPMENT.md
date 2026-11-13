@@ -4,7 +4,7 @@
 
 - Use `drawer-organizer-vN.scad` and `drawer-organizer-vN.json` together. Increase **N** once for each new functional release; **remain on v9 throughout the current screenshot-led review iterations**. Documentation/checkpoint commits do not increment the functional version.
 - Maintain only the latest SCAD/JSON pair at the branch root; older work belongs to Git history, **not a `versions/` directory**. Do not generate release ZIPs; use GitHub's repository download.
-- Keep unfinished code on `wip/v9-recovery`, without modifying `main` until the screenshot review is accepted. Commits must be normal, additive commits; no force-push, history rewriting, squash, or `Co-authored-by` attribution trailers.
+- Keep unfinished geometry on WIP branches. Promote reviewed releases to the default `main` branch. Release a WIP branch as a **single squash-equivalent commit** on the existing `main` parent when requested, without rewriting previous `main` history or adding `Co-authored-by` trailers.
 - **Push a checkpoint frequently**, not just when a release is ready: after meaningful implementation milestones, before major refactors, and before expensive renders/testing. A WIP checkpoint may contain an incomplete design, but describe its status plainly. After any sync interruption, inspect the branch and resume from the newest surviving checkpoint.
 - Update the README, preset, tests, and gallery with each significant geometry change, and verify Markdown uses unescaped backticks and fenced code blocks.
 
@@ -23,8 +23,14 @@
 2. Confirm five individual tray STL bodies are watertight, no solid extends below z=0, and all default cutouts stay in inner divider walls.
 3. Inspect **actual mesh screenshots** for full layout, both end trays, a middle tray, upper outer/inner corners, bottom fillet, cutout lower/upper transitions, rim cross-section, dogbone, and blind seats.
 4. Test the rim at 60° and 75° with 18 mm projection, the cutout at 45°/60°/90°, gap spacing 0/1/12/50 mm, invalid selections, 1×1 grid, and output angle options.
-5. Push WIP commits during implementation, including screenshots or CI preview artifacts, before further modifications. Keep `main` untouched pending review.
+5. Push WIP commits during implementation, including screenshots or CI preview artifacts, before further modifications. Use `main` for completed releases and WIP branches for later experimental iterations.
 6. A watertight STL alone does **not** prove clearance, print quality, wall minimum everywhere, or the physical snap-fit; verify with physical test prints.
 ### v9 connector checkpoint
 
 Use `connector_center_thickness_mm = 4`, `connector_diameter_protrusion_mm = 1` (radius increase on **each** side, yielding a 6 mm lobe), and `connector_height_mm = 6`. The free straight section is 2× the 2 mm tray wall, so each tray receives 2 mm of the center bar. Render real STLs and verify pocket clearance before promoting v9.
+
+## v9 connector tolerance controls
+
+- `connector_side_clearance_total_mm = 0.2`: female cavity is **0.1 mm larger on each side**, not 0.2 mm per side. Male dimensions remain unchanged.
+- `connector_top_clearance_mm = 1`: female roof is **1 mm higher** than the matching truncated male top wherever the connector has solid height; still a blind underside pocket.
+- Test the socket roof for minimum floor stock when changing top clearance; verify clearances at the lobes and test-print.
