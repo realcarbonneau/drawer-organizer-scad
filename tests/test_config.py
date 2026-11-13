@@ -82,6 +82,34 @@ def test_customizer_controls_and_defaults():
     for i in range(1,11):
         assert params[f"Cutout_row_{i:02d}"] in ("true","false")
 
+def test_cutout_soft_touch_roundover_tracks_the_same_radius():
+    source,_=release_paths()
+    scad=source.read_text()
+    assert "if(SOFT_R>0 && Cutout_base_width_mm>0" in scad
+    assert "for(face=[1,1+T])" in scad
+    assert "sphere(r=SOFT_R" in scad
+    assert "minkowski()" in scad
+
+
+def test_readme_visuals_are_camera_fitted_and_never_cropped():
+    root=release_paths()[0].parent
+    cli=(root/"scripts/organizer_cli.py").read_text()
+    gallery=(root/"scripts/readme_gallery.py").read_text()
+    build=(root/"scripts/build.py").read_text()
+    assert '"--imgsize", "3200,2200"' in cli
+    assert '"--autocenter", "--viewall"' in cli
+    assert 'image_camera=camera, image_focus=focus' in build
+    assert '"cutout-closeup"' in build
+    assert 'focus = (31.5, 118.5, 35, 70, 0, 67, 280)' in build
+    assert "'cutout-closeup.png'" in gallery
+    assert '"Render_facets": 64' in build
+    assert "def image_contain(" in gallery
+    assert "def image_crop(" not in gallery
+    assert ".crop(" not in gallery
+    assert "min(size[0]/im.width,size[1]/im.height,1.0)" in gallery
+    assert "SCALE=2" in gallery
+
+
 def test_connector_clearance_semantics_and_independent_controls():
     source,preset=release_paths()
     scad=source.read_text()

@@ -66,6 +66,8 @@ def openscad_render(
     source: Path | None = None,
     preset: Path | None = None,
     timeout: int = 180,
+    image_camera: tuple[int, int, int] = (58, 0, 35),
+    image_focus: tuple[float, float, float, float, float, float, float] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     model, config = release_paths() if source is None or preset is None else (source, preset)
     executable = shutil.which("openscad")
@@ -76,8 +78,18 @@ def openscad_render(
     if output.suffix.lower() == ".stl":
         args.extend(["--export-format", "binstl"])
     elif output.suffix.lower() == ".png":
-        args.extend(["--viewall", "--imgsize", "1200,900",
-                     "--camera", "0,0,0,45,0,35,900"])
+        # Camera fit must come AFTER selecting the part. The old fixed 900-mm
+        # camera distance shrank a tray to a few dozen pixels; cropping then
+        # enlarged those pixels into jagged README screenshots.
+        args.extend(["--imgsize", "3200,2200", "--colorscheme", "Tomorrow"])
+        if image_focus is None:
+            rx, ry, rz = image_camera
+            args.extend(["--camera", f"0,0,0,{rx},{ry},{rz},900",
+                         "--autocenter", "--viewall"])
+        else:
+            # Move the camera toward a feature in 3D instead of cropping
+            # and enlarging an already-rendered raster screenshot.
+            args.extend(["--camera", ",".join(str(v) for v in image_focus)])
     # OpenSCAD 2021.01's JSON Customizer preset wins over -D. Merge overrides
     # into a temporary preset; otherwise tests silently render default values.
     merged = json.loads(config.read_text(encoding="utf-8"))
