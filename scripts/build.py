@@ -22,22 +22,22 @@ def main() -> None:
     for row, col in parts:
         destination = args.output / f"tray-row{row:02d}-col{col:02d}.stl"
         result = openscad_render(destination, {
-            "output_mode": 1, "selected_row": row, "selected_column": col
+            "Output_mode": 1, "Selected_row": row, "Selected_column": col
         })
         require_render_ok(result, destination)
         print(f"built {destination}")
-    if params.get("connectors_enabled", "true") != "false":
+    if params.get("Connectors_enabled", "true") != "false":
         destination = args.output / "dogbone-connectors.stl"
-        result = openscad_render(destination, {"output_mode": 2})
+        result = openscad_render(destination, {"Output_mode": 2})
         require_render_ok(result, destination)
         print(f"built {destination}")
     # Screenshot images are CI artifacts, not files retained in Git history.
     screenshots = {
-        "full-layout": {"output_mode": 0, "preview_separation_mm": 12},
-        "rear-tray": {"output_mode": 1, "selected_row": 1, "selected_column": 1},
-        "middle-tray": {"output_mode": 1, "selected_row": 3, "selected_column": 2},
-        "front-tray": {"output_mode": 1, "selected_row": 6, "selected_column": 1},
-        "dogbone": {"output_mode": 2, "loose_connector_quantity": 1},
+        "full-layout": {"Output_mode": 0, "Preview_separation_mm": 12},
+        "rear-tray": {"Output_mode": 1, "Selected_row": 1, "Selected_column": 1},
+        "middle-tray": {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2},
+        "front-tray": {"Output_mode": 1, "Selected_row": 6, "Selected_column": 1},
+        "dogbone": {"Output_mode": 2, "Loose_connector_quantity": 1},
     }
     for name, selection in screenshots.items():
         destination = args.output / "previews" / f"{name}.png"
