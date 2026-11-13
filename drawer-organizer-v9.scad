@@ -693,26 +693,89 @@ module access_notch_profile_2d(width,top_height) {
     }
 }
 
-// The original 2D access profile fixes the unrounded base gap, 20 mm tangent
-// transitions and 75-degree risers. Extrude this core through ONE divider only.
-// A separate small spherical sweep at each exposed wall face softens the sharp
-// edge LEFT BY SUBTRACTION, unlike the outer top rim collar which cannot follow
-// a newly cut opening. The radius uses the existing Soft_edge_radius_mm limit.
-// The central profile, socket roof and wall thickness remain unchanged.
+// The soft-touch cutout edge is a quarter-circle between the EXPOSED divider
+// face and the original notch surface; it expands the cutter by SOFT_R on the
+// wall face and joins the unchanged central notch tangentially SOFT_R mm inward.
+// Using a sphere Minkowski on the face creates the inverse curvature and is
+// prohibitively expensive at higher facets. A single analytic indexed loft
+// per side is fast to preview and keeps all faces connected.
+function cutout_touch_clearance(u,r) =
+    r<=0 ? 0 : r-sqrt(max(0,2*r*u-u*u));
+// An ordered 2D outline of the notch, without repeated corner vertices.
+function cutout_outline(width,top_height,n) =
+    let(zbase=PAD_HEIGHT+B+1,ztop=top_height,
+        base=max(0,width),ang=cutout_angle(Cutout_riser_angle_deg),
+        r=cutout_effective_r(zbase,ztop,base,ang),
+        right=cutout_right_side(base,zbase,ztop,r,ang,n),
+        x_top=right[len(right)-1][0],
+        x_flat=base/2-r*tan(ang/2),
+        left=[for(j=[len(right)-1:-1:1]) [-right[j][0],right[j][1]]])
+    r<=0.00001 ?
+      let(x0=base/2,xtop=x0+cutout_run(ztop-zbase,ang))
+      [[-x0,zbase],[x0,zbase],[xtop,ztop],[xtop,ztop+6],
+       [-xtop,ztop+6],[-xtop,ztop]] :
+      concat(x_flat>0.00001 ? [[-x_flat,zbase]] : [],right,
+             [[x_top,ztop+6],[-x_top,ztop+6]],left);
+function cutout_edge_normal(a,b) =
+    let(dx=b[0]-a[0],dy=b[1]-a[1],length=max(0.00001,sqrt(dx*dx+dy*dy)))
+    [dy/length,-dx/length];
+function cutout_vertex_normal(points,j) =
+    let(N=len(points),
+        p=points[j],prev=points[(j+N-1)%N],
+        next=points[(j+1)%N],
+        n0=cutout_edge_normal(prev,p),n1=cutout_edge_normal(p,next),
+        divisor=max(0.1,1+n0[0]*n1[0]+n0[1]*n1[1]))
+    [(n0[0]+n1[0])/divisor,(n0[1]+n1[1])/divisor];
+function cutout_loft_idx(k,side,j,N)=k*2*N+side*N+j;
+function cutout_loft_winding(a,b,c,dir)=dir>0 ? [a,b,c] : [a,c,b];
+module soft_cutout_face_3d(face,dir) {
+    n=max(12,ceil(Render_facets*0.65));
+    steps=max(12,min(24,ceil(Render_facets/2)));
+    path=cutout_outline(Cutout_base_width_mm,ZTOP,n);
+    N=len(path);
+    normals=[for(j=[0:N-1]) cutout_vertex_normal(path,j)];
+    // The inner strip overlaps the regular notch cutter by 0.02 mm.
+    // This prevents coplanar CGAL joins without changing the visible opening.
+    inner=-0.02;
+    radius=SOFT_R;
+    vertices=[for(k=[0:steps])
+        let(u=radius*k/steps,
+            outer=max(0.005,cutout_touch_clearance(u,radius)),
+            z=face+dir*u)
+        each concat(
+          [for(j=[0:N-1])
+             [path[j][0]+outer*normals[j][0],path[j][1]+outer*normals[j][1],z]],
+          [for(j=[0:N-1])
+             [path[j][0]+inner*normals[j][0],path[j][1]+inner*normals[j][1],z]])];
+    faces=concat(
+       [for(k=[0:steps-1],j=[0:N-1]) each [
+         cutout_loft_winding(cutout_loft_idx(k,0,j,N),cutout_loft_idx(k,0,(j+1)%N,N),cutout_loft_idx(k+1,0,(j+1)%N,N),dir),
+         cutout_loft_winding(cutout_loft_idx(k,0,j,N),cutout_loft_idx(k+1,0,(j+1)%N,N),cutout_loft_idx(k+1,0,j,N),dir),
+         cutout_loft_winding(cutout_loft_idx(k,1,(j+1)%N,N),cutout_loft_idx(k,1,j,N),cutout_loft_idx(k+1,1,j,N),dir),
+         cutout_loft_winding(cutout_loft_idx(k,1,(j+1)%N,N),cutout_loft_idx(k+1,1,j,N),cutout_loft_idx(k+1,1,(j+1)%N,N),dir)
+       ]],
+       [for(j=[0:N-1]) each [
+         cutout_loft_winding(cutout_loft_idx(steps,0,j,N),cutout_loft_idx(steps,0,(j+1)%N,N),cutout_loft_idx(steps,1,(j+1)%N,N),dir),
+         cutout_loft_winding(cutout_loft_idx(steps,0,j,N),cutout_loft_idx(steps,1,(j+1)%N,N),cutout_loft_idx(steps,1,j,N),dir),
+         cutout_loft_winding(cutout_loft_idx(0,0,j,N),cutout_loft_idx(0,1,(j+1)%N,N),cutout_loft_idx(0,0,(j+1)%N,N),dir),
+         cutout_loft_winding(cutout_loft_idx(0,0,j,N),cutout_loft_idx(0,1,j,N),cutout_loft_idx(0,1,(j+1)%N,N),dir)
+       ]]
+    );
+    polyhedron(points=vertices,faces=faces,convexity=8);
+}
 module access_notch_3d(xcenter,ycenter) {
     span=T+2;
     translate([xcenter-span/2,ycenter,0])
         rotate([0,0,90]) rotate([90,0,0]) {
             linear_extrude(height=span,convexity=8)
                 access_notch_profile_2d(Cutout_base_width_mm,ZTOP);
-            if(SOFT_R>0 && Cutout_base_width_mm>0 && cutout_angle(Cutout_riser_angle_deg)>0)
-                for(face=[1,1+T])
-                    translate([0,0,face])
-                        minkowski() {
-                            linear_extrude(height=E,convexity=8)
-                                access_notch_profile_2d(Cutout_base_width_mm,ZTOP);
-                            sphere(r=SOFT_R,$fn=max(16,ceil(Render_facets/2)));
-                        }
+            // Degenerate very narrow gaps / near-horizontal risers still
+            // render with the original unrounded edge, rather than CGAL
+            // self-intersections. User input itself is never limited.
+            if(SOFT_R>0 && Cutout_base_width_mm>=1 && cutout_angle(Cutout_riser_angle_deg)>=3) {
+                soft_cutout_face_3d(1,+1);
+                soft_cutout_face_3d(1+T,-1);
+            }
         }
 }
 module joining_wall_cutouts(w,d,start,last,col,cols) {
