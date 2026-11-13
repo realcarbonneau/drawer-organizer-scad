@@ -180,6 +180,43 @@ def test_exposed_cutout_edges_are_soft_not_knife_sharp(tmp_path):
     )
 
 
+def test_cutout_fillet_curves_the_correct_way(tmp_path):
+    # The former Minkowski cutter used the opposite quarter circle:
+    # it stayed almost 0.6 mm below the floor near the face, then turned
+    # sharply at the inner transition. A convex touch fillet must instead
+    # meet the ORIGINAL notch floor tangentially.
+    radius=0.6
+    base_z=6+1+2+0.4+2+1
+    m,_=render_stl(tmp_path,"correct_cutout_quarter_circle",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Cutout_row_04":True,"Soft_edge_radius_mm":radius
+    })
+    assert m.is_watertight
+    assert m.body_count==1
+    yc=1.5*(474/6)
+    for x,depth in ((0.2,0.2),(0.4,0.4),(1.6,0.4),(1.8,0.2)):
+        section=m.section(plane_origin=[x,0,0],plane_normal=[1,0,0])
+        assert section is not None
+        points=np.vstack(section.discrete)
+        floor=points[(np.abs(points[:,1]-yc)<2)&
+                     (points[:,2]>10)&(points[:,2]<14)]
+        assert len(floor)>0
+        actual=np.min(floor[:,2])
+        expected=base_z-(radius-math.sqrt(2*radius*depth-depth*depth))
+        assert actual==pytest.approx(expected,abs=0.04), (
+            f"Incorrect cutout edge curvature at x={x}: {actual} vs {expected}")
+
+
+@pytest.mark.parametrize("diameter", [0,20])
+def test_cutout_touches_remain_watertight_without_profile_rounding(tmp_path,diameter):
+    m,_=render_stl(tmp_path,f"cutout_diameter_{diameter}",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Cutout_row_04":True,"Cutout_round_diameter_mm":diameter
+    })
+    assert m.is_watertight
+    assert m.body_count==1
+
+
 def test_cutout_on_single_column_row_is_noop(tmp_path):
     m,_ = render_stl(tmp_path,"cut_singlecol",{
         "Output_mode":1,"Selected_row":1,"Selected_column":1,
