@@ -38,7 +38,6 @@
       "selected_column": "1",
       "preview_separation_mm": "0",
       "render_facets": "20",
-      "connector_diameter_addition_mm": "1.6",
       "cutout_row_01": "false",
       "cutout_row_02": "false",
       "cutout_row_03": "false",
@@ -49,11 +48,12 @@
       "cutout_row_08": "false",
       "cutout_row_09": "false",
       "cutout_row_10": "false",
-      "connector_center_thickness_mm": "3.6",
+      "connector_center_thickness_mm": "4",
       "connector_height_mm": "4",
       "cutout_round_diameter_mm": "20",
       "cutout_riser_angle_deg": "60",
-      "soft_edge_radius_mm": "0.6"
+      "soft_edge_radius_mm": "0.6",
+      "connector_diameter_protrusion_mm": "1"
     }
   }
 }

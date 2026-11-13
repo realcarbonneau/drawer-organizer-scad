@@ -48,7 +48,9 @@ def test_customizer_controls_and_defaults():
     assert "render_facets = 20; // [3:1:200]" in scad
     assert int(params["render_facets"])==20
     assert int(params["print_overhang_angle_deg"])==60
-    assert "connector_diameter_addition_mm" in params
+    assert params["connector_diameter_protrusion_mm"] == "1"
+    assert params["connector_center_thickness_mm"] == "4"
+    assert "connector_diameter_addition_mm" not in params
     assert params["base_thickness_mm"] == "2"
     assert params["wall_thickness_mm"] == "2"
     assert params["soft_edge_radius_mm"] == "0.6"

@@ -79,14 +79,14 @@ soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 /* [04 - Connector Specifications] */
 // One continuous connector center-spacing target on every joining segment.
 connector_spacing_mm = 59; // [18:1:160]
-// Width of the rectangular middle web in the XY plane.
-connector_center_thickness_mm = 3.6; // [2:0.2:12]
-// Added diameter of each circular lobe compared to the web width.
-// Example: 3 mm center thickness + 2 mm addition = 5 mm lobe diameter.
-connector_diameter_addition_mm = 1.6; // [0.4:0.2:10]
+// Thickness of the straight rectangular center, in the XY plane.
+connector_center_thickness_mm = 4; // [2:0.5:12]
+// Radial protrusion on EACH side of a circular lobe, beyond center thickness.
+// Example: 4 mm center + 1 mm per side = 6 mm lobe diameter.
+connector_diameter_protrusion_mm = 1; // [0.25:0.25:5]
 // Maximum vertical connector height. The two lobes are progressively trimmed
 // to follow the bottom inside fillet and preserve stock above each blind socket.
-connector_height_mm = 4; // [1:0.2:8]
+connector_height_mm = 6; // [1:0.2:8]
 // Each half is a straight-sided pocket: only clearance is added; NO
 // locking taper, mouth flare, entry bevel, or internal socket chamfer.
 connector_clearance_mm = 0.2; // [0:0.05:0.6]
@@ -173,9 +173,15 @@ ROW_DEPTH=DY/grid_rows;
 // Nominal logical-grid pitch, before exterior drafts, fillets and wall stock.
 GRID_UNIT_WIDTH=W0/grid_columns;
 WEB_R=connector_center_thickness_mm/2;
-HEAD_R=(connector_center_thickness_mm+connector_diameter_addition_mm)/2;
-// Derive lobe depth from web width, head radius and minimum socket side wall.
-HEAD_IN=HEAD_R+max(B,T)+1;
+HEAD_R=connector_center_thickness_mm/2+connector_diameter_protrusion_mm;
+// In the XY silhouette each circular lobe meets the rectangular center
+// at the circle/rectangle chord (x=+/-WEB_R). Keep exactly one wall
+// thickness of exposed STRAIGHT center bar on EACH side of the tray seam:
+//   2*(HEAD_IN - sqrt(HEAD_R^2-WEB_R^2)) = 2*T.
+// This shortens the connector independently of the lobe diameter.
+LOBE_CHORD=sqrt(max(0,HEAD_R*HEAD_R-WEB_R*WEB_R));
+HEAD_IN=T+LOBE_CHORD;
+CONNECTOR_STRAIGHT_LENGTH=2*(HEAD_IN-LOBE_CHORD);
 // Connector height is derived, not a user choice: shallow enough to leave
 // minimum material above the blind pocket without erasing bottom rounding.
 CONNECTOR_HEIGHT=connector_height_mm;
@@ -237,8 +243,8 @@ assert(drawer_top_width_mm>drawer_floor_width_mm,"Top opening must exceed flat f
 assert(W0>10&&DY>20&&H>15&&B>0&&T>0&&H>B+5,"Drawer dimensions or thicknesses are invalid.");
 assert(ALPHA>=20&&ALPHA<85,"Printing angle must be between 20 and 85 degrees.");
 assert(connector_spacing_mm>=2*(HEAD_R+T+2)&&connector_spacing_mm>0,"Connector spacing is too short for dogbone heads.");
-assert(connector_diameter_addition_mm>0 && connector_center_thickness_mm>=2,
-       "Dogbone lobe diameter must exceed web width.");
+assert(connector_diameter_protrusion_mm>0 && connector_center_thickness_mm>=2,
+       "Dogbone lobe diameter protrusion must be positive.");
 assert(CONNECTOR_HEIGHT>=1 && CONNECTOR_HEIGHT < H-2*B,
        "Connector height must fit underneath the tray walls.");
 assert(JOIN_Z<=B,"Elephant foot relief must be no deeper than the base thickness.");
@@ -368,115 +374,117 @@ module yz_void_2d(d,front_outer,rear_outer) {
     }
 }
 
-// Apply a rounded edge ONLY to the top ~2R band of a solid section.
-// The bottom profile, its 45/60-degree exterior chamfer and bottom interior
-// fillet remain unchanged. Opening the 2D wall section rounds BOTH top sides.
-module softened_upper_section(z_top) {
-    if(SOFT_R<=0) children();
-    else union() {
-        intersection() {
-            children();
-            translate([-2000,-2000]) square([4000,z_top-2*SOFT_R+2000]);
-        }
-        intersection() {
-            offset(r=SOFT_R) offset(delta=-SOFT_R) children();
-            translate([-2000,z_top-2*SOFT_R]) square([4000,2000]);
-        }
-    }
-}
+// --- Unified top rim: true 2-way edge arcs and 3-way corner transitions. ---
+// The earlier pair of independently rounded XZ/YZ extrusions overlapped
+// at corners. A 2D plan mask plus a separate hull created facet seams.
+// Instead, generate ONE continuous, closed polygonal collar. Its edge
+// insets follow a quarter circle (two-face blend); at each of its EIGHT
+// corners, a 3D spherical-style transition raises the XY corner radius smoothly from
+// zero to SOFT_R, with zero end slopes. Adjacent surfaces share every vertex.
+// It is deliberately restricted to the last 2*SOFT_R mm to leave the
+// lower chamfer and the common inner bottom fillet completely unchanged.
+// The polyhedron uses flat triangles with shared indices: no co-planar
+// corner patches, overlapping hulls or vertical corner clipping artifacts.
 module xz_wall_2d(w,left_outer,right_outer) {
     difference() { xz_outer_2d(w,left_outer,right_outer); xz_void_2d(w,left_outer,right_outer); }
 }
 module yz_wall_2d(d,front_outer,rear_outer) {
     difference() { yz_outer_2d(d,front_outer,rear_outer); yz_void_2d(d,front_outer,rear_outer); }
 }
-// The cross-section fillets protect the upper XZ and YZ edges, but an
-// intersection of two independently rounded cross-sections leaves a sharp
-// VERTICAL line where four walls meet. Round those XY-plane corners too.
-// A thin rounded-rectangle mask is deliberately applied only at the TOP:
-// this leaves the full-length bottom chamfer, fillet, and side taper intact.
-module top_outer_corner_mask(w,d,left_outer,right_outer,front_outer,rear_outer) {
-    if(SOFT_R<=0) children();
-    else {
-        xmin=left_outer ? -SIDE_EXPAND-(rim_left?rim_projection_mm:0) : 0;
-        xmax=right_outer ? w+SIDE_EXPAND+(rim_right?rim_projection_mm:0) : w;
-        ymin=front_outer && rim_front ? -rim_projection_mm : 0;
-        ymax=rear_outer && rim_rear ? d+rim_projection_mm : d;
-        // The lower half of the tray MUST remain untouched.
-        intersection() {
-            children();
-            union() {
-                translate([-1500,-1500,-100]) cube([3000,3000,ZTOP-2*SOFT_R+100]);
-                translate([xmin,ymin,ZTOP-2*SOFT_R-E])
-                    linear_extrude(height=2*SOFT_R+2*E)
-                        offset(r=SOFT_R) offset(delta=-SOFT_R)
-                            square([xmax-xmin,ymax-ymin]);
-            }
-        }
-    }
-}
-// Small CONCAVE top inside corners need an XY fillet as well: the two
-// cross-section fillets by themselves intersect in a sharp vertical crease.
-// Fill only the interior's 0.6 mm quarter-square corner, tapering that fill
-// down to zero over two radii so no abrupt ledge is left inside the tray.
-// This is separate from the large UNIFORM interior bottom fillet.
-module top_corner_fill_2d() {
-    r=SOFT_R;
-    difference() {
-        translate([-0.2,-0.2]) square([r+0.2,r+0.2]);
-        translate([r,r]) circle(r=r);
-    }
-}
-module one_inner_top_corner(x,y,sx,sy) {
-    translate([x,y,ZTOP-2*SOFT_R])
-        scale([sx,sy,1])
-            hull() {
-                linear_extrude(height=E) scale([0.02,0.02]) top_corner_fill_2d();
-                translate([0,0,2*SOFT_R-E])
-                    linear_extrude(height=E) top_corner_fill_2d();
-            }
-}
-module top_inner_corner_fills(w,d,left_outer,right_outer,front_outer,rear_outer) {
+function top_outer_coord(z, outside, rim, along_x=true) =
+    !outside ? 0 :
+    along_x ? -SIDE_EXPAND - (rim ? lip_run_at_z(z) : 0) :
+    -(rim ? lip_run_at_z(z) : 0);
+function top_inner_coord(z, outside, rim, along_x=true) =
+    along_x ? inner_x_left_at(z,outside,rim) : inner_y_front_at(z,outside,rim);
+// The curve is flat-tangent to the vertical side at its lower end, and
+// flat-tangent to the top at the upper end. The taper outside is included
+// in top_outer_coord(), not approximated by a vertical cuboid's bounds.
+function top_edge_inset(z) =
+    SOFT_R<=0 || z<=ZTOP-SOFT_R ? 0 :
+    let(h=z-(ZTOP-SOFT_R))
+        SOFT_R-sqrt(max(0,SOFT_R*SOFT_R-h*h));
+// The 3-way corner must share the roundover height and curvature of the
+// 2-way top edge. It must not make an unrelated bump in the vertical corner.
+function top_corner_radius(z) =
+    // Three-face blend is restricted to the SAME height as the soft top-edge
+    // roundover. Below it, the vertical tray corners remain geometrically
+    // straight; there is no independent full-height vertical-corner fillet.
+    // Reuse the two-face edge inset so there is no second easement or hump
+    // in the top plane from two independently changing radii.
+    SOFT_R<=0 ? 0 : max(0.002,top_edge_inset(z));
+// CCW perimeter with matching vertices on outer and inner loops. Every
+// transition is captured by one shared polyhedron surface at all z levels.
+function corner_loop(x0,x1,y0,y1,r,n) = concat(
+   [for(j=[0:n]) [x1-r+r*cos(-90+j*90/n),y0+r+r*sin(-90+j*90/n)]],
+   [for(j=[0:n]) [x1-r+r*cos(j*90/n),y1-r+r*sin(j*90/n)]],
+   [for(j=[0:n]) [x0+r+r*cos(90+j*90/n),y1-r+r*sin(90+j*90/n)]],
+   [for(j=[0:n]) [x0+r+r*cos(180+j*90/n),y0+r+r*sin(180+j*90/n)]]
+);
+function top_ring_points(z,w,d,left_outer,right_outer,front_outer,rear_outer,n) =
+    let(e=top_edge_inset(z),cr=top_corner_radius(z),
+        xo0=top_outer_coord(z,left_outer,rim_left&&left_outer,true)+e,
+        xo1=w-top_outer_coord(z,right_outer,rim_right&&right_outer,true)-e,
+        yo0=top_outer_coord(z,front_outer,rim_front&&front_outer,false)+e,
+        yo1=d-top_outer_coord(z,rear_outer,rim_rear&&rear_outer,false)-e,
+        xi0=top_inner_coord(z,left_outer,rim_left&&left_outer,true)-e,
+        xi1=w-top_inner_coord(z,right_outer,rim_right&&right_outer,true)+e,
+        yi0=top_inner_coord(z,front_outer,rim_front&&front_outer,false)-e,
+        yi1=d-top_inner_coord(z,rear_outer,rim_rear&&rear_outer,false)+e)
+    concat(
+        [for(p=corner_loop(xo0,xo1,yo0,yo1,cr,n)) [p[0],p[1],z]],
+        [for(p=corner_loop(xi0,xi1,yi0,yi1,cr,n)) [p[0],p[1],z]]
+    );
+// Indexed collar topology: outer side, inner side, top annulus, bottom annulus.
+// Render facets controls the number of circular arc samples; no Minkowski.
+function collar_idx(k,side,j,N)=k*2*N+side*N+j;
+function collar_z(k,nz)=ZTOP-2*SOFT_R-E+(2*SOFT_R+E)*k/nz;
+module top_edge_and_corner_collar(w,d,left_outer,right_outer,front_outer,rear_outer) {
     if(SOFT_R>0) {
-        side_k=(SIDE_EXPAND-CHAMFER_X)/max(0.01,H-CHAMFER_Z);
-        lip_k=rim_projection_mm/max(0.01,LIP_Z);
-        outer_stock=B*sqrt(1+side_k*side_k);
-        lip_start=-SIDE_EXPAND-side_k*B+outer_stock;
-        left_x=left_outer
-           ? (rim_left && rim_projection_mm>0 && LIP_Z>B
-              ? lip_start-(ZTOP-H-B)*lip_k
-              : -SIDE_EXPAND+B)
-           : B;
-        right_x=right_outer
-           ? (rim_right && rim_projection_mm>0 && LIP_Z>B
-              ? w-lip_start+(ZTOP-H-B)*lip_k
-              : w+SIDE_EXPAND-B)
-           : w-B;
-        front_y=front_outer ? B-(rim_front ? rim_projection_mm : 0) : B;
-        rear_y=rear_outer ? d-B+(rim_rear ? rim_projection_mm : 0) : d-B;
-        one_inner_top_corner(left_x,front_y, 1, 1);
-        one_inner_top_corner(right_x,front_y,-1, 1);
-        one_inner_top_corner(left_x,rear_y, 1,-1);
-        one_inner_top_corner(right_x,rear_y,-1,-1);
+        nc=max(16,ceil(render_facets/2));
+        nz=max(24,ceil(render_facets));
+        N=4*(nc+1);
+        vertices=[for(k=[0:nz]) each top_ring_points(
+            collar_z(k,nz),w,d,left_outer,right_outer,front_outer,rear_outer,nc)];
+        faces=concat(
+          [for(k=[0:nz-1],j=[0:N-1]) each [
+             [collar_idx(k,0,j,N),collar_idx(k,0,(j+1)%N,N),collar_idx(k+1,0,(j+1)%N,N)],
+             [collar_idx(k,0,j,N),collar_idx(k+1,0,(j+1)%N,N),collar_idx(k+1,0,j,N)],
+             [collar_idx(k,1,(j+1)%N,N),collar_idx(k,1,j,N),collar_idx(k+1,1,j,N)],
+             [collar_idx(k,1,(j+1)%N,N),collar_idx(k+1,1,j,N),collar_idx(k+1,1,(j+1)%N,N)]
+          ]],
+          [for(j=[0:N-1]) each [
+             [collar_idx(nz,0,j,N),collar_idx(nz,0,(j+1)%N,N),collar_idx(nz,1,(j+1)%N,N)],
+             [collar_idx(nz,0,j,N),collar_idx(nz,1,(j+1)%N,N),collar_idx(nz,1,j,N)],
+             [collar_idx(0,0,j,N),collar_idx(0,1,(j+1)%N,N),collar_idx(0,0,(j+1)%N,N)],
+             [collar_idx(0,0,j,N),collar_idx(0,1,j,N),collar_idx(0,1,(j+1)%N,N)]
+          ]]
+        );
+        polyhedron(points=vertices,faces=faces,convexity=10);
+    }
+}
+module raw_tray_shell(w,d,left_outer,right_outer,front_outer,rear_outer) {
+    union() {
+      intersection() {
+         xz_extrude_2d(d) xz_wall_2d(w,left_outer,right_outer);
+         yz_extrude_2d(w) yz_outer_2d(d,front_outer,rear_outer);
+      }
+      intersection() {
+         yz_extrude_2d(w) yz_wall_2d(d,front_outer,rear_outer);
+         xz_extrude_2d(d) xz_outer_2d(w,left_outer,right_outer);
+      }
     }
 }
 module tray_shell(w,d,left_outer,right_outer,front_outer,rear_outer) {
-    // The cross-sectional opening creates one common bottom fillet radius.
-    // Plan-view rounding above removes the four sharp 3D top intersections.
-    top_outer_corner_mask(w,d,left_outer,right_outer,front_outer,rear_outer)
-        union() {
-            top_inner_corner_fills(w,d,left_outer,right_outer,front_outer,rear_outer);
-            intersection() {
-                xz_extrude_2d(d)
-                    softened_upper_section(ZTOP) xz_wall_2d(w,left_outer,right_outer);
-                yz_extrude_2d(w) yz_outer_2d(d,front_outer,rear_outer);
-            }
-            intersection() {
-                yz_extrude_2d(w)
-                    softened_upper_section(ZTOP) yz_wall_2d(d,front_outer,rear_outer);
-                xz_extrude_2d(d) xz_outer_2d(w,left_outer,right_outer);
-            }
+    if(SOFT_R<=0) raw_tray_shell(w,d,left_outer,right_outer,front_outer,rear_outer);
+    else union() {
+        intersection() {
+            raw_tray_shell(w,d,left_outer,right_outer,front_outer,rear_outer);
+            translate([-1500,-1500,-100])
+                cube([3000,3000,ZTOP-2*SOFT_R+100+E/2]);
         }
+        top_edge_and_corner_collar(w,d,left_outer,right_outer,front_outer,rear_outer);
+    }
 }
 
 // ----------- Bottom-up dogbone: TWO CIRCLES + RECTANGLE -----------
@@ -729,7 +737,8 @@ module all_trays() {
 echo("DRAWER v9 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / OUTER CHAMFER run, rise / lip projection, rise",ALPHA,CHAMFER_X,CHAMFER_Z,rim_projection_mm,LIP_Z);
 echo("BASE MIN THICKNESS / BOTTOM INNER R / WALL REINFORCEMENT",B,INNER_BOTTOM_R,T);
-echo("DOGBONE max height / diameter / interior bottom R",CONNECTOR_HEIGHT,2*HEAD_R,INNER_BOTTOM_R);
+echo("DOGBONE max height / lobe diameter / straight center length / interior bottom R",
+     CONNECTOR_HEIGHT,2*HEAD_R,CONNECTOR_STRAIGHT_LENGTH,INNER_BOTTOM_R);
 // Explain the logical pitch independently of the per-row split count.
 // Example: usable W0=189, columns=3 => width pitch 63;
 // usable DY=474, rows=6 => depth pitch 79.

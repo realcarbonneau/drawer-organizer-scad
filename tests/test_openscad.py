@@ -204,14 +204,14 @@ def test_simple_cylinder_rectangle_dogbones_are_separate_and_flush(tmp_path):
         "output_mode":2,"loose_connector_quantity":3
     })
     assert m.body_count==3
-    assert m.bounds[1,2]==pytest.approx(4.0,abs=0.1)
+    assert m.bounds[1,2]==pytest.approx(6.0,abs=0.1)
     # A truncated top profile clears the lower inner rounding; the XY
     # silhouette remains two circles joined by a rectangle.
     components=m.split(only_watertight=True)
     assert len(components)==3
     for c in components:
-        assert c.extents[0]==pytest.approx(5.2,abs=0.12)
-        assert c.extents[1]==pytest.approx(16.4,abs=0.12)
+        assert c.extents[0]==pytest.approx(6.0,abs=0.15)
+        assert c.extents[1]==pytest.approx(14.47,abs=0.15)
 
 
 @pytest.mark.parametrize("facets", [3,20,200])

@@ -25,3 +25,6 @@
 4. Test the rim at 60° and 75° with 18 mm projection, the cutout at 45°/60°/90°, gap spacing 0/1/12/50 mm, invalid selections, 1×1 grid, and output angle options.
 5. Push WIP commits during implementation, including screenshots or CI preview artifacts, before further modifications. Keep `main` untouched pending review.
 6. A watertight STL alone does **not** prove clearance, print quality, wall minimum everywhere, or the physical snap-fit; verify with physical test prints.
+### v9 connector checkpoint
+
+Use `connector_center_thickness_mm = 4`, `connector_diameter_protrusion_mm = 1` (radius increase on **each** side, yielding a 6 mm lobe), and `connector_height_mm = 6`. The free straight section is 2× the 2 mm tray wall, so each tray receives 2 mm of the center bar. Render real STLs and verify pocket clearance before promoting v9.
