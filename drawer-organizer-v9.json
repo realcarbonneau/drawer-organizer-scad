@@ -29,10 +29,9 @@
       "rim_projection_mm": "3",
       "outer_bottom_chamfer_max_rise_mm": "10",
       "join_edge_elephant_foot_mm": "1",
-      "base_thickness_mm": "1.8",
-      "wall_thickness_mm": "1.8",
+      "base_thickness_mm": "2",
+      "wall_thickness_mm": "2",
       "connector_spacing_mm": "59",
-      "connector_web_width_mm": "3.6",
       "connector_clearance_mm": "0.2",
       "output_mode": "0",
       "selected_row": "1",
@@ -43,13 +42,18 @@
       "cutout_row_01": "false",
       "cutout_row_02": "false",
       "cutout_row_03": "false",
-      "cutout_row_04": "false",
+      "cutout_row_04": "true",
       "cutout_row_05": "false",
       "cutout_row_06": "false",
       "cutout_row_07": "false",
       "cutout_row_08": "false",
       "cutout_row_09": "false",
-      "cutout_row_10": "false"
+      "cutout_row_10": "false",
+      "connector_center_thickness_mm": "3.6",
+      "connector_height_mm": "4",
+      "cutout_round_diameter_mm": "20",
+      "cutout_riser_angle_deg": "60",
+      "soft_edge_radius_mm": "0.6"
     }
   }
 }

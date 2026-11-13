@@ -1,59 +1,48 @@
-# Drawer Organizer
+# Drawer Organizer — v9 geometry review
 
-Parametric 3D-printable trays for metal-sided kitchen drawers, implemented in OpenSCAD 2021.01. The entire arrangement is defined by drawer measurements, a logical grid, and shared tray / connector settings.
+Parametric 3D-printable drawer trays for metal-sided kitchen drawers, authored in OpenSCAD 2021.01. **v9 is a work-in-progress on `wip/v9-recovery`; `main` remains the published v8 release pending screenshot review.**
 
-## Current release: v8
+## Review files
 
-- [OpenSCAD model](drawer-organizer-v8.scad)
-- [Kitchen cutlery drawer Customizer preset](drawer-organizer-v8.json)
-- [Development and testing guidelines](DEVELOPMENT.md)
+- [OpenSCAD model](drawer-organizer-v9.scad)
+- [Matching Customizer preset](drawer-organizer-v9.json)
+- [Development and test guidelines](DEVELOPMENT.md)
+- Actual mesh review screenshots are attached to the current review conversation. CI also generates a downloadable preview build artifact.
 
-Download the matching SCAD and JSON files into the **same directory**, open the SCAD in OpenSCAD, and choose **Kitchen cutlery drawer** in the Customizer.
+To open the named kitchen preset, download the `.scad` and matching `.json` into the same directory. In OpenSCAD, open the SCAD and select **Kitchen cutlery drawer**.
 
-### Drawer orientation and example
+## Drawer and grid
 
-**Top view, standing at the FRONT of the open drawer:** Row 1 is at the REAR (farthest away); larger row numbers move toward the FRONT. Column 1 is LEFT; larger column numbers move RIGHT.
+In top view while standing at the FRONT, **row 1 is REAR** and column 1 is LEFT. Row subdivision `0` continues the previous row's group. The kitchen example uses a six-row, three-column grid: `1, 0, 3, 0, 0, 1`. This makes five trays: a rear full-width tray, three long middle trays, and a front full-width tray.
 
-Example measured drawer: top opening **218 mm**, flat floor width **190 mm**, bottom corner radius **10 mm**, interior depth **475 mm**, rim height approximately **65 mm**, and tray extension **10 mm**. These dimensions remain approximate until physically verified.
+Measured working profile: 218 mm top inside width, 190 mm flat floor width, R10 mm floor corners, 475 mm inside length, ~65 mm rim height. Treat these as measured approximations. A 2 mm base and 2 mm walls are the defaults, with 0.6 mm soft exposed-edge rounding.
 
-The default 6-row grid, `1, 0, 3, 0, 0, 1`, creates five parts: one full-width rear tray (rows 1–2), three long middle trays (rows 3–5), and one full-width front tray (row 6). **0 means continue the previous row's compartments.** Grid rows and columns are selectable with labeled dropdowns. Invalid selected parts print an explanatory message and generate no geometry.
+## v9 geometry and review checkpoints
 
-### What v8 changes
+- A uniform calculated **bottom inside fillet** protects the minimum floor stock. Outer bottom edges are chamfered for the metal drawer corner profile.
+- The top rim has **continuous 0.6 mm exposed-edge softening** in XZ, YZ and around the XY corner intersections, including a small tapered fill at the inside corners. The soft radius is capped below half the minimum wall/base thickness.
+- Exterior side walls follow the metal drawer taper. **Front and rear ends are vertical** apart from any separately enabled rim flare.
+- A rim flare uses the same print slope on its outer and inner faces. The outside ramp starts at the metal rim; the **inside ramp starts 2 mm higher** and continues to the top without a vertical return.
+- One checkbox per logical row controls an access cutout on all INNER left/right dividers in that row; row 4 is ON by default. **At the lowest point** the opening measures `cutout_base_width_mm` (25 mm by default). Two tangent circular arcs with a shared 20 mm diameter blend to a straight 60° riser and back to the top surface. The opening may expand into neighboring logical-row space when the rise/angle/rounding require it.
+- Rounded dogbones press **upward into blind underside pockets**, without locking ledges or socket entry chamfers. The connector has a flat middle and a trimmed top profile at the lobes to clear the bottom fillet.
+- F5 preview calls `render()` once per tray to normalize the CSG to one cached solid per part. This reduces preview-scene complexity; it does **not** guarantee smooth camera navigation on every computer. F6 produces the final mesh.
+- The console prints nominal logical grid pitch, approximate clear pitch, and the selected tray's dimensions.
 
-- **Preview separation:** 0–50 mm in **whole millimetres**, with a constant gap between adjacent tray parts in both axes. The spacing is counted per actual tray-group boundary, not per logical grid row. Preview separation does not change an individual exported tray.
-- **Render facets:** default **20** for faster previews; permitted range **3–200**.
-- **Round dogbone joiners:** two circles connected by a rectangle in XY, straight-extruded in Z; **no locking taper or retention edges**. They press **from underneath** into blind, closed-roof sockets in the inverted trays. Connector web width, circular diameter addition, and fit clearance are adjustable; height and socket reinforcement are derived.
-- **Joining-edge elephant-foot relief:** a small bevel along joining edges; the female socket mouths are protected from the bevel. There are no internal socket chamfers.
-- **Sidewalls and rim:** side profiles widen outward to the drawer rim; the rear and front exterior ends are vertical unless a separately enabled rim flare is requested. Default rim extensions are LEFT and RIGHT only. Default printable ramp/chamfer angle is **60° from horizontal**.
-- **Interior bottom fillets** are retained and related to the base-thickness requirement. The top interior horizontal edges remain square; exterior bottom edges receive chamfers.
-- **Divider access cutouts:** one checkbox per row, affecting **all interior dividers** in that row, not external walls. The notch has rounded shoulders and a controlled printable slope; the width control measures the opening at its base.
+## Actual model review screenshots
 
-### Preview and export
+The review gallery includes the complete layout, front/rear trays, outer and inner top corners, uniform bottom fillet, rounded cutout and profile, lip cross-section, blind sockets, and dogbone top/side views. Request the latest review images in the conversation or download generated PNGs from GitHub Actions build artifacts.
 
-1. Choose **Full layout preview**, **Selected tray**, or **Loose dogbone connectors** in the Part selection and preview section.
-2. For **Selected tray**, choose row and column. A continuation row resolves to its full multirow part.
-3. Press F5 to preview, F6 to render, then export the STL.
-4. For visual inspection, increase preview separation. Use 0 mm for the dimensional assembly arrangement.
+The close-up mesh sections show the actual OpenSCAD STL contours. **No physical fit or F5 mouse-orbit performance has been verified on your printer/computer.**
 
-**Physical fit and press-fit tolerance must be confirmed by a small test print.** Watertight STL tests do not guarantee mechanical fit or printability on every machine.
+## Build and tests
 
-## Automated tests and builds
-
-Uses **Python 3 + pytest + trimesh**, with **OpenSCAD 2021.01** as the actual geometry engine. The suite covers valid and invalid grid selections, all default trays, exact preview gaps at 0/1/12/50 mm, bottom fillets, rear-wall profile, dogbones, row cutouts, print angles, large rim projections, and watertight meshes.
-
-Install Python requirements from [requirements-dev.txt](requirements-dev.txt), install OpenSCAD, then run:
+Requirements: Python 3, pytest, numpy, trimesh, OpenSCAD 2021.01; `xvfb-run` for headless PNG previews.
 
 ```sh
 python -m pip install -r requirements-dev.txt
-make test      # Test source, presets, parameter combinations and STL geometry
-make build     # Render all sample tray STLs, joiners, and screenshots
-make check     # Both steps; the CI build command
+make test
+make build
+make check
 ```
 
-On Linux, PNG snapshots require `xvfb-run` and a working OpenSCAD installation.
-
-[GitHub Actions](.github/workflows/ci.yml) runs `make check` on pushes and pull requests. The workflow publishes **STLs and PNG preview screenshots as a downloadable build artifact**; generated parts/images are not committed to the repository.
-
-## Development and versions
-
-See [DEVELOPMENT.md](DEVELOPMENT.md). Each functional release increments the number, and only the current `drawer-organizer-vN.scad` and matching `.json` stay at repository root. Earlier releases remain in ordinary [Git history](https://github.com/realcarbonneau/drawer-organizer-scad/commits/main). No release ZIPs or `versions/` folder are maintained.
+The suite exercises the five default trays, connectors, invalid selections, rim and chamfer parameters, row-4 cutouts, both tangent radii, top XY corner rounding, inner rim start height, and F5 cached preview. Generated STL/PNG files are build artifacts, not a substitute for physical inspection.

@@ -1,4 +1,4 @@
-// DRAWER ORGANIZER v8
+// DRAWER ORGANIZER v9
 // Independent parametric model for a measured, metal-sided kitchen drawer.
 // OpenSCAD 2021.01; no libraries or external geometry required.
 //
@@ -68,20 +68,25 @@ join_edge_elephant_foot_mm = 1; // [0:0.1:4]
 
 // Shared tray geometry (same drawer-level section).
 // Floor thickness is also the MINIMUM distance to every outer wall surface.
-base_thickness_mm = 1.8; // [0.8:0.1:5]
+base_thickness_mm = 2.0; // [0.8:0.1:5]
 // Additional reinforcements around the dogbone sockets use this thickness.
-wall_thickness_mm = 1.8; // [0.8:0.1:5]
-// Bottom INSIDE fillet is derived from the base thickness; upper internal edges remain sharp.
-// Upper internal horizontal edges: leave square for reliable printing.
+wall_thickness_mm = 2.0; // [0.8:0.1:5]
+// Same bottom INSIDE rounding on all four sides. Automatically sized to
+// preserve the minimum base thickness at the exterior bottom chamfer.
+// Exposed top edges get a small protective rounding, limited below T/2.
+soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 
-/* [04 - Rounded dogbone joining system] */
+/* [04 - Connector Specifications] */
 // One continuous connector center-spacing target on every joining segment.
 connector_spacing_mm = 59; // [18:1:160]
 // Width of the rectangular middle web in the XY plane.
-connector_web_width_mm = 3.6; // [2:0.2:12]
+connector_center_thickness_mm = 3.6; // [2:0.2:12]
 // Added diameter of each circular lobe compared to the web width.
-// Example: 3.6 mm web + 1.6 mm addition = 5.2 mm diameter ends.
+// Example: 3 mm center thickness + 2 mm addition = 5 mm lobe diameter.
 connector_diameter_addition_mm = 1.6; // [0.4:0.2:10]
+// Maximum vertical connector height. The two lobes are progressively trimmed
+// to follow the bottom inside fillet and preserve stock above each blind socket.
+connector_height_mm = 4; // [1:0.2:8]
 // Each half is a straight-sided pocket: only clearance is added; NO
 // locking taper, mouth flare, entry bevel, or internal socket chamfer.
 connector_clearance_mm = 0.2; // [0:0.05:0.6]
@@ -96,7 +101,7 @@ connectors_enabled = true;
 cutout_row_01 = false;
 cutout_row_02 = false;
 cutout_row_03 = false;
-cutout_row_04 = false;
+cutout_row_04 = true;
 cutout_row_05 = false;
 cutout_row_06 = false;
 cutout_row_07 = false;
@@ -106,6 +111,10 @@ cutout_row_10 = false;
 // Width at the LOWEST point of the rounded, angled notch.
 // The two shoulders expand upwards with the selected printing angle.
 cutout_base_width_mm = 25; // [8:1:65]
+// Diameter of curved transitions into/out of the cutout risers.
+cutout_round_diameter_mm = 20; // [0:1:40]
+// Wall-face cutout riser inclination, from the horizontal surface.
+cutout_riser_angle_deg = 60; // [45:1:90]
 
 /* [06 - Manual standalone tray (optional)] */
 // Set grid_columns=1, grid_rows=1, row_01_splits=1 to use these controls.
@@ -153,26 +162,44 @@ CHAMFER_X=min(max(0,SIDE_EXPAND-0.4),outer_bottom_chamfer_max_rise_mm/tan(ALPHA)
 CHAMFER_Z=CHAMFER_X*tan(ALPHA);
 JOIN_Z=join_edge_elephant_foot_mm;
 JOIN_X=JOIN_Z/tan(ALPHA);
-LIP_Z=rim_projection_mm*tan(ALPHA);
-ZTOP=max(H+tray_height_above_rim_mm,H+((rim_left||rim_right||rim_front||rim_rear)?LIP_Z:0));
+// An enabled rim is ONE straight outward slope, from metal rim level
+// directly to the top surface. No straight vertical return after the slope.
+// Actual rim angle may become STEEPER than the minimum printing angle to
+// maintain a requested above-rim height with a short horizontal projection.
+HAS_RIM=rim_left||rim_right||rim_front||rim_rear;
+LIP_Z=HAS_RIM ? max(tray_height_above_rim_mm,rim_projection_mm*tan(ALPHA)) : tray_height_above_rim_mm;
+ZTOP=H+LIP_Z;
 ROW_DEPTH=DY/grid_rows;
-WEB_R=connector_web_width_mm/2;
-HEAD_R=(connector_web_width_mm+connector_diameter_addition_mm)/2;
+// Nominal logical-grid pitch, before exterior drafts, fillets and wall stock.
+GRID_UNIT_WIDTH=W0/grid_columns;
+WEB_R=connector_center_thickness_mm/2;
+HEAD_R=(connector_center_thickness_mm+connector_diameter_addition_mm)/2;
 // Derive lobe depth from web width, head radius and minimum socket side wall.
 HEAD_IN=HEAD_R+max(B,T)+1;
 // Connector height is derived, not a user choice: shallow enough to leave
 // minimum material above the blind pocket without erasing bottom rounding.
-CONNECTOR_HEIGHT=max(2.5,min(5,B+2));
+CONNECTOR_HEIGHT=connector_height_mm;
 // Pocket opens ONLY at Z=0 and stops at CONNECTOR_HEIGHT.
 // A closed ROOF at least B thick remains above it. The lower 2D contour
 // is a clean circle-rectangle-circle shape with no retention undercuts.
 SOCKET_R=HEAD_R+connector_clearance_mm;
 SOCKET_STOCK=max(B,T);
-PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_STOCK+0.4;
+PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_STOCK+0.4; // design envelope; NO inside pads
 // Use B for MINIMUM stock and a visibly rounded interior junction.
 // Filleting a concave cavity corner REMOVES void, not solid, so it cannot
 // violate the base thickness below the fillet or the normal wall offset.
-INNER_BOTTOM_R=max(B,CHAMFER_X*0.65);
+// Uniform bottom fillet for all interior walls. A larger outside chamfer
+// demands more rounding at the cavity/vertical-wall transition. Eroding the
+// outside by B and subtracting the softened cavity preserves >=B stock.
+// Ensure even the far end of each dogbone lobe retains printable height
+// WITHOUT raising localized socket pads into the usable tray cavity.
+// With k=reach beyond wall and h=height needed at lobe tip, a fillet
+// radius R >= k+h+sqrt(2*k*h) provides that much stock above the floor.
+LOBE_REACH=max(0,HEAD_IN+HEAD_R+connector_clearance_mm-T);
+LOBE_TIP_STOCK=min(CONNECTOR_HEIGHT,0.8)+0.25;
+CONNECTOR_FILLET_R=LOBE_REACH+LOBE_TIP_STOCK+sqrt(2*LOBE_REACH*LOBE_TIP_STOCK);
+INNER_BOTTOM_R=max(B,CHAMFER_X*0.65,CONNECTOR_FILLET_R);
+SOFT_R=min(max(0,soft_edge_radius_mm),max(0,min(B,T)/2-0.1));
 
 function splits_at(row) = row_values[row-1];
 function notch_at(row) = cutout_values[row-1];
@@ -210,20 +237,22 @@ assert(drawer_top_width_mm>drawer_floor_width_mm,"Top opening must exceed flat f
 assert(W0>10&&DY>20&&H>15&&B>0&&T>0&&H>B+5,"Drawer dimensions or thicknesses are invalid.");
 assert(ALPHA>=20&&ALPHA<85,"Printing angle must be between 20 and 85 degrees.");
 assert(connector_spacing_mm>=2*(HEAD_R+T+2)&&connector_spacing_mm>0,"Connector spacing is too short for dogbone heads.");
-assert(connector_diameter_addition_mm>0 && connector_web_width_mm>=2,
+assert(connector_diameter_addition_mm>0 && connector_center_thickness_mm>=2,
        "Dogbone lobe diameter must exceed web width.");
-assert(PAD_HEIGHT<H-5,"Underside socket pad is taller than the available wall height.");
-assert(PAD_HEIGHT-CONNECTOR_HEIGHT>=B,
-       "Blind underside socket must retain at least the base thickness overhead.");
+assert(CONNECTOR_HEIGHT>=1 && CONNECTOR_HEIGHT < H-2*B,
+       "Connector height must fit underneath the tray walls.");
 assert(JOIN_Z<=B,"Elephant foot relief must be no deeper than the base thickness.");
 // Notch width is clipped to each row's room; no hard failure on a short row.
 
 // ----------- 2D section profiles; generated from the measured drawer -----------
 // Each profile is a closed XY polygon where (x,z) or (y,z) become its axes.
+// Extended top profiles remain collinear through the rim ramp so eroding
+// these sections also produces a CONTINUOUS parallel sloped inner lip.
+function lip_run_at_z(z)=(ZTOP<=H || rim_projection_mm<=0) ? 0
+    : rim_projection_mm*(z-H)/(ZTOP-H);
 function left_profile(outside, rim, top_extra=0)=
     outside ? concat([[0,0],[-CHAMFER_X,CHAMFER_Z],[-SIDE_EXPAND,H]],
-              rim && rim_projection_mm>0 ? [[-SIDE_EXPAND-rim_projection_mm,H+LIP_Z]] : [],
-              [[-SIDE_EXPAND-(rim?rim_projection_mm:0),ZTOP+top_extra]])
+              [[-SIDE_EXPAND-(rim?lip_run_at_z(ZTOP+top_extra):0),ZTOP+top_extra]])
             : [[JOIN_X,0],[0,JOIN_Z],[0,ZTOP+top_extra]];
 function right_profile(w,outside,rim,top_extra=0)=
     [for(p=left_profile(outside,rim,top_extra)) [w-p[0],p[1]]];
@@ -234,8 +263,7 @@ function right_profile(w,outside,rim,top_extra=0)=
 // chamfer. The small internal joiner-edge chamfer remains at internal seams.
 function end_profile(outside,rim,top_extra=0)=
     outside ? concat([[0,0],[0,H]],
-             rim&&rim_projection_mm>0?[[-rim_projection_mm,H+LIP_Z]]:[],
-             [[-(rim?rim_projection_mm:0),ZTOP+top_extra]])
+             [[-(rim?lip_run_at_z(ZTOP+top_extra):0),ZTOP+top_extra]])
             : [[JOIN_X,0],[0,JOIN_Z],[0,ZTOP+top_extra]];
 function profile_polygon(a,b)=concat(a,[for(i=[len(b)-1:-1:0]) b[i]]);
 
@@ -279,28 +307,176 @@ module safe_inner_2d(bottom_cutoff) {
         }
     }
 }
+// Upper inner wall profiles use an EXACT offset from the straight sidewall,
+// with a delayed transition to the lip. Relying on offset(delta=-B) at the
+// sharp sidewall/lip junction rounded/mitred the inside kink erratically.
+// We retain the eroded + uniformly FILLETED cavity at the BOTTOM; above the
+// fillet's endpoint the cross-section is analytic and has ONE intended kink.
+SIDE_K=(SIDE_EXPAND-CHAMFER_X)/max(0.01,H-CHAMFER_Z);
+LIP_K=rim_projection_mm/max(0.01,LIP_Z);
+function inner_x_left_at(z,outer,rim)=
+    !outer ? B :
+    (rim && rim_projection_mm>0 && LIP_Z>B) ?
+        (z<=H+B
+          ? -SIDE_EXPAND-(z-H)*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K)
+          : -SIDE_EXPAND-B*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K)-(z-H-B)*LIP_K)
+        : (z<=H
+          ? -SIDE_EXPAND-(z-H)*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K)
+          : -SIDE_EXPAND+B*sqrt(1+SIDE_K*SIDE_K));
+function inner_y_front_at(z,outer,rim)=
+    !outer ? B :
+    (rim && rim_projection_mm>0 && LIP_Z>B && z>H+B)
+       ? B-(z-H-B)*LIP_K : B;
+module analytic_upper_cavity(w,left_outer,right_outer,left_rim,right_rim,is_x=true,zstart=43) {
+    zlast=ZTOP+101;
+    za=min(ZTOP-E,H);
+    zb=min(ZTOP-E,H+B);
+    lp=[for(z=[zstart,za,zb,zlast])
+         [is_x?inner_x_left_at(z,left_outer,left_rim):inner_y_front_at(z,left_outer,left_rim),z]];
+    rp=[for(z=[zstart,za,zb,zlast])
+         [w-(is_x?inner_x_left_at(z,right_outer,right_rim):inner_y_front_at(z,right_outer,right_rim)),z]];
+    polygon(profile_polygon(lp,rp));
+}
 module xz_void_2d(w,left_outer,right_outer) {
-    // min ~halfway between lower chamfer and upper rim, safely beyond R.
-    cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B));
-    module eroded() { offset(delta=-B) xz_outer_2d(w,left_outer,right_outer,100); }
-    safe_inner_2d(cut) eroded();
-}
-module yz_void_2d(d,front_outer,rear_outer) {
-    cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B));
-    module eroded() { offset(delta=-B) yz_outer_2d(d,front_outer,rear_outer,100); }
-    safe_inner_2d(cut) eroded();
-}
-module tray_shell(w,d,left_outer,right_outer,front_outer,rear_outer) {
-    difference() {
+    zcut=min(ZTOP-2*B,max(CHAMFER_Z+INNER_BOTTOM_R+3,H-18));
+    floor_cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B));
+    union() {
         intersection() {
-            xz_extrude_2d(d) xz_outer_2d(w,left_outer,right_outer);
-            yz_extrude_2d(w) yz_outer_2d(d,front_outer,rear_outer);
+            safe_inner_2d(floor_cut)
+                offset(delta=-B) xz_outer_2d(w,left_outer,right_outer,100);
+            translate([-2000,-100]) square([4000,zcut+100+E]);
         }
         intersection() {
-            xz_extrude_2d(d) xz_void_2d(w,left_outer,right_outer);
-            yz_extrude_2d(w) yz_void_2d(d,front_outer,rear_outer);
+            analytic_upper_cavity(w,left_outer,right_outer,rim_left,rim_right,true,zcut);
+            translate([-2000,zcut-E]) square([4000,2000]);
         }
     }
+}
+module yz_void_2d(d,front_outer,rear_outer) {
+    zcut=min(ZTOP-2*B,max(CHAMFER_Z+INNER_BOTTOM_R+3,H-18));
+    floor_cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B));
+    union() {
+        intersection() {
+            safe_inner_2d(floor_cut)
+                offset(delta=-B) yz_outer_2d(d,front_outer,rear_outer,100);
+            translate([-2000,-100]) square([4000,zcut+100+E]);
+        }
+        intersection() {
+            analytic_upper_cavity(d,front_outer,rear_outer,rim_front,rim_rear,false,zcut);
+            translate([-2000,zcut-E]) square([4000,2000]);
+        }
+    }
+}
+
+// Apply a rounded edge ONLY to the top ~2R band of a solid section.
+// The bottom profile, its 45/60-degree exterior chamfer and bottom interior
+// fillet remain unchanged. Opening the 2D wall section rounds BOTH top sides.
+module softened_upper_section(z_top) {
+    if(SOFT_R<=0) children();
+    else union() {
+        intersection() {
+            children();
+            translate([-2000,-2000]) square([4000,z_top-2*SOFT_R+2000]);
+        }
+        intersection() {
+            offset(r=SOFT_R) offset(delta=-SOFT_R) children();
+            translate([-2000,z_top-2*SOFT_R]) square([4000,2000]);
+        }
+    }
+}
+module xz_wall_2d(w,left_outer,right_outer) {
+    difference() { xz_outer_2d(w,left_outer,right_outer); xz_void_2d(w,left_outer,right_outer); }
+}
+module yz_wall_2d(d,front_outer,rear_outer) {
+    difference() { yz_outer_2d(d,front_outer,rear_outer); yz_void_2d(d,front_outer,rear_outer); }
+}
+// The cross-section fillets protect the upper XZ and YZ edges, but an
+// intersection of two independently rounded cross-sections leaves a sharp
+// VERTICAL line where four walls meet. Round those XY-plane corners too.
+// A thin rounded-rectangle mask is deliberately applied only at the TOP:
+// this leaves the full-length bottom chamfer, fillet, and side taper intact.
+module top_outer_corner_mask(w,d,left_outer,right_outer,front_outer,rear_outer) {
+    if(SOFT_R<=0) children();
+    else {
+        xmin=left_outer ? -SIDE_EXPAND-(rim_left?rim_projection_mm:0) : 0;
+        xmax=right_outer ? w+SIDE_EXPAND+(rim_right?rim_projection_mm:0) : w;
+        ymin=front_outer && rim_front ? -rim_projection_mm : 0;
+        ymax=rear_outer && rim_rear ? d+rim_projection_mm : d;
+        // The lower half of the tray MUST remain untouched.
+        intersection() {
+            children();
+            union() {
+                translate([-1500,-1500,-100]) cube([3000,3000,ZTOP-2*SOFT_R+100]);
+                translate([xmin,ymin,ZTOP-2*SOFT_R-E])
+                    linear_extrude(height=2*SOFT_R+2*E)
+                        offset(r=SOFT_R) offset(delta=-SOFT_R)
+                            square([xmax-xmin,ymax-ymin]);
+            }
+        }
+    }
+}
+// Small CONCAVE top inside corners need an XY fillet as well: the two
+// cross-section fillets by themselves intersect in a sharp vertical crease.
+// Fill only the interior's 0.6 mm quarter-square corner, tapering that fill
+// down to zero over two radii so no abrupt ledge is left inside the tray.
+// This is separate from the large UNIFORM interior bottom fillet.
+module top_corner_fill_2d() {
+    r=SOFT_R;
+    difference() {
+        translate([-0.2,-0.2]) square([r+0.2,r+0.2]);
+        translate([r,r]) circle(r=r);
+    }
+}
+module one_inner_top_corner(x,y,sx,sy) {
+    translate([x,y,ZTOP-2*SOFT_R])
+        scale([sx,sy,1])
+            hull() {
+                linear_extrude(height=E) scale([0.02,0.02]) top_corner_fill_2d();
+                translate([0,0,2*SOFT_R-E])
+                    linear_extrude(height=E) top_corner_fill_2d();
+            }
+}
+module top_inner_corner_fills(w,d,left_outer,right_outer,front_outer,rear_outer) {
+    if(SOFT_R>0) {
+        side_k=(SIDE_EXPAND-CHAMFER_X)/max(0.01,H-CHAMFER_Z);
+        lip_k=rim_projection_mm/max(0.01,LIP_Z);
+        outer_stock=B*sqrt(1+side_k*side_k);
+        lip_start=-SIDE_EXPAND-side_k*B+outer_stock;
+        left_x=left_outer
+           ? (rim_left && rim_projection_mm>0 && LIP_Z>B
+              ? lip_start-(ZTOP-H-B)*lip_k
+              : -SIDE_EXPAND+B)
+           : B;
+        right_x=right_outer
+           ? (rim_right && rim_projection_mm>0 && LIP_Z>B
+              ? w-lip_start+(ZTOP-H-B)*lip_k
+              : w+SIDE_EXPAND-B)
+           : w-B;
+        front_y=front_outer ? B-(rim_front ? rim_projection_mm : 0) : B;
+        rear_y=rear_outer ? d-B+(rim_rear ? rim_projection_mm : 0) : d-B;
+        one_inner_top_corner(left_x,front_y, 1, 1);
+        one_inner_top_corner(right_x,front_y,-1, 1);
+        one_inner_top_corner(left_x,rear_y, 1,-1);
+        one_inner_top_corner(right_x,rear_y,-1,-1);
+    }
+}
+module tray_shell(w,d,left_outer,right_outer,front_outer,rear_outer) {
+    // The cross-sectional opening creates one common bottom fillet radius.
+    // Plan-view rounding above removes the four sharp 3D top intersections.
+    top_outer_corner_mask(w,d,left_outer,right_outer,front_outer,rear_outer)
+        union() {
+            top_inner_corner_fills(w,d,left_outer,right_outer,front_outer,rear_outer);
+            intersection() {
+                xz_extrude_2d(d)
+                    softened_upper_section(ZTOP) xz_wall_2d(w,left_outer,right_outer);
+                yz_extrude_2d(w) yz_outer_2d(d,front_outer,rear_outer);
+            }
+            intersection() {
+                yz_extrude_2d(w)
+                    softened_upper_section(ZTOP) yz_wall_2d(d,front_outer,rear_outer);
+                xz_extrude_2d(d) xz_outer_2d(w,left_outer,right_outer);
+            }
+        }
 }
 
 // ----------- Bottom-up dogbone: TWO CIRCLES + RECTANGLE -----------
@@ -321,21 +497,45 @@ module full_dogbone_2d(clearance=0) {
             square([2*(WEB_R+clearance),2*HEAD_IN]);
     }
 }
-// Pad protrudes into the tray, providing socket-side stock even at the
-// lower INNER fillet. Pad starts exactly on seam; does not extend outside.
-module socket_pad_footprint_2d() {
-    intersection() {
-        offset(delta=SOCKET_STOCK) half_dogbone_2d(connector_clearance_mm);
-        translate([-50,0]) square([100,HEAD_IN+HEAD_R+SOCKET_STOCK+5]);
-    }
+// The connector is solidly flat against the drawer floor (z=0) and has a
+// flat top near the joining plane. At both outward lobes, its upper face is
+// TRUNCATED following the shared bottom fillet. The socket is the same solid
+// plus XY clearance: a blind underside cut, not a raised internal floor pad.
+// The analytic cap is a conservative approximation of the R fillet above the
+// B-thick floor. A safety margin absorbs tessellation and socket clearance.
+function connection_cap_at(y) =
+    let(t=max(0,(abs(y)-T)/INNER_BOTTOM_R),
+        rounded_stock=max(0,INNER_BOTTOM_R*(1-sqrt(max(0,2*t-t*t)))-0.25))
+    abs(y)<=T ? CONNECTOR_HEIGHT :
+    t>=1 ? 0 : min(CONNECTOR_HEIGHT,rounded_stock);
+module connector_height_envelope(full=true) {
+    R=INNER_BOTTOM_R;
+    // Match the cap to the display facet budget instead of oversampling at
+    // every connector. Approx. 16 segments at the default $fn=20 is adequate;
+    // increasing render_facets increases the cap precision with it.
+    steps=max(12,ceil(render_facets*0.8));
+    // y ranges from 0 to T+R. No connector solid projects into the cavity
+    // below the B-thick base when that distance is reached.
+    if(full) rotate([90,0,90])
+            linear_extrude(height=200,center=true,convexity=5)
+                polygon(concat(
+                    [[-T-R-1,-0.02]],
+                    [for(i=[steps:-1:0]) let(y=T+R*i/steps) [-y,connection_cap_at(y)]],
+                    [for(i=[0:steps]) let(y=T+R*i/steps) [y,connection_cap_at(y)]],
+                    [[T+R+1,-0.02]]));
+    else rotate([90,0,90])
+        linear_extrude(height=200,center=true,convexity=5)
+            polygon(concat([[0,-0.02]],[[0,CONNECTOR_HEIGHT]],
+                [for(i=[0:steps]) let(y=T+R*i/steps)
+                    [y,connection_cap_at(y)]],[[T+R+1,-0.02]]));
 }
 module socket_opening_3d() {
-    translate([0,0,-E])
-        linear_extrude(height=CONNECTOR_HEIGHT+E)
+    intersection() {
+        translate([0,0,-E]) linear_extrude(height=CONNECTOR_HEIGHT+E)
             half_dogbone_2d(connector_clearance_mm);
-}
-module socket_pad_3d() {
-    linear_extrude(height=PAD_HEIGHT) socket_pad_footprint_2d();
+        // Only what fits beneath the B-thick interior bottom is removed.
+        connector_height_envelope(false);
+    }
 }
 module edge_station(side,at) {
     if(side=="front") translate([at,0,0]) children();
@@ -343,19 +543,22 @@ module edge_station(side,at) {
     if(side=="left") translate([0,at,0]) rotate([0,0,-90]) children();
     if(side=="right") translate([0,at,0]) rotate([0,0,90]) children();
 }
-module sockets_or_pads(w,d,front_c,rear_c,left_c,right_c,
-                        front_stations,rear_stations,side_stations,make_pads=true) {
-    for(p=front_stations) if(front_c) edge_station("front",p)
-        if(make_pads) socket_pad_3d(); else socket_opening_3d();
-    for(p=rear_stations) if(rear_c) translate([0,d,0]) edge_station("rear",p)
-        if(make_pads) socket_pad_3d(); else socket_opening_3d();
-    for(p=side_stations) if(left_c) edge_station("left",p)
-        if(make_pads) socket_pad_3d(); else socket_opening_3d();
-    for(p=side_stations) if(right_c) translate([w,0,0]) edge_station("right",p)
-        if(make_pads) socket_pad_3d(); else socket_opening_3d();
+// Every socket is a subtraction. No extra reinforcing blocks protrude into
+// the tray cavity; the rounded lower wall provides socket roof thickness.
+module sockets(w,d,front_c,rear_c,left_c,right_c,
+               front_stations,rear_stations,side_stations) {
+    if(connectors_enabled) {
+        if(front_c) for(p=front_stations) edge_station("front",p) socket_opening_3d();
+        if(rear_c) for(p=rear_stations) translate([0,d,0]) edge_station("rear",p) socket_opening_3d();
+        if(left_c) for(p=side_stations) edge_station("left",p) socket_opening_3d();
+        if(right_c) for(p=side_stations) translate([w,0,0]) edge_station("right",p) socket_opening_3d();
+    }
 }
 module loose_dogbone() {
-    linear_extrude(height=CONNECTOR_HEIGHT) full_dogbone_2d();
+    intersection() {
+        linear_extrude(height=CONNECTOR_HEIGHT) full_dogbone_2d();
+        connector_height_envelope(true);
+    }
 }
 
 // ----------- Joining-edge elephant-foot relief -----------
@@ -399,20 +602,45 @@ module join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
 // Rounded shoulders and controlled print slope. Notch reaches down to
 // a safe height ABOVE the socket-pad ROOF, so connectors keep their stock.
 // Ends broaden outwards at print_overhang_angle_deg, then remain vertical.
+// Circular tangent construction, not a generic polygon offset.
+// The lower R-arc leaves the FLAT base horizontally, meets the straight
+// riser at the selected angle, and the upper R-arc meets the top surface
+// horizontally again. Both transitions use the same user-selected diameter.
+// The LEFT edge mirrors the RIGHT edge, so the notch is symmetric.
+function cutout_effective_r(zbase,ztop) =
+    let(a=cutout_riser_angle_deg)
+    min(max(0,cutout_round_diameter_mm/2),
+        max(0,(ztop-zbase-0.5)/(2*(1-cos(a)))));
+function cutout_right_side(width,zbase,ztop,r,a,n=12) =
+    let(ang=max(45,min(90,a)),
+        dz=max(0,(ztop-zbase)-2*r*(1-cos(ang))),
+        slope_dx=dz/max(0.001,tan(ang)),
+        upper_x=width/2 + 2*r*sin(ang)+slope_dx,
+        upper_z=ztop-r,
+        base_x=width/2,
+        low_cz=zbase+r)
+    concat(
+        // Bottom R: tangent to horizontal, then tangent to inclined riser.
+        [for(i=[0:n]) let(t=-90+ang*i/n)
+          [base_x+r*cos(t), low_cz+r*sin(t)]],
+        // Top R: tangent to inclined riser, then tangent to horizontal top.
+        [for(i=[0:n]) let(t=90+ang-ang*i/n)
+          [upper_x+r*cos(t),upper_z+r*sin(t)]]);
 module access_notch_profile_2d(width,top_height) {
     zbase=PAD_HEIGHT+B+1;
-    ramp_h=min(20,max(4,(ROW_DEPTH-width-4)*tan(ALPHA)/2));
-    spread=ramp_h/tan(ALPHA);
-    rr=min(4,width/6);
-    // A radius opening on a polygon produces rounded internal notch corners.
-    // The profile stays bounded and remains open all the way through the top.
-    offset(r=rr) offset(delta=-rr)
-        polygon([[-width/2,zbase], [width/2,zbase],
-                 [width/2+spread,zbase+ramp_h],
-                 [width/2+spread,top_height+4],
-                 [-width/2-spread,top_height+4],
-                 [-width/2-spread,zbase+ramp_h]]);
+    ztop=top_height;
+    r=cutout_effective_r(zbase,ztop);
+    n=max(8,ceil(render_facets*0.65));
+    right=cutout_right_side(width,zbase,ztop,r,cutout_riser_angle_deg,n);
+    left=[for(j=[len(right)-1:-1:0]) [-right[j][0],right[j][1]]];
+    x_top=right[len(right)-1][0];
+    // Cutter is open beyond the tray roof; the vertical lines here are
+    // ABOVE the physical tray, not unwanted vertical edges inside it.
+    polygon(concat(
+        [[-width/2,zbase]], right,
+        [[x_top,top_height+6],[-x_top,top_height+6]],left));
 }
+
 // Project the 2D (y,z) notch completely through the joining-wall thickness.
 // Restrict the notch to the actual shared divider thickness. Do NOT use
 // yz_extrude_2d() here: that helper deliberately extends 50 mm beyond both
@@ -451,23 +679,33 @@ module one_tray(start,col,report=true) {
     rear_stations=rear_outer ? clip_stations(w) : cross_seam_stations(n,col,group_count(start-1));
     if(report) {
         echo(str("TRAY rows ",start,"-",last," column ",col," / ",n));
+        // The outer nominal footprint is measured before sidewall drafts and
+        // chamfers. The estimated clear footprint subtracts two wall thicknesses;
+        // the actual usable area near radii / connector mouths is smaller.
+        echo("SELECTED TRAY NOMINAL WIDTH x DEPTH (mm)",w,d);
+        echo("SELECTED TRAY ESTIMATED CLEAR WIDTH x DEPTH (mm, before fillets)",
+             max(0,w-2*T),max(0,d-2*T));
         echo("BOTTOM SIZE (mm)",w,d,"CONNECTORS (front rear left right)",front_join,rear_join,left_join,right_join);
         echo("CONNECTOR STATIONS (front/rear/side)",front_stations,rear_stations,side_stations);
     }
     difference() {
-        union() {
-            tray_shell(w,d,left_outer,right_outer,front_outer,rear_outer);
-            sockets_or_pads(w,d,front_join,rear_join,left_join,right_join,
-                            front_stations,rear_stations,side_stations,true);
-        }
-        sockets_or_pads(w,d,front_join,rear_join,left_join,right_join,
-                        front_stations,rear_stations,side_stations,false);
+        tray_shell(w,d,left_outer,right_outer,front_outer,rear_outer);
+        sockets(w,d,front_join,rear_join,left_join,right_join,
+                front_stations,rear_stations,side_stations);
         join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
                          front_stations,rear_stations,side_stations);
         joining_wall_cutouts(w,d,start,last,col,n);
     }
 }
 
+// OpenCSG F5 normalizer expands nested offset/intersection/subtraction
+// combinations exponentially. Rendering the FINAL one-tray boundary once
+// gives a single cached polyhedron to the preview scene, instead of
+// >100,000 CSG leaves. F6 exports the normal (exact) one_tray geometry.
+module display_tray(start,col,report=true) {
+    if($preview) render(convexity=10) one_tray(start,col,report);
+    else one_tray(start,col,report);
+}
 // Count tray GROUP boundaries in front of (closer to the viewer than) this group.
 // Separation is applied once PER TRAY JOIN, not once per logical row.
 function groups_ahead(start) = len([for(k=[1:grid_rows]) if(k>start && splits_at(k)>0) k]);
@@ -483,16 +721,26 @@ module all_trays() {
             echo("PREVIEW ORIGIN (row, column, x, y, w, depth)",r,c,x,y,w,d);
             translate([x,y,0])
                 color([0.78+0.03*((r+c)%3),0.84,0.91-0.04*(c%3)])
-                    one_tray(r,c,false);
+                    display_tray(r,c,false);
         }
 }
 
 // ----------- Output and non-fatal invalid selection handling -----------
-echo("DRAWER v8 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
+echo("DRAWER v9 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / OUTER CHAMFER run, rise / lip projection, rise",ALPHA,CHAMFER_X,CHAMFER_Z,rim_projection_mm,LIP_Z);
 echo("BASE MIN THICKNESS / BOTTOM INNER R / WALL REINFORCEMENT",B,INNER_BOTTOM_R,T);
-echo("DOGBONE straight height / lobe diameter / pocket roof minimum",CONNECTOR_HEIGHT,
-     2*HEAD_R,PAD_HEIGHT-CONNECTOR_HEIGHT);
+echo("DOGBONE max height / diameter / interior bottom R",CONNECTOR_HEIGHT,2*HEAD_R,INNER_BOTTOM_R);
+// Explain the logical pitch independently of the per-row split count.
+// Example: usable W0=189, columns=3 => width pitch 63;
+// usable DY=474, rows=6 => depth pitch 79.
+echo("GRID UNIT NOMINAL WIDTH x DEPTH (mm, before walls)",
+     GRID_UNIT_WIDTH,ROW_DEPTH);
+echo("GRID UNIT ESTIMATED CLEAR WIDTH x DEPTH (mm, before fillets)",
+     max(0,GRID_UNIT_WIDTH-2*T),max(0,ROW_DEPTH-2*T));
+for(r=[1:grid_rows]) if(splits_at(r)>0)
+    echo(str("GRID GROUP rows ",r,"-",group_end(r),
+             " (",splits_at(r)," tray(s)): NOMINAL WIDTH x DEPTH (mm)"),
+         W0/splits_at(r),group_depth(r));
 echo("GRID rear->front",[for(r=[1:grid_rows]) splits_at(r)]);
 
 if(output_mode==0) {
@@ -504,7 +752,7 @@ if(output_mode==0) {
         if(selected_column<1||selected_column>splits_at(start))
             echo(str("SELECTION INVALID: Column ",selected_column," does not exist in row ",selected_row,
                      " (1..",splits_at(start),"). Nothing drawn."));
-        else one_tray(start,selected_column);
+        else display_tray(start,selected_column);
 } else if(output_mode==2) {
     stride=2*(HEAD_IN+HEAD_R)+4;
     for(i=[0:loose_connector_quantity-1])

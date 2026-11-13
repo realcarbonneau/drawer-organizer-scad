@@ -30,7 +30,7 @@ jobs:
       - name: Upload rendered STLs and preview screenshots
         uses: actions/upload-artifact@v4
         with:
-          name: drawer-organizer-v8-build
+          name: drawer-organizer-v9-review-build
           path: |
             build/*.stl
             build/previews/*.png
