@@ -58,7 +58,8 @@ def test_customizer_controls_and_defaults():
     assert "Connector_center_thickness_mm" in params
     assert "Connector_height_mm" in params
     assert "Cutout_round_diameter_mm" in params
-    assert "Cutout_riser_angle_deg" in params
+    assert params["Cutout_riser_angle_deg"] == "75"
+    assert "Cutout_riser_angle_deg = 75; // [45:1:90]" in scad
     for key in ("connector_entry_bevel_mm","connector_head_diameter_mm",
                 "connector_lobe_inset_mm","cutout_after_column_row_03"):
         assert key not in params
