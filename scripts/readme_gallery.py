@@ -53,7 +53,7 @@ def hero(source,dest):
     label(d,(91,363),'Print the trays you need. Connect them',27,'#d3e0ea')
     label(d,(91,408),'underneath. Keep the layout flexible.',27,'#d3e0ea')
     rounded(d,(90,544,360,615),MID,18)
-    label(d,(110,562),'5 TRAYS  /  v10',28,WHITE,True)
+    label(d,(110,562),'5 TRAYS  /  v11',28,WHITE,True)
     rounded(d,(375,544,642,615),MID,18)
     label(d,(402,562),'2 mm WALLS',26,WHITE,True)
     rounded(d,(85,689,1705,750),'#1c354c',15)
@@ -73,7 +73,7 @@ def sheet(dest,source,title,subtitle,left,right):
         insert(im,source/name,(x0+17,y0+12,x1-17,y1-85))
         label(d,(x0+23,y1-72),title,25,INK,True)
         label(d,(x0+23,y1-37),caption,18,MUTED)
-    label(d,(85,833),'Actual OpenSCAD v10 model previews  /  Test print before use',19,MUTED)
+    label(d,(85,833),'Actual OpenSCAD v11 model previews  /  Test print before use',19,MUTED)
     im.save(dest,optimize=True)
 
 def main():
