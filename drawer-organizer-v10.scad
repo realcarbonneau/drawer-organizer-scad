@@ -60,7 +60,7 @@ Wall_thickness_mm = 2.0; // [0.8:0.1:5]
 // radius cannot compromise the minimum thickness: it will be raised to the
 // structural minimum and a warning is echoed. A larger radius fills more of
 // the tray floor corner and automatically shortens connector head pockets.
-Inner_bottom_radius_mm = 0;
+Inner_bottom_radius_mm = 0; // [0:0.5:40]
 // Soft touch rounding of exposed top edges and the divider cutout ridge.
 Soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 
@@ -213,7 +213,11 @@ CHAMFER_FIT_ERROR=CHAMFER_Z>=H-2*B ||
     CHAMFER_X>=SIDE_EXPAND-0.4 || CHAMFER_Z>SIDE_EXPAND;
 MIN_TRAY_WIDTH=min([for(r=[1:Grid_rows]) if(splits_at(r)>0) W0/splits_at(r)]);
 MIN_TRAY_DEPTH=ROW_DEPTH;
-INNER_FLOOR_FIT_ERROR=2*(B+INNER_BOTTOM_R)>=min(MIN_TRAY_WIDTH,MIN_TRAY_DEPTH);
+// A near-half-pitch fillet need not leave a flat at precisely Z=B: two
+// almost-touching arcs can form a gently raised floor without losing stock.
+// Require the complete tangent transition to fit below the upper profile.
+INNER_FLOOR_FIT_ERROR=2*INNER_BOTTOM_R>=min(MIN_TRAY_WIDTH,MIN_TRAY_DEPTH) ||
+    CHAMFER_Z+B+INNER_BOTTOM_R+2*E>=H-2*B;
 // Cutout floors are above the larger inner-bottom radius and the convex
 // 0.6 mm edge blend, never carved through them. For an active cutout there
 // must also be a useful opening above its lowest point.
@@ -316,13 +320,28 @@ module yz_outer_2d(d,front_outer,rear_outer,extra=0) {
 // Build the inner cavity by ERODING the outside cross-section by base B.
 // This is a Euclidean (normal-distance) offset, not a horizontal guess:
 //   - the minimum outside-to-inside stock in either profile is >= B;
-//   - bottom transitions get an R=B blend by a local morphological opening;
+//   - bottom transitions get a shared R blend, independently on each side;
 //   - the upper section is NOT rounded (sharp upper horizontal edges).
 // Artificial upper extension opens the tray without curving or capping the rim.
-module safe_inner_2d(bottom_cutoff) {
+// Opening the WHOLE narrow cavity by R destroys it when its eroded width is
+// just under 2*R, although both corner arcs fit the nominal tray. Instead,
+// open each side independently by extending its opposite half, then intersect
+// the two rounded half-cavities. The B-thick floor is kept everywhere.
+module half_open_inner_2d(span,left_half) {
+    offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R)
+        union() {
+            children();
+            if(left_half)
+                translate([span/2,B]) square([2000,2000]);
+            else
+                translate([span/2-2000,B]) square([2000,2000]);
+        }
+}
+module safe_inner_2d(bottom_cutoff,span) {
     union() {
         intersection() {
-            offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R) children();
+            half_open_inner_2d(span,true) children();
+            half_open_inner_2d(span,false) children();
             translate([-2000,-2000]) square([4000,2000+bottom_cutoff]);
         }
         intersection() {
@@ -365,11 +384,14 @@ module analytic_upper_cavity(w,left_outer,right_outer,left_rim,right_rim,is_x=tr
     polygon(profile_polygon(lp,rp));
 }
 module xz_void_2d(w,left_outer,right_outer) {
-    zcut=min(ZTOP-2*B,max(CHAMFER_Z+INNER_BOTTOM_R+3,H-18));
-    floor_cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B));
+    // Switch to the straight-wall profile only after the entire arc is
+    // tangent, including the lower exterior drawer-floor chamfer.
+    floor_cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B,
+                            CHAMFER_Z+B+INNER_BOTTOM_R+2*E));
+    zcut=min(ZTOP-2*B,max(floor_cut+2,CHAMFER_Z+INNER_BOTTOM_R+3,H-18));
     union() {
         intersection() {
-            safe_inner_2d(floor_cut)
+            safe_inner_2d(floor_cut,w)
                 offset(delta=-B) xz_outer_2d(w,left_outer,right_outer,100);
             translate([-2000,-100]) square([4000,zcut+100+E]);
         }
@@ -380,11 +402,14 @@ module xz_void_2d(w,left_outer,right_outer) {
     }
 }
 module yz_void_2d(d,front_outer,rear_outer) {
-    zcut=min(ZTOP-2*B,max(CHAMFER_Z+INNER_BOTTOM_R+3,H-18));
-    floor_cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B));
+    // Switch to the straight-wall profile only after the entire arc is
+    // tangent, including the lower exterior drawer-floor chamfer.
+    floor_cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B,
+                            CHAMFER_Z+B+INNER_BOTTOM_R+2*E));
+    zcut=min(ZTOP-2*B,max(floor_cut+2,CHAMFER_Z+INNER_BOTTOM_R+3,H-18));
     union() {
         intersection() {
-            safe_inner_2d(floor_cut)
+            safe_inner_2d(floor_cut,d)
                 offset(delta=-B) yz_outer_2d(d,front_outer,rear_outer,100);
             translate([-2000,-100]) square([4000,zcut+100+E]);
         }
@@ -949,11 +974,14 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
              " mm. Adjust the drawer floor radius, measured widths, rim height, " ,
              "or print overhang angle. Nothing rendered."));
 } else if(INNER_FLOOR_FIT_ERROR) {
-    echo(str("INNER FLOOR FILLET DOES NOT FIT: Connector socket clearance and " ,
-             "floor stock require an inner radius of ",INNER_BOTTOM_R,
-             " mm; smallest tray width is ",MIN_TRAY_WIDTH,
-             " mm. Reduce the requested radius, change compartments/connector " ,
-             "dimensions. Nothing rendered."));
+    echo(str("INNER FLOOR FILLET DOES NOT FIT: Connector clearance and floor stock ",
+             "require an effective inner radius of ",INNER_BOTTOM_R,
+             " mm (diameter ",2*INNER_BOTTOM_R,
+             " mm); smallest tray width is ",MIN_TRAY_WIDTH,
+             " mm, smallest tray depth is ",MIN_TRAY_DEPTH,
+             " mm, and available lower wall height is ",H-2*B,
+             " mm. Reduce the radius, change compartment/connector dimensions, ",
+             "or increase drawer rim height. Nothing rendered."));
 } else if(CUTOUT_HEADROOM_ERROR) {
     echo(str("CUTOUT DOES NOT FIT: Connector roofs and protected inner-bottom " ,
              "rounding require a cutout floor of at least ",cutout_floor_z(),
