@@ -197,11 +197,18 @@ def test_cutout_fillet_curves_the_correct_way(tmp_path):
     for x,depth in ((0.2,0.2),(0.4,0.4),(1.6,0.4),(1.8,0.2)):
         section=m.section(plane_origin=[x,0,0],plane_normal=[1,0,0])
         assert section is not None
-        points=np.vstack(section.discrete)
-        floor=points[(np.abs(points[:,1]-yc)<2)&
-                     (points[:,2]>10)&(points[:,2]<14)]
-        assert len(floor)>0
-        actual=np.min(floor[:,2])
+        # Interpolate the cutout floor where the section crosses its
+        # centreline. STL triangulation is free to omit a vertex at y=yc.
+        elevations=[]
+        for polyline in section.discrete:
+            for p,q in zip(polyline[:-1],polyline[1:]):
+                if (p[1]-yc)*(q[1]-yc)<=0:
+                    t=0 if abs(q[1]-p[1])<1e-8 else (yc-p[1])/(q[1]-p[1])
+                    z=p[2]+t*(q[2]-p[2])
+                    if 10<z<14:
+                        elevations.append(z)
+        assert elevations, f"Missing cutout floor at x={x}"
+        actual=min(elevations)
         expected=base_z-(radius-math.sqrt(2*radius*depth-depth*depth))
         assert actual==pytest.approx(expected,abs=0.04), (
             f"Incorrect cutout edge curvature at x={x}: {actual} vs {expected}")
