@@ -693,16 +693,27 @@ module access_notch_profile_2d(width,top_height) {
     }
 }
 
-// Project the 2D (y,z) notch completely through the joining-wall thickness.
-// Restrict the notch to the actual shared divider thickness. Do NOT use
-// yz_extrude_2d() here: that helper deliberately extends 50 mm beyond both
-// ends for large envelope booleans and would cut through neighboring trays.
+// The original 2D access profile fixes the unrounded base gap, 20 mm tangent
+// transitions and 75-degree risers. Extrude this core through ONE divider only.
+// A separate small spherical sweep at each exposed wall face softens the sharp
+// edge LEFT BY SUBTRACTION, unlike the outer top rim collar which cannot follow
+// a newly cut opening. The radius uses the existing Soft_edge_radius_mm limit.
+// The central profile, socket roof and wall thickness remain unchanged.
 module access_notch_3d(xcenter,ycenter) {
     span=T+2;
     translate([xcenter-span/2,ycenter,0])
-        rotate([0,0,90]) rotate([90,0,0])
+        rotate([0,0,90]) rotate([90,0,0]) {
             linear_extrude(height=span,convexity=8)
                 access_notch_profile_2d(Cutout_base_width_mm,ZTOP);
+            if(SOFT_R>0 && Cutout_base_width_mm>0 && cutout_angle(Cutout_riser_angle_deg)>0)
+                for(face=[1,1+T])
+                    translate([0,0,face])
+                        minkowski() {
+                            linear_extrude(height=E,convexity=8)
+                                access_notch_profile_2d(Cutout_base_width_mm,ZTOP);
+                            sphere(r=SOFT_R,$fn=max(16,ceil(Render_facets/2)));
+                        }
+        }
 }
 module joining_wall_cutouts(w,d,start,last,col,cols) {
     if(cols>1) for(r=[start:last]) if(notch_at(r)) {

@@ -82,6 +82,15 @@ def test_customizer_controls_and_defaults():
     for i in range(1,11):
         assert params[f"Cutout_row_{i:02d}"] in ("true","false")
 
+def test_cutout_soft_touch_roundover_tracks_the_same_radius():
+    source,_=release_paths()
+    scad=source.read_text()
+    assert "if(SOFT_R>0 && Cutout_base_width_mm>0" in scad
+    assert "for(face=[1,1+T])" in scad
+    assert "sphere(r=SOFT_R" in scad
+    assert "minkowski()" in scad
+
+
 def test_readme_visuals_are_camera_fitted_and_never_cropped():
     root=release_paths()[0].parent
     cli=(root/"scripts/organizer_cli.py").read_text()

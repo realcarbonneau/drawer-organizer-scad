@@ -156,6 +156,30 @@ def test_cutout_is_only_in_internal_dividers(tmp_path):
     )
 
 
+def test_exposed_cutout_edges_are_soft_not_knife_sharp(tmp_path):
+    # The 20 mm rounds shape the notch in YZ; these samples verify the
+    # separate 0.6 mm touch-softening across the 2 mm divider thickness.
+    m,_=render_stl(tmp_path,"soft_touch_access_notch",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2,
+        "Cutout_row_04":True,"Soft_edge_radius_mm":0.6
+    })
+    assert m.body_count==1
+    assert m.is_watertight
+    yc=1.5*(474/6)
+    levels=[]
+    for x in (0.05,1.0):
+        section=m.section(plane_origin=[x,0,0],plane_normal=[1,0,0])
+        assert section is not None
+        vertices=np.vstack(section.discrete)
+        floor=vertices[(np.abs(vertices[:,1]-yc)<8)&
+                       (vertices[:,2]>10)&(vertices[:,2]<14)]
+        assert floor.size>0, f"Missing cutout floor section at x={x}"
+        levels.append(np.min(floor[:,2]))
+    assert levels[0]+0.3 < levels[1], (
+        "Exposed divider face should have a curved, lower rounded notch edge",levels
+    )
+
+
 def test_cutout_on_single_column_row_is_noop(tmp_path):
     m,_ = render_stl(tmp_path,"cut_singlecol",{
         "Output_mode":1,"Selected_row":1,"Selected_column":1,

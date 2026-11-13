@@ -8,6 +8,12 @@ on:
 permissions:
   contents: write
 
+# Serialize builds for the same branch. Multiple simultaneous pushes used to
+# race while publishing the gallery back to main.
+concurrency:
+  group: drawer-organizer-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   verify-and-build:
     runs-on: ubuntu-24.04
@@ -40,12 +46,24 @@ jobs:
             build/*.stl
             build/previews/*.png
             docs/images/*.png
+            drawer-organizer-v9.scad
+            drawer-organizer-v9.json
+            scripts/*.py
+            tests/*.py
+            requirements-dev.txt
           if-no-files-found: error
       - name: Publish README gallery to main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # A later push may have advanced main. Let that newer run publish
+          # the matching screenshots rather than failing a non-FF git push.
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "Main has advanced; skipping stale screenshot publication."
+            exit 0
+          fi
           git add docs/images/
           if ! git diff --cached --quiet; then
             git commit -m 'Refresh README screenshots [skip ci]'
