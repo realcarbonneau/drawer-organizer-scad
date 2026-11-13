@@ -13,7 +13,7 @@ from scripts.organizer_cli import default_parts,preset_parameters,release_paths
 def test_only_one_current_release_pair():
     source,preset=release_paths()
     assert source.stem==preset.stem
-    assert source.name=="drawer-organizer-v9.scad"
+    assert source.name=="drawer-organizer-v10.scad"
     assert json.loads(preset.read_text())["fileFormatVersion"]=="1"
 
 
