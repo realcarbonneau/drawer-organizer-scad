@@ -32,18 +32,22 @@ def main() -> None:
         require_render_ok(result, destination)
         print(f"built {destination}")
     # Screenshot images are CI artifacts, not files retained in Git history.
+    # Each camera is fitted to the *actual model*, without cropping the PNG.
+    # The middle-tray camera faces the access cutout for an unobstructed view.
     screenshots = {
-        "full-layout": {"Output_mode": 0, "Preview_separation_mm": 12},
-        "rear-tray": {"Output_mode": 1, "Selected_row": 1, "Selected_column": 1},
-        "middle-tray": {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2},
-        "front-tray": {"Output_mode": 1, "Selected_row": 6, "Selected_column": 1},
-        "dogbone": {"Output_mode": 2, "Loose_connector_quantity": 1},
+        "full-layout": ((58, 0, 35), {"Output_mode": 0, "Preview_separation_mm": 12}),
+        "rear-tray": ((62, 0, 35), {"Output_mode": 1, "Selected_row": 1, "Selected_column": 1}),
+        "middle-tray": ((70, 0, 67), {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),
+        "front-tray": ((62, 0, 35), {"Output_mode": 1, "Selected_row": 6, "Selected_column": 1}),
+        "dogbone": ((58, 0, 35), {"Output_mode": 2, "Loose_connector_quantity": 1}),
     }
-    for name, selection in screenshots.items():
+    for name, (camera, selection) in screenshots.items():
         destination = args.output / "previews" / f"{name}.png"
-        result = openscad_render(destination, selection)
+        # More facets for screenshots alone; printable STL defaults are unchanged.
+        result = openscad_render(destination, {**selection, "Render_facets": 64},
+                                image_camera=camera)
         require_render_ok(result, destination)
-        print(f"preview {destination}")
+        print(f"high-resolution preview {destination}")
     print(f"Built {len(parts)} trays and preview images from {source.name}")
 
 

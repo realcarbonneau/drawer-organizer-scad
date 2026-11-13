@@ -6,45 +6,47 @@ Run after make build; requires Pillow and DejaVuSans.
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from PIL import Image, ImageChops, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 DARK='#142338'; MID='#263b53'; INK='#223349'
 MUTED='#597085'; PALE='#f3f7fa'; WHITE='#ffffff'
 ACCENT='#4bc6b4'; BORDER='#dfe7ee'
 FONT_DIR=Path('/usr/share/fonts/truetype/dejavu')
+SCALE=2  # README gallery exports at 3600 px wide, with vector text at native scale.
+
+def px(coords):
+    return tuple(round(value*SCALE) for value in coords)
 
 def font(size, bold=False):
     name='DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf'
-    return ImageFont.truetype(str(FONT_DIR/name),size)
+    return ImageFont.truetype(str(FONT_DIR/name),size*SCALE)
 
 def label(draw,xy,s,size=27,color=INK,bold=False):
-    draw.text(xy,s,font=font(size,bold),fill=color)
+    draw.text(px(xy),s,font=font(size,bold),fill=color)
 
 def rounded(draw,rect,fill,radius=22,outline=None):
-    draw.rounded_rectangle(rect,radius=radius,fill=fill,outline=outline,width=2)
+    draw.rounded_rectangle(px(rect),radius=radius*SCALE,fill=fill,
+                           outline=outline,width=2*SCALE)
 
-def image_crop(path,size):
+def image_contain(path,size):
+    """Downscale a camera-fitted screenshot, never crop or upscale CAD pixels."""
     im=Image.open(path).convert('RGB')
-    background=im.getpixel((0,0))
-    diff=ImageChops.difference(im,Image.new('RGB',im.size,background))
-    bounds=diff.convert('L').point(lambda v:255 if v>28 else 0).getbbox()
-    if bounds:
-        x0,y0,x1,y1=bounds
-        im=im.crop((max(0,x0-24),max(0,y0-24),min(im.width,x1+24),min(im.height,y1+24)))
-    scale=min(size[0]/im.width,size[1]/im.height)
-    return im.resize((max(1,round(im.width*scale)),max(1,round(im.height*scale))),Image.Resampling.LANCZOS)
+    scale=min(size[0]/im.width,size[1]/im.height,1.0)
+    return im.resize((max(1,round(im.width*scale)),
+                      max(1,round(im.height*scale))),Image.Resampling.LANCZOS)
 
 def insert(canvas,source,rect):
-    x0,y0,x1,y1=rect
-    im=image_crop(source,(x1-x0-24,y1-y0-24))
-    backdrop=Image.new('RGB',(x1-x0,y1-y0),'#fffef4')
-    backdrop.paste(im,((backdrop.width-im.width)//2,(backdrop.height-im.height)//2))
+    x0,y0,x1,y1=px(rect)
+    im=image_contain(source,(x1-x0-24*SCALE,y1-y0-24*SCALE))
+    backdrop=Image.new('RGB',(x1-x0,y1-y0),'#fafafa')
+    backdrop.paste(im,((backdrop.width-im.width)//2,
+                       (backdrop.height-im.height)//2))
     canvas.paste(backdrop,(x0,y0))
 
 def hero(source,dest):
-    im=Image.new('RGB',(1800,820),DARK);d=ImageDraw.Draw(im)
-    d.ellipse((1190,-300,1980,490),fill='#1e344c')
-    d.ellipse((1380,370,1980,970),fill='#1a2f44')
+    im=Image.new('RGB',(1800*SCALE,820*SCALE),DARK);d=ImageDraw.Draw(im)
+    d.ellipse(px((1190,-300,1980,490)),fill='#1e344c')
+    d.ellipse(px((1380,370,1980,970)),fill='#1a2f44')
     label(d,(92,66),'OPENSCAD  /  PARAMETRIC CAD',23,ACCENT,True)
     label(d,(86,132),'Drawer',87,WHITE,True)
     label(d,(86,233),'Organizer',87,WHITE,True)
@@ -61,7 +63,7 @@ def hero(source,dest):
     im.save(dest,optimize=True)
 
 def sheet(dest,source,title,subtitle,left,right):
-    im=Image.new('RGB',(1800,900),PALE);d=ImageDraw.Draw(im)
+    im=Image.new('RGB',(1800*SCALE,900*SCALE),PALE);d=ImageDraw.Draw(im)
     label(d,(78,49),title,48,DARK,True)
     label(d,(80,119),subtitle,23,MUTED)
     for rect,view in zip([(64,202,892,790),(908,202,1736,790)],[left,right]):
@@ -99,6 +101,6 @@ def main():
           'Loose dogbones have independent side and roof clearances.',
           ('dogbone.png','Male dogbone','4 mm core / 6 mm lobes / 6 mm tall'),
           ('middle-tray.png','Individual tray','Blind pockets face down'))
-    for f in sorted(args.output.glob('*.png')):print('Generated',f)
+    for f in sorted(args.output.glob('*.png')):print('Generated high-res, uncropped',f)
 
 if __name__=='__main__':main()

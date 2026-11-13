@@ -8,7 +8,7 @@ A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Pr
 
 **[Open the v9 model](drawer-organizer-v9.scad)** · **[Matching Customizer preset](drawer-organizer-v9.json)** · **[Development guidelines](DEVELOPMENT.md)**
 
-> These are composites of actual OpenSCAD preview screenshots, not photographs of a manufactured product. Always test fit and material strength on your own printer.
+> These are high-resolution, camera-fitted captures of the actual OpenSCAD model, not photographs of manufactured parts. Screenshots are resized down with antialiasing, never enlarged from crops. Always test fit and material strength on your own printer.
 
 ## See the layout
 
@@ -78,7 +78,7 @@ make check
 
 On Linux, headless PNG generation requires `xvfb` and `xauth`. The Python dependencies include `pytest`, `trimesh`, `numpy`, `scipy`, `networkx` and `Pillow`.
 
-GitHub Actions runs the OpenSCAD geometry tests and builds the **five tray STLs, dogbone connector STL, preview PNGs and README gallery**. Download them as artifacts from the latest successful [workflow run](https://github.com/realcarbonneau/drawer-organizer-scad/actions). The four images in [docs/images](docs/images) are generated from the actual OpenSCAD previews on successful main-branch builds.
+GitHub Actions runs the OpenSCAD geometry tests and builds the **five tray STLs, dogbone connector STL, preview PNGs and README gallery**. Download them as artifacts from the latest successful [workflow run](https://github.com/realcarbonneau/drawer-organizer-scad/actions). The four gallery images in [docs/images](docs/images) are regenerated from **3200 × 2200** OpenSCAD screenshots and exported at **3600 px** wide on successful main-branch builds. The camera automatically fits the models instead of magnifying small cropped thumbnails.
 
 The test suite checks mesh validity, geometry variants and connector parameters. **Real-world connector fit, wall thickness at every parameter combination and F5 orbiting speed still require manual testing.**
 
