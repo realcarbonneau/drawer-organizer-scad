@@ -76,7 +76,6 @@ def test_customizer_controls_and_defaults():
     assert "fillet_offset_cap_at(y,B+SOCKET_TOP_CLEARANCE)" in scad
     assert "CONNECTOR_LOBE_REDUCTION" not in scad
     assert "INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);" in scad
-    assert "CONNECTOR_LOBE_REDUCTION" in scad
     assert params["Drawer_floor_corner_radius_mm"] == "10"
     assert "Outer_bottom_chamfer_max_rise_mm" not in params
     assert "Outer_bottom_chamfer_max_rise_mm" not in scad
@@ -165,8 +164,10 @@ def test_connector_clearance_semantics_and_independent_controls():
     assert "connector_clearance_mm" not in p
     assert "connector_clearance_mm" not in scad
     assert "SOCKET_SIDE_CLEARANCE=Connector_side_clearance_total_mm/2;" in scad
-    assert "baseline_male_cap_at(y)*connector_lobe_scale_at(y);" in scad
-    assert "connection_cap_at(y)+SOCKET_TOP_CLEARANCE;" in scad
+    assert "function fillet_offset_cap_at(y,stock)" in scad
+    assert "fillet_offset_cap_at(y,B)" in scad
+    assert "fillet_offset_cap_at(y,B+SOCKET_TOP_CLEARANCE)" in scad
+    assert "CONNECTOR_LOBE_REDUCTION" not in scad
     assert "PAD_HEIGHT=CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+0.4" in scad
 
 
