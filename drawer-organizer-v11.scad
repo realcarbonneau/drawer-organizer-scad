@@ -1,4 +1,4 @@
-// DRAWER ORGANIZER v10
+// DRAWER ORGANIZER v11
 // Independent parametric model for a measured, metal-sided kitchen drawer.
 // OpenSCAD 2021.01; no libraries or external geometry required.
 //
@@ -334,11 +334,16 @@ function fillet_intercept(outer,is_x) =
     fillet_use_chamfer(outer,is_x) ?
         B*sqrt(1+pow(fillet_slope(outer,is_x),2)) :
         -SIDE_EXPAND+H*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K);
+// One pair of circle-center helpers is shared by the rendered tray cavity
+// and the connector cutter profiles. These are the actual PR8 fillet centres.
+function inner_fillet_center_x(outer,is_x) =
+    let(r=INNER_BOTTOM_R,b=fillet_slope(outer,is_x),a=fillet_intercept(outer,is_x))
+    a+b*(B+r)+r*sqrt(1+b*b);
+function inner_fillet_center_z() = B+INNER_BOTTOM_R;
 module inner_corner_fillet_keepout(outer,is_x) {
     r=INNER_BOTTOM_R;
     b=fillet_slope(outer,is_x);
-    a=fillet_intercept(outer,is_x);
-    cx=a+b*(B+r)+r*sqrt(1+b*b);
+    cx=inner_fillet_center_x(outer,is_x);
     tangent_angle=atan(b);
     tangent_z=B+r+r*sin(tangent_angle);
     n=max(20,ceil(Render_facets*1.3));
@@ -346,7 +351,7 @@ module inner_corner_fillet_keepout(outer,is_x) {
         [[-2000,-100],[cx+E,-100]],
         [for(i=[0:n])
             let(theta=-90+(90+tangent_angle)*i/n)
-            [cx-r*cos(theta),B+r+r*sin(theta)]],
+            [cx-r*cos(theta),inner_fillet_center_z()+r*sin(theta)]],
         [[-2000,tangent_z+E]]));
 }
 module inner_corner_fillet_keepouts(span,left_outer,right_outer,is_x) {
@@ -551,58 +556,56 @@ module full_dogbone_2d(clearance=0) {
             square([2*(WEB_R+clearance),2*HEAD_IN]);
     }
 }
-// Both connector envelopes use the ACTUAL effective lower fillet radius.
-// The inner void boundary in a seam-normal section is a quarter circle:
-//   centre (B+R, B+R), radius R = INNER_BOTTOM_R.
-// The cavity wall is eroded by B, NOT T. For a non-default wall thickness,
-// using T as the profile origin would cut into the actual cavity.
-// Its inward offsets by B and B+SOCKET_TOP_CLEARANCE are exact concentric
-// arcs, not an arbitrary vertical scaling or a second guessed fillet.
-// This preserves >= B solid material (in true normal distance) above the
-// female socket, with >= SOCKET_TOP_CLEARANCE above the male connector.
-// Increasing R therefore retains MORE connector material, never less.
-function fillet_offset_cap_at(y,stock) =
-    let(u=max(0,y)-B, R=INNER_BOTTOM_R,
-        h=B+R, radial=R+stock, across=R-u)
-    u<=-stock ? h :
-    u>=R ? 0 :
-    max(0,h-sqrt(max(0,radial*radial-across*across)));
-function socket_roof_safe_cap_at(y) =
+// The blind female socket roof and male dogbone top use the EXACT circle
+// centre of the PR8 interior divider fillet. Their radii are respectively
+// R+B and R+B+top_clearance; neither centre is shifted or re-estimated.
+// The connector lies across an INNER divider (outer=false), so this is the
+// same centre used by inner_corner_fillet_keepout(false,false).
+function connector_fillet_center_x()=inner_fillet_center_x(false,false);
+function connector_fillet_center_z()=inner_fillet_center_z();
+function connector_offset_circle_z(x,extra_radius) =
+    let(cx=connector_fillet_center_x(),cz=connector_fillet_center_z(),
+        radius=INNER_BOTTOM_R+extra_radius,
+        dx=x-cx)
+    x>=cx ? 0 :
+    dx < -radius ? cz :
+    max(0,cz-sqrt(max(0,radius*radius-dx*dx)));
+function socket_roof_safe_cap_at(x) =
     min(CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE,
-        fillet_offset_cap_at(y,B));
-function connection_cap_at(y) =
+        connector_offset_circle_z(x,B));
+function connection_cap_at(x) =
     min(CONNECTOR_HEIGHT,
-        fillet_offset_cap_at(y,B+SOCKET_TOP_CLEARANCE));
-// At very small radii the male can taper to zero BEFORE the nominal lobe tip.
-// Stop the envelope just short of that root rather than exporting a
-// zero-height, non-manifold end wedge. At normal radii this cut is outside
-// the dogbone's XY footprint and changes nothing.
-function male_envelope_end_y() =
-    max(0.01,B+INNER_BOTTOM_R-
-        sqrt(2*(INNER_BOTTOM_R+B)*SOCKET_TOP_CLEARANCE+
-             SOCKET_TOP_CLEARANCE*SOCKET_TOP_CLEARANCE)-0.05);
+        connector_offset_circle_z(x,B+SOCKET_TOP_CLEARANCE));
+// The male's larger-radius offset reaches the underside at this X distance.
+// Use the exact zero crossing (plus a tiny inward safety offset) so any
+// extreme small-radius truncation still creates a watertight male STL.
+function male_envelope_end_x() =
+    let(cx=connector_fillet_center_x(),cz=connector_fillet_center_z(),
+        radial=INNER_BOTTOM_R+B+SOCKET_TOP_CLEARANCE)
+    max(0.01,cx-sqrt(max(0,radial*radial-cz*cz))-0.015);
 module connector_height_envelope(full=true) {
-    R=INNER_BOTTOM_R;
-    steps=max(48,ceil(Render_facets),ceil(R*4));
+    // The *same circular functions* are used in both polygon envelopes and
+    // socket_opening_3d() below. High enough sampling for smooth STL sections.
+    steps=max(64,ceil(Render_facets*2),ceil(INNER_BOTTOM_R*4));
     if(full) rotate([90,0,90])
         linear_extrude(height=200,center=true,convexity=5)
             polygon(concat(
-                [[-male_envelope_end_y(),-0.02]],
+                [[-male_envelope_end_x(),-0.02]],
                 [for(i=[steps:-1:0])
-                    let(y=male_envelope_end_y()*i/steps)
-                    [-y,connection_cap_at(y)]],
+                    let(x=male_envelope_end_x()*i/steps)
+                    [-x,connection_cap_at(x)]],
                 [for(i=[0:steps])
-                    let(y=male_envelope_end_y()*i/steps)
-                    [y,connection_cap_at(y)]],
-                [[male_envelope_end_y(),-0.02]]));
+                    let(x=male_envelope_end_x()*i/steps)
+                    [x,connection_cap_at(x)]],
+                [[male_envelope_end_x(),-0.02]]));
     else rotate([90,0,90])
         linear_extrude(height=200,center=true,convexity=5)
             polygon(concat(
                 [[0,-0.02]],[[0,socket_roof_safe_cap_at(0)]],
                 [for(i=[0:steps])
-                    let(y=(B+R)*i/steps)
-                    [y,socket_roof_safe_cap_at(y)]],
-                [[B+R+1,-0.02]]));
+                    let(x=connector_fillet_center_x()*i/steps)
+                    [x,socket_roof_safe_cap_at(x)]],
+                [[connector_fillet_center_x()+1,-0.02]]));
 }
 // One closed polyhedron per female pocket: rectangular stem, rounded lobe,
 // and the SAME calculated roof-height envelope used by the male dogbone.
@@ -946,7 +949,7 @@ module preview_loose_connectors() {
 }
 
 // ----------- Output and non-fatal invalid selection handling -----------
-echo("DRAWER v10 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
+echo("DRAWER v11 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / AUTO OUTER CHAMFER run, rise (from drawer floor radius)",ALPHA,CHAMFER_X,CHAMFER_Z);
 echo("DRAWER FLOOR radius / REQUIRED exterior chamfer rise",Drawer_floor_corner_radius_mm,CHAMFER_Z);
 echo("RIM (angle FROM PRINT BED / fixed height / derived projection)",
@@ -954,6 +957,9 @@ echo("RIM (angle FROM PRINT BED / fixed height / derived projection)",
 echo("CONNECTOR CLEARANCES (total side / each side / top)",
      Connector_side_clearance_total_mm, SOCKET_SIDE_CLEARANCE, SOCKET_TOP_CLEARANCE);
 echo("CONNECTOR ROOF CAPS (at seam)",connection_cap_at(0),socket_roof_safe_cap_at(0));
+echo("CONCENTRIC FILLET CENTER (X, Z) / RADII (inner, socket, male)",
+     connector_fillet_center_x(),connector_fillet_center_z(),
+     INNER_BOTTOM_R,INNER_BOTTOM_R+B,INNER_BOTTOM_R+B+SOCKET_TOP_CLEARANCE);
 echo("CONNECTOR ROOF CAPS (at lobe T+2 / T+4, female / male)",
      socket_roof_safe_cap_at(T+2),connection_cap_at(T+2),
      socket_roof_safe_cap_at(T+4),connection_cap_at(T+4));
