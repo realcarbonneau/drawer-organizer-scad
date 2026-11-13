@@ -229,7 +229,7 @@ def test_f5_preview_uses_original_geometry_without_forced_render(tmp_path):
     require_render_ok(proc,path)
     text=proc.stdout+proc.stderr
     assert "CSG normalization resulted in an empty tree" not in text
-    match=re.search(r"Normalized (?:CSG )?tree has (\\d+) elements",text)
+    match=re.search(r"Normalized (?:CSG )?tree has (\d+) elements",text)
     assert match and 10 < int(match.group(1)) < 10000, text[-1000:]
     assert path.stat().st_size>5000
 
@@ -240,7 +240,7 @@ def test_f5_preview_is_unforced_for_selected_part(tmp_path):
     require_render_ok(proc,path)
     text=proc.stdout+proc.stderr
     assert "CSG normalization resulted in an empty tree" not in text
-    match=re.search(r"Normalized (?:CSG )?tree has (\\d+) elements",text)
+    match=re.search(r"Normalized (?:CSG )?tree has (\d+) elements",text)
     assert match and 10 < int(match.group(1)) < 10000, text[-1000:]
     assert path.stat().st_size>5000
 
