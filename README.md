@@ -14,7 +14,7 @@ A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Pr
 
 ![Five-tray arrangement and full-width rear tray, generated from the actual CAD model](docs/images/layout.png)
 
-The default logical-row splits are **1, 0, 3, 0, 0, 1**. A zero means the row continues the previous tray group. When looking down into an open drawer, row 1 is at the **rear** and column 1 is on the **left**.
+Use the **Continue previous** dropdown option to extend the preceding tray group. In the example, rows 1–2 form the rear tray, rows 3–5 form three middle trays, and row 6 forms the front tray. Looking down into the open drawer, row 1 is at the **rear** and column 1 is on the **left**.
 
 | Group | Trays | Approximate nominal floor footprint |
 | --- | ---: | ---: |
@@ -23,7 +23,7 @@ The default logical-row splits are **1, 0, 3, 0, 0, 1**. A zero means the row co
 | Front, row 6 | 1 full-width | 189 × 79 mm |
 | Logical grid cell | 3 columns × 6 rows | **63 × 79 mm** |
 
-The estimated **clear** space for a logical cell is about **59 × 75 mm**, before bottom fillets. Actual space depends on the wall taper, floor corner radius and rim projection.
+The estimated **clear** space for a logical cell is about **59 × 75 mm**, before bottom fillets. Actual space depends on the wall taper, floor corner radius, and calculated rim projection.
 
 ## Soft edges and access cutouts
 
@@ -32,6 +32,12 @@ The estimated **clear** space for a logical cell is about **59 × 75 mm**, befor
 The trays default to **2 mm walls and base**, **0.6 mm soft exposed-edge rounding**, and a shared calculated bottom interior fillet. The outer sidewalls taper to suit the measured drawer, while the front/rear outer ends stay vertical. The outer rim can flare outward while the inner rim follows the same slope without an extra vertical return.
 
 One checkbox per logical row enables cutouts along interior dividers. **Row 4 is enabled** in the example. The default cutout has a **25 mm base width**, two tangent blends of **20 mm rounding diameter**, and a **60° straight riser**; the riser angle can be adjusted.
+
+### Rim angle and tray height
+
+The **print overhang angle** and **tray height above the metal rim** are the independent rim settings. A separate rim-projection input is not needed. The model calculates horizontal projection as `height / tan(angle from the print bed)`. With the default 10 mm height and 60° angle, the selected flared edges extend approximately **5.77 mm** horizontally. The lip stays at the chosen height for all printing angles.
+
+Customizer sections and parameter labels are sentence case. Row labels are shortened to `Row_01`, `Row_02`, and so on, without duplicate explanatory text.
 
 ## Connector and tolerances
 
