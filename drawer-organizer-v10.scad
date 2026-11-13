@@ -60,7 +60,7 @@ Wall_thickness_mm = 2.0; // [0.8:0.1:5]
 // radius cannot compromise the minimum thickness: it will be raised to the
 // structural minimum and a warning is echoed. A larger radius fills more of
 // the tray floor corner and automatically shortens connector head pockets.
-Inner_bottom_radius_mm = 0;
+Inner_bottom_radius_mm = 0; // [0:0.5:100]
 // Soft touch rounding of exposed top edges and the divider cutout ridge.
 Soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 
@@ -207,13 +207,19 @@ EXTRA_INNER_BOTTOM_R=max(0,INNER_BOTTOM_R-INNER_BOTTOM_R_MIN);
 CONNECTOR_LOBE_REDUCTION=min(0.75,EXTRA_INNER_BOTTOM_R/max(0.00001,INNER_BOTTOM_R_MIN));
 SOFT_R=min(max(0,Soft_edge_radius_mm),max(0,min(B,T)/2-0.1));
 // The radius-derived exterior chamfer must not pass through the measured
-// metal wall or consume the straight wall above it. The inner bottom fillet
-// must fit between the sides of the narrowest compartment, with B stock.
+// metal wall or consume the straight wall above it. An inner corner radius
+// may consume the entire FLAT floor in a narrow tray; opposing circular
+// fillets can meet in a shallow valley, which is valid geometry. Do not
+// reject it based on nominal tray width (and do not silently cap the radius).
 CHAMFER_FIT_ERROR=CHAMFER_Z>=H-2*B ||
     CHAMFER_X>=SIDE_EXPAND-0.4 || CHAMFER_Z>SIDE_EXPAND;
 MIN_TRAY_WIDTH=min([for(r=[1:Grid_rows]) if(splits_at(r)>0) W0/splits_at(r)]);
 MIN_TRAY_DEPTH=ROW_DEPTH;
-INNER_FLOOR_FIT_ERROR=2*(B+INNER_BOTTOM_R)>=min(MIN_TRAY_WIDTH,MIN_TRAY_DEPTH);
+// A full circular fillet needs vertical room before the rim transition.
+// Width alone is NOT a fit failure. Narrow trays may have a rounded valley.
+INNER_FLOOR_FIT_ERROR=B+INNER_BOTTOM_R>=H-B-E ||
+    B+INNER_BOTTOM_R>=ZTOP-2*B;
+INNER_FLAT_FLOOR_WIDTH_EST=min(MIN_TRAY_WIDTH,MIN_TRAY_DEPTH)-2*B-2*INNER_BOTTOM_R;
 // Cutout floors are above the larger inner-bottom radius and the convex
 // 0.6 mm edge blend, never carved through them. For an active cutout there
 // must also be a useful opening above its lowest point.
@@ -313,23 +319,46 @@ module yz_outer_2d(d,front_outer,rear_outer,extra=0) {
     polygon(profile_polygon(a,b));
 }
 
-// Build the inner cavity by ERODING the outside cross-section by base B.
-// This is a Euclidean (normal-distance) offset, not a horizontal guess:
-//   - the minimum outside-to-inside stock in either profile is >= B;
-//   - bottom transitions get an R=B blend by a local morphological opening;
-//   - the upper section is NOT rounded (sharp upper horizontal edges).
-// Artificial upper extension opens the tray without curving or capping the rim.
-module safe_inner_2d(bottom_cutoff) {
-    union() {
-        intersection() {
-            offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R) children();
-            translate([-2000,-2000]) square([4000,2000+bottom_cutoff]);
-        }
-        intersection() {
-            children();
-            translate([-2000,bottom_cutoff-E]) square([4000,3000]);
-        }
-    }
+// Build the inner cavity by ERODING the outside cross-section by base B,
+// then remove two simple circular corner *wedges* from this cavity. Unlike
+// offset(r=R) offset(delta=-R), these independent analytic arcs do not erase
+// the cavity when R exceeds half the width available at the nominal floor.
+// Their arcs may meet in a shallow central valley, preserving the
+// requested R, the exact floor stock, and tangent contact with the sidewalls.
+// The wall reference line is the true B-offset sidewall above its chamfer.
+// The lowest fillet arc is always tangent to the base plane at Z=B.
+function fillet_main_slope(outer,is_x) = outer && is_x ? -SIDE_K : 0;
+function fillet_use_chamfer(outer,is_x) =
+    outer && is_x && CHAMFER_Z>0 &&
+    B+INNER_BOTTOM_R+INNER_BOTTOM_R*fillet_main_slope(outer,is_x)/
+       sqrt(1+pow(fillet_main_slope(outer,is_x),2)) < CHAMFER_Z;
+function fillet_slope(outer,is_x) =
+    fillet_use_chamfer(outer,is_x) ? -CHAMFER_X/max(E,CHAMFER_Z) :
+    fillet_main_slope(outer,is_x);
+function fillet_intercept(outer,is_x) =
+    !outer || !is_x ? B :
+    fillet_use_chamfer(outer,is_x) ?
+        B*sqrt(1+pow(fillet_slope(outer,is_x),2)) :
+        -SIDE_EXPAND+H*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K);
+module inner_corner_fillet_keepout(outer,is_x) {
+    r=INNER_BOTTOM_R;
+    b=fillet_slope(outer,is_x);
+    a=fillet_intercept(outer,is_x);
+    cx=a+b*(B+r)+r*sqrt(1+b*b);
+    tangent_angle=atan(b);
+    tangent_z=B+r+r*sin(tangent_angle);
+    n=max(20,ceil(Render_facets*1.3));
+    polygon(concat(
+        [[-2000,-100],[cx+E,-100]],
+        [for(i=[0:n])
+            let(theta=-90+(90+tangent_angle)*i/n)
+            [cx-r*cos(theta),B+r+r*sin(theta)]],
+        [[-2000,tangent_z+E]]));
+}
+module inner_corner_fillet_keepouts(span,left_outer,right_outer,is_x) {
+    inner_corner_fillet_keepout(left_outer,is_x);
+    translate([span,0]) mirror([1,0])
+        inner_corner_fillet_keepout(right_outer,is_x);
 }
 // Upper inner wall profiles use an EXACT offset from the straight sidewall,
 // with a delayed transition to the lip. Relying on offset(delta=-B) at the
@@ -366,11 +395,12 @@ module analytic_upper_cavity(w,left_outer,right_outer,left_rim,right_rim,is_x=tr
 }
 module xz_void_2d(w,left_outer,right_outer) {
     zcut=min(ZTOP-2*B,max(CHAMFER_Z+INNER_BOTTOM_R+3,H-18));
-    floor_cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B));
     union() {
         intersection() {
-            safe_inner_2d(floor_cut)
+            difference() {
                 offset(delta=-B) xz_outer_2d(w,left_outer,right_outer,100);
+                inner_corner_fillet_keepouts(w,left_outer,right_outer,true);
+            }
             translate([-2000,-100]) square([4000,zcut+100+E]);
         }
         intersection() {
@@ -381,11 +411,12 @@ module xz_void_2d(w,left_outer,right_outer) {
 }
 module yz_void_2d(d,front_outer,rear_outer) {
     zcut=min(ZTOP-2*B,max(CHAMFER_Z+INNER_BOTTOM_R+3,H-18));
-    floor_cut=min(H-2*B,max(CHAMFER_Z+3*B,5*B));
     union() {
         intersection() {
-            safe_inner_2d(floor_cut)
+            difference() {
                 offset(delta=-B) yz_outer_2d(d,front_outer,rear_outer,100);
+                inner_corner_fillet_keepouts(d,front_outer,rear_outer,false);
+            }
             translate([-2000,-100]) square([4000,zcut+100+E]);
         }
         intersection() {
@@ -908,6 +939,11 @@ if(INNER_BOTTOM_R_CLAMPED)
              " mm. Enforcing the minimum to protect floor thickness and socket roofs; " ,
              "smaller requests have no effect."));
 echo("CUTOUT floor Z / protected inner bottom fillet top Z",cutout_floor_z(),B+INNER_BOTTOM_R);
+echo("INNER FILLET narrowest nominal flat floor / radius",INNER_FLAT_FLOOR_WIDTH_EST,INNER_BOTTOM_R);
+if(INNER_FLAT_FLOOR_WIDTH_EST<0)
+    echo(str("INNER BOTTOM FILLET NOTE: Opposing radii overlap by ",
+             -INNER_FLAT_FLOOR_WIDTH_EST,
+             " mm at the nominal floor; they form a rounded valley instead of a flat floor."));
 // Report the entered pre-rounding gap as well as the finished dimensions.
 let(z0=cutout_floor_z(),
     ang=cutout_angle(Cutout_riser_angle_deg),
@@ -951,9 +987,9 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
 } else if(INNER_FLOOR_FIT_ERROR) {
     echo(str("INNER FLOOR FILLET DOES NOT FIT: Connector socket clearance and " ,
              "floor stock require an inner radius of ",INNER_BOTTOM_R,
-             " mm; smallest tray width is ",MIN_TRAY_WIDTH,
-             " mm. Reduce the requested radius, change compartments/connector " ,
-             "dimensions. Nothing rendered."));
+             " mm; available vertical wall height before the metal rim is ",H-B,
+             " mm. Reduce the requested radius or increase the drawer rim " ,
+             "height. Nothing rendered."));
 } else if(CUTOUT_HEADROOM_ERROR) {
     echo(str("CUTOUT DOES NOT FIT: Connector roofs and protected inner-bottom " ,
              "rounding require a cutout floor of at least ",cutout_floor_z(),

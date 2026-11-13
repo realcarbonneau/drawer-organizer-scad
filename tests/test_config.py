@@ -66,6 +66,9 @@ def test_customizer_controls_and_defaults():
     assert params["Wall_thickness_mm"] == "2"
     assert params["Soft_edge_radius_mm"] == "0.6"
     assert params["Inner_bottom_radius_mm"] == "0"
+    assert "Inner_bottom_radius_mm = 0; // [0:0.5:100]" in scad
+    assert "module inner_corner_fillet_keepouts(" in scad
+    assert "offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R)" not in scad
     assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_X*0.65,CONNECTOR_FILLET_R);" in scad
     assert "INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);" in scad
     assert "CONNECTOR_LOBE_REDUCTION" in scad
