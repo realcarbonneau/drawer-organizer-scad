@@ -53,8 +53,9 @@ A loose dogbone inserts upward into **blind, underside-facing sockets**. There a
 | Male connector height | **6 mm** | Maximum connector height |
 | Side tolerance | **0.2 mm total** | The female socket is 0.1 mm wider on each side |
 | Top tolerance | **1 mm** | Additional space between the male and blind pocket roof |
+| Connector elephant-foot chamfer | **0.4 mm rise** | Bevel around each underside socket entrance and the bottom edge of printed dogbones |
 
-These allowances enlarge **the female pocket only**. The male retains its nominal dimensions. Both lobe ends are trimmed in height to clear the bottom interior fillet; the socket roof is kept closed in the model.
+The **side and top tolerances** enlarge the female pocket only, and the male retains its nominal fitting dimensions above the first printed layers. A separate **connector elephant-foot chamfer** (default 0.4 mm rise) opens each socket entrance—including its narrow web sides and round head—and insets the foot around the loose dogbone perimeter. At the default 60° printing angle its horizontal run is about **0.23 mm**. The existing 1 mm **joining-edge** relief also continues across connector mouths, rather than stopping beside them. Set the new connector setting to **0** to keep the original square foot and socket entry; if the blind socket roof is too low, the connector relief is automatically reduced to preserve it. Both lobe ends are trimmed in height to clear the bottom interior fillet; the socket roof remains closed in the model. Confirm actual fit with a small test print before printing a full set.
 
 ## Get started
 
