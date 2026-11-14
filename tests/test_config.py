@@ -163,6 +163,8 @@ def test_connector_clearance_semantics_and_independent_controls():
     p=preset_parameters(preset)
     assert p["Connector_side_clearance_total_mm"]=="0.2"
     assert p["Connector_top_clearance_mm"]=="1"
+    assert p["Connector_elephant_foot_mm"]=="0.4"
+    assert "Connector_elephant_foot_mm = 0.4; // [0:0.1:1.5]" in scad
     assert "connector_clearance_mm" not in p
     assert "connector_clearance_mm" not in scad
     assert "SOCKET_SIDE_CLEARANCE=Connector_side_clearance_total_mm/2;" in scad
