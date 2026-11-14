@@ -393,6 +393,40 @@ def test_larger_bottom_radius_keeps_tray_and_dogbone_watertight(tmp_path,radius)
     assert male.volume>0
 
 
+@pytest.mark.parametrize("relief",[0,0.4])
+def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
+    """The FIRST layers change, but the original straight fitting size remains."""
+    source,_=release_paths()
+    marker="// ----------- Output and non-fatal invalid selection handling -----------"
+    prefix=source.read_text().split(marker,1)[0]
+    spans={}
+    for label,module in [("female","socket_with_entry_chamfer_3d"),
+                         ("male","loose_dogbone")]:
+        fixture=tmp_path/f"{label}_foot_{relief}.scad"
+        fixture.write_text(prefix+f"\\n{module}();\\n")
+        mesh_path=tmp_path/f"{label}_foot_{relief}.stl"
+        proc=openscad_render(mesh_path,{
+            "Connector_elephant_foot_mm":relief,
+            "Inner_bottom_radius_mm":12
+        },source=fixture)
+        require_render_ok(proc,mesh_path)
+        mesh=trimesh.load(mesh_path,force="mesh",process=True)
+        assert mesh.is_watertight and mesh.body_count==1
+        assert mesh.bounds[0,2]==pytest.approx(0,abs=0.03) if label=="male" else mesh.bounds[0,2]<0
+        def width(z):
+            section=mesh.section(plane_origin=[0,0,z],plane_normal=[0,0,1])
+            assert section is not None
+            vertices=np.vstack(section.discrete)
+            return float(vertices[:,0].max()-vertices[:,0].min())
+        spans[label]=(width(0.05),width(0.8))
+    if relief:
+        assert spans["female"][0]-spans["female"][1]>0.25
+        assert spans["male"][1]-spans["male"][0]>0.25
+    else:
+        assert abs(spans["female"][0]-spans["female"][1])<0.05
+        assert abs(spans["male"][0]-spans["male"][1])<0.05
+
+
 @pytest.mark.parametrize("relief",[0,1,1.8])
 def test_joining_edge_elephant_foot_settings(tmp_path,relief):
     render_stl(tmp_path,f"foot_{relief}",{
