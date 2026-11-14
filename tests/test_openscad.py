@@ -403,7 +403,7 @@ def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
     for label,module in [("female","socket_with_entry_chamfer_3d"),
                          ("male","loose_dogbone")]:
         fixture=tmp_path/f"{label}_foot_{relief}.scad"
-        fixture.write_text(prefix+f"\\n{module}();\\n")
+        fixture.write_text(prefix + chr(10) + module + "();" + chr(10))
         mesh_path=tmp_path/f"{label}_foot_{relief}.stl"
         proc=openscad_render(mesh_path,{
             "Connector_elephant_foot_mm":relief,
@@ -412,7 +412,10 @@ def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
         require_render_ok(proc,mesh_path)
         mesh=trimesh.load(mesh_path,force="mesh",process=True)
         assert mesh.is_watertight and mesh.body_count==1
-        assert mesh.bounds[0,2]==pytest.approx(0,abs=0.03) if label=="male" else mesh.bounds[0,2]<0
+        if label=="male":
+            assert mesh.bounds[0,2]==pytest.approx(0,abs=0.03)
+        else:
+            assert mesh.bounds[0,2]<0
         def width(z):
             section=mesh.section(plane_origin=[0,0,z],plane_normal=[0,0,1])
             assert section is not None
