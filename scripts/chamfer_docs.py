@@ -26,31 +26,51 @@ module inspection_join_cut() {
         polygon([[-20,-E],[JOIN_X+E,-E],[JOIN_X,0],[0,JOIN_Z],[-20,JOIN_Z+20]]);
 }
 module inspection_socket_coupon() {
+    // F6 evaluation removes OpenCSG stripe artifacts at the blind pocket
+    // roof and mouth; all actual production subtractors are retained.
+    render(convexity=10)
     difference() {
-        color([0.28,0.64,0.68]) translate([-10,0,0]) cube([20,19,10]);
+        color([0.30,0.68,0.83]) translate([-10,0,0]) cube([20,19,10]);
         color([0.96,0.72,0.12]) socket_with_entry_chamfer_3d();
         color([0.96,0.72,0.12]) inspection_join_cut();
     }
 }
 module inspection_socket_section() {
-    difference() {
-        inspection_socket_coupon();
-        color([0.96,0.72,0.12]) translate([-20,-10,-1]) cube([20,40,30]);
-    }
+    // An actual solid section, evaluated before display, prevents OpenCSG
+    // z-fighting and the striped/corrupted walls in the previous screenshot.
+    render(convexity=10)
+        intersection() {
+            inspection_socket_coupon();
+            translate([-0.2,-2,-0.5]) cube([14,23,16]);
+        }
 }
 module inspection_join_edge() {
     difference() {
-        color([0.28,0.64,0.68]) translate([-12,0,0]) cube([24,9,7]);
+        color([0.30,0.68,0.83]) translate([-12,0,0]) cube([24,9,3]);
         color([0.96,0.72,0.12]) inspection_join_cut();
     }
 }
 // Preview palette: teal for stock / loose connector and gold for volumes
 // removed by the socket or joining-edge chamfer. STL color is unaffected.
 Inspection_view="connector-foot";
-if(Inspection_view=="connector-foot") color([0.28,0.64,0.68]) loose_dogbone();
+if(Inspection_view=="connector-foot") color([0.90,0.62,0.25]) loose_dogbone();
 else if(Inspection_view=="connector-lobe")
-    translate([0,-HEAD_IN,0]) color([0.28,0.64,0.68]) loose_dogbone();
-else if(Inspection_view=="connector-web") color([0.28,0.64,0.68]) loose_dogbone();
+    // Crop at a real lobe: this inspection section makes the round head
+    // large enough to distinguish from the complete dogbone overview.
+    translate([0,-HEAD_IN,0]) color([0.90,0.62,0.25])
+        render(convexity=10) intersection() {
+            loose_dogbone();
+            translate([-5,HEAD_IN-3.2,-0.2])
+                cube([10,8,CONNECTOR_HEIGHT+2]);
+        }
+else if(Inspection_view=="connector-web")
+    // Crop away the heads to expose the actual straight center relief.
+    color([0.90,0.62,0.25])
+        render(convexity=10) intersection() {
+            loose_dogbone();
+            translate([-WEB_R-0.4,-HEAD_IN+2,-0.2])
+                cube([2*(WEB_R+0.4),2*(HEAD_IN-2),CONNECTOR_HEIGHT+2]);
+        }
 else if(Inspection_view=="socket-underside")
     rotate([180,0,0]) inspection_socket_coupon();
 else if(Inspection_view=="socket-lips")
@@ -58,19 +78,43 @@ else if(Inspection_view=="socket-lips")
 else if(Inspection_view=="socket-section")
     rotate([180,0,0]) inspection_socket_section();
 else if(Inspection_view=="joining-edge") inspection_join_edge();
+else if(Inspection_view=="connector-plan")
+    color([0.90,0.62,0.25]) loose_dogbone();
+else if(Inspection_view=="connector-underside")
+    rotate([180,0,0]) color([0.90,0.62,0.25]) loose_dogbone();
+else if(Inspection_view=="connector-profile")
+    color([0.90,0.62,0.25]) loose_dogbone();
+else if(Inspection_view=="socket-mouth-plan")
+    rotate([180,0,0]) inspection_socket_coupon();
+else if(Inspection_view=="joining-socket")
+    rotate([180,0,0]) inspection_socket_coupon();
 """
 
-# Stable semantic filenames, not serial numbers. Focal points in CAD mm.
-# For the female pockets the inspection coupon is flipped to expose the
-# underside, hence the negative focal Y/Z coordinates.
+# Stable semantic filenames. Camera: target X/Y/Z, rotation X/Y/Z, distance.
+# Image dimensions are uniform; close-ups differ by view angle, not PNG size.
 VIEWS = [
-    ("connector-foot",    (0,  0,  3, 58,  0, 32, 35)),
-    ("connector-lobe",    (0,  0,  1, 70,  0, 25, 35)),
-    ("connector-web",     (0,  0,  1, 80,  0, 50, 42)),
-    ("socket-underside",  (0, -9, -3, 65,  0, 25, 95)),
-    ("socket-lips",       (0, -5, -1, 55,  0,  0, 75)),
-    ("socket-section",    (0, -7, -3, 62,  0,210, 90)),
-    ("joining-edge",     (0,  4,  2, 62,  0, 42, 85)),
+    ("connector-foot",      (0,  0,  1.2, 78, 0, 34, 49)),
+    ("connector-plan",      (0,  0,  3.0,  0, 0,  0, 38)),
+    ("connector-lobe",      (0,  0,  1.0, 75, 0, 28, 42)),
+    ("connector-web",       (0,  0,  1.0, 80, 0, 52, 42)),
+    ("connector-underside", (0,  0, -2.8, 38, 0, 20, 43)),
+    ("connector-profile",   (0,  0,  1.2, 90, 0,  0, 49)),
+    ("socket-underside",    (0, -8, -1.7, 52, 0,190, 92)),
+    ("socket-mouth-plan",   (0, -9, -1.0,  0, 0,180, 86)),
+    ("socket-lips",         (0, -7, -0.8, 60, 0,180, 88)),
+    ("socket-section",      (0, -6, -3.2, 60, 0,220, 94)),
+    ("joining-edge",        (0,  4,  1.0, 80, 0, 32, 71)),
+    ("joining-socket",      (0, -6, -1.4, 80, 0,190, 96)),
+]
+
+# Raw F5 views of the actual preset, without any card art or marketing copy.
+CONTEXT_VIEWS = [
+    "full-layout",
+    "rear-tray",
+    "middle-tray",
+    "front-tray",
+    "cutout-closeup",
+    "dogbone",
 ]
 
 
@@ -88,27 +132,56 @@ def run_preview(source: Path, name: str, camera: tuple[int, ...], destination: P
         raise RuntimeError(f"OpenSCAD screenshot {name} failed: {result.stdout}\n{result.stderr}")
 
 
-def trim_preview(path: Path, *, closeup: bool = False) -> Image.Image:
-    image = Image.open(path).convert("RGB")
-    rgb = np.asarray(image,dtype=np.int16)
-    # Preserve the actual OpenSCAD preview colors and shaded cut surfaces.
-    # This mask selects colored geometry, not pale-gray background pixels.
-    visible = ((rgb.max(axis=2)-rgb.min(axis=2))>20) & (rgb.min(axis=2)<225)
-    yy,xx=np.nonzero(visible)
-    if len(xx)<5000:
-        raise RuntimeError(f"No usable CAD geometry in screenshot {path.name}")
-    x0,x1=int(xx.min()),int(xx.max())
-    y0,y1=int(yy.min()),int(yy.max())
-    width,height=image.size
-    if not closeup and (x0<8 or x1>width-9 or y0<8 or y1>height-9):
-        raise RuntimeError(f"Camera cuts off geometry in {path.name}: {(x0,y0,x1,y1)}")
-    if x1-x0<width*0.24 or y1-y0<height*0.20:
-        raise RuntimeError(f"Camera too distant in {path.name}: {(x0,y0,x1,y1)}")
-    margin=max(30,int(max(x1-x0,y1-y0)*.04))
-    rect=(max(0,x0-margin),max(0,y0-margin),
-          min(width,x1+margin+1),min(height,y1+margin+1))
-    return image.crop(rect)
+FRAME_SIZE = (1200, 900)
+BACKGROUND = (248, 248, 248)
 
+
+def uniform_frame(path: Path, *, name: str) -> Image.Image:
+    """Place uncropped CAD geometry on equal 4:3 canvases at a consistent scale.
+
+    A high-resolution camera render is fitted to a constant 1200x900 frame.
+    Detail crops may receive at most 1.5x resizing, never the former huge upscale.
+    """
+    source = Image.open(path).convert("RGB")
+    rgb = np.asarray(source, dtype=np.int16)
+    mask = ((rgb.max(axis=2)-rgb.min(axis=2)) > 19) & (rgb.min(axis=2) < 227)
+    ys, xs = np.nonzero(mask)
+    if len(xs) < 2500:
+        raise RuntimeError(f"No usable CAD pixels in {name}")
+    x0, x1 = int(xs.min()), int(xs.max()) + 1
+    y0, y1 = int(ys.min()), int(ys.max()) + 1
+    w, h = source.size
+    # The interior-divider detail is intentionally a camera crop of a tray,
+    # unlike the complete fitting interfaces, which must not be clipped.
+    if name != "cutout-closeup" and (x0 <= 1 or y0 <= 1 or x1 >= w-1 or y1 >= h-1):
+        raise RuntimeError(f"CAD model clipped by the source camera: {name}")
+    box_w, box_h = x1-x0, y1-y0
+    margin = max(24, round(max(box_w, box_h) * .05))
+    crop = source.crop((max(0,x0-margin), max(0,y0-margin),
+                        min(w,x1+margin), min(h,y1+margin)))
+    max_w, max_h = int(FRAME_SIZE[0]*.84), int(FRAME_SIZE[1]*.84)
+    factor = min(max_w/crop.width, max_h/crop.height, 1.5)
+    size = (max(1,round(crop.width*factor)), max(1,round(crop.height*factor)))
+    resized = crop.resize(size,Image.Resampling.LANCZOS)
+    canvas = Image.new("RGB",FRAME_SIZE,BACKGROUND)
+    canvas.paste(resized,((FRAME_SIZE[0]-size[0])//2,(FRAME_SIZE[1]-size[1])//2))
+    if size[0] < FRAME_SIZE[0]*.24 or size[1] < FRAME_SIZE[1]*.24:
+        raise RuntimeError(f"CAD view too small in normalized frame: {name}")
+    return canvas
+
+
+def assert_gallery(output: Path) -> None:
+    expected = [f"{name}.png" for name, _ in VIEWS] + [
+        f"{name}.png" for name in CONTEXT_VIEWS
+    ]
+    if len(expected) != len(set(expected)):
+        raise RuntimeError("Duplicate gallery output filenames")
+    for filename in expected:
+        path = output / filename
+        with Image.open(path) as im:
+            if im.size != FRAME_SIZE:
+                raise RuntimeError(f"Unequal gallery dimensions: {filename}")
+    print(f"Validated {len(expected)} equally sized real-CAD gallery images")
 
 def font(size:int,bold:bool=False):
     name="DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
@@ -144,6 +217,7 @@ def schematic(output: Path) -> None:
 def main() -> None:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output",type=Path,default=Path("docs/images"))
+    parser.add_argument("--input",type=Path,default=Path("build/previews"))
     args=parser.parse_args()
     source,_=release_paths()
     model=source.read_text()
@@ -158,8 +232,14 @@ def main() -> None:
             raw=Path(temp)/(name+".png")
             run_preview(fixture,name,camera,raw)
             destination=out/(name+".png")
-            trim_preview(raw,closeup=name in {'connector-lobe','connector-web','socket-lips'}).save(destination,optimize=True)
-            print("Wrote raw OpenSCAD CAD view",destination)
+            uniform_frame(raw,name=name).save(destination,optimize=True)
+            print("Wrote normalized OpenSCAD CAD view",destination)
+    for name in CONTEXT_VIEWS:
+        original = args.input/(name+".png")
+        if not original.is_file():
+            raise FileNotFoundError(f"Missing actual OpenSCAD preset preview: {original}")
+        uniform_frame(original,name=name).save(out/(name+".png"),optimize=True)
+    assert_gallery(out)
     # Old numbered, upscaled image cards misrepresented the zoom level and
     # exterior wall. They are intentionally removed rather than retained.
     for old in args.output.glob("inspection-??.png"):
