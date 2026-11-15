@@ -29,7 +29,7 @@
       "Join_edge_elephant_foot_mm": "1",
       "Base_thickness_mm": "2",
       "Wall_thickness_mm": "2",
-      "Inner_bottom_radius_mm": "0",
+      "Inner_bottom_radius_mm": "20",
       "Soft_edge_radius_mm": "0.6",
       "Connector_spacing_mm": "59",
       "Connector_center_thickness_mm": "4",

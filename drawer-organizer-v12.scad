@@ -1,4 +1,4 @@
-// DRAWER ORGANIZER v11
+// DRAWER ORGANIZER v12
 // Independent parametric model for a measured, metal-sided kitchen drawer.
 // OpenSCAD 2021.01; no libraries or external geometry required.
 //
@@ -60,7 +60,7 @@ Wall_thickness_mm = 2.0; // [0.8:0.1:5]
 // radius cannot compromise the minimum thickness: it will be raised to the
 // structural minimum and a warning is echoed. A larger radius fills more of
 // the tray floor corner and automatically shortens connector head pockets.
-Inner_bottom_radius_mm = 0; // [0:0.5:100]
+Inner_bottom_radius_mm = 20; // [0:0.5:100]
 // Soft touch rounding of exposed top edges and the divider cutout ridge.
 Soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 
@@ -983,7 +983,7 @@ module preview_loose_connectors() {
 }
 
 // ----------- Output and non-fatal invalid selection handling -----------
-echo("DRAWER v11 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
+echo("DRAWER v12 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / AUTO OUTER CHAMFER run, rise (from drawer floor radius)",ALPHA,CHAMFER_X,CHAMFER_Z);
 echo("DRAWER FLOOR radius / REQUIRED exterior chamfer rise",Drawer_floor_corner_radius_mm,CHAMFER_Z);
 echo("RIM (angle FROM PRINT BED / fixed height / derived projection)",

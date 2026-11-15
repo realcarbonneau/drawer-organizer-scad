@@ -44,6 +44,20 @@ def preview_connector_positions(messages):
     return [(int(i),float(x),float(y)) for i,x,y in re.findall(p,messages)]
 
 
+
+def test_v12_default_has_20_mm_inside_fillet(tmp_path):
+    out,_=render_csg(tmp_path,"v12_default_inside_fillet",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2
+    })
+    match=re.search(
+        r'"INNER BOTTOM ROUNDING \(requested / chamfer-protected minimum / effective\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+    assert match,out[-2000:]
+    requested,minimum,effective=map(float,match.groups())
+    assert requested==pytest.approx(20)
+    assert minimum==pytest.approx(12)
+    assert effective==pytest.approx(20)
+
 @pytest.mark.parametrize("gap", [0, 1, 12, 50])
 def test_preview_separation_is_one_constant_gap_between_tray_edges(tmp_path, gap):
     output, _ = render_csg(tmp_path, f"preview_{gap}", {

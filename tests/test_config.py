@@ -13,7 +13,7 @@ from scripts.organizer_cli import default_parts,preset_parameters,release_paths
 def test_only_one_current_release_pair():
     source,preset=release_paths()
     assert source.stem==preset.stem
-    assert source.name=="drawer-organizer-v11.scad"
+    assert source.name=="drawer-organizer-v12.scad"
     assert json.loads(preset.read_text())["fileFormatVersion"]=="1"
 
 
@@ -65,8 +65,8 @@ def test_customizer_controls_and_defaults():
     assert params["Base_thickness_mm"] == "2"
     assert params["Wall_thickness_mm"] == "2"
     assert params["Soft_edge_radius_mm"] == "0.6"
-    assert params["Inner_bottom_radius_mm"] == "0"
-    assert "Inner_bottom_radius_mm = 0; // [0:0.5:100]" in scad
+    assert params["Inner_bottom_radius_mm"] == "20"
+    assert "Inner_bottom_radius_mm = 20; // [0:0.5:100]" in scad
     assert "preview_loose_connectors();" in scad
     assert "module inner_corner_fillet_keepouts(" in scad
     assert "offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R)" not in scad

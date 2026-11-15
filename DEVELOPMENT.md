@@ -2,7 +2,7 @@
 
 ## Version and Git policies
 
-- Use `drawer-organizer-vN.scad` and `drawer-organizer-vN.json` together. Increase **N** once for each new functional release; **v11 is the current release; keep subsequent refinements on v11 until the next functional release is explicitly requested**. Documentation/checkpoint commits do not increment the functional version.
+- Use `drawer-organizer-vN.scad` and `drawer-organizer-vN.json` together. Increase **N** once for each new functional release; **v12 is the current release; keep subsequent refinements on v12 until the next functional release is explicitly requested**. Documentation/checkpoint commits do not increment the functional version.
 - Maintain only the latest SCAD/JSON pair at the branch root; older work belongs to Git history, **not a `versions/` directory**. Do not generate release ZIPs; use GitHub's repository download.
 - Keep unfinished geometry on WIP branches. Promote reviewed releases to the default `main` branch. Release a WIP branch as a **single squash-equivalent commit** on the existing `main` parent when requested, without rewriting previous `main` history or adding `Co-authored-by` trailers.
 - **Push a checkpoint frequently**, not just when a release is ready: after meaningful implementation milestones, before major refactors, and before expensive renders/testing. A WIP checkpoint may contain an incomplete design, but describe its status plainly. After any sync interruption, inspect the branch and resume from the newest surviving checkpoint.
@@ -11,7 +11,7 @@
 ## Geometry and UI invariants
 
 - Top-down drawer orientation: row 1 = REAR/farthest; column 1 = LEFT. A **Continue previous** row dropdown value extends the preceding group. Invalid selected parts and row splits that exceed Grid_columns print a helpful message and generate no geometry, without assertions.
-- Use **2 mm walls and base**, 0.6 mm soft exposed-edge radius by default, capped below half the thickness. Maintain the uniform bottom inside fillet, no top internal horizontal ledges, and bottom exterior clearance chamfers.
+- Use **2 mm walls and base**, a 20 mm default inside bottom radius (0 = automatic minimum), and 0.6 mm soft exposed-edge radius by default, capped below half the thickness. Maintain the uniform bottom inside fillet, no top internal horizontal ledges, and bottom exterior clearance chamfers.
 - Outer left/right side tapers must fit the metal-sided drawer. Front/rear ends have no metal-side taper. Exterior lip ramp starts at drawer rim; inner ramp starts one base thickness higher and stays sloped through the top.
 - The rounded access cutout specifies a BASE gap measured at the unrounded riser/floor intersections; by default two tangent R10 transitions are applied afterward. The base gap and angle are unrestricted numeric inputs, including zero, with safe degeneracy handling. One checkbox per row controls the cutouts on interior dividers only.
 - The full-layout mode shows the Loose_connector_quantity dogbones in a right-side Y column. The separate selected-tray and connector-only exports are unchanged.
@@ -27,11 +27,11 @@
 4. Test rim angles 25°/35°/45°/60°/75° and independent tray heights 10/18 mm; verify that projection is derived from height / tan(angle). Test cutouts at 0°/45°/60°/75°/90° and gap=0, row splits 4/5/6 both with matching and insufficient Grid_columns (non-fatal empty geometry), preview gaps 0/1/12/50 mm, invalid selections, and 1×1 grid.
 5. Push WIP commits during implementation, including screenshots or CI preview artifacts, before further modifications. Use `main` for completed releases and WIP branches for later experimental iterations.
 6. A watertight STL alone does **not** prove clearance, print quality, wall minimum everywhere, or the physical snap-fit; verify with physical test prints.
-### v11 connector checkpoint
+### v12 connector checkpoint
 
-Use `Connector_center_thickness_mm = 4`, `Connector_diameter_protrusion_mm = 1` (radius increase on **each** side, yielding a 6 mm lobe), and `Connector_height_mm = 6`. The free straight section is 2× the 2 mm tray wall, so each tray receives 2 mm of the center bar. Render real STLs and verify pocket clearance before promoting v11.
+Use `Connector_center_thickness_mm = 4`, `Connector_diameter_protrusion_mm = 1` (radius increase on **each** side, yielding a 6 mm lobe), and `Connector_height_mm = 6`. The free straight section is 2× the 2 mm tray wall, so each tray receives 2 mm of the center bar. Render real STLs and verify pocket clearance before promoting v12.
 
-## v11 connector tolerance controls
+## v12 connector tolerance controls
 
 - `Connector_side_clearance_total_mm = 0.2`: female cavity is **0.1 mm larger on each side**, not 0.2 mm per side. Male dimensions remain unchanged.
 - `Connector_top_clearance_mm = 1`: female roof is **1 mm higher** than the matching truncated male top wherever the connector has solid height; still a blind underside pocket.
@@ -46,6 +46,6 @@ Use `Connector_center_thickness_mm = 4`, `Connector_diameter_protrusion_mm = 1` 
 - Use capitalized public Customizer identifiers (and matching JSON/test selectors). Keep section names and help text concise; no obsolete numeric-continuation explanations.
 - Confirm CI passes on WIP before promoting a new functional change to `main`.
 
-## v11 shared circular-profile invariant
+## v12 shared circular-profile invariant
 
-The PR8 analytic inner fillet centre is the sole source for the connector profiles: `inner_fillet_center_x(false,false)` and `inner_fillet_center_z()`. Do not recompute another centre for the socket or male dogbone. The socket arc has radius `INNER_BOTTOM_R+B`; the male arc has radius `INNER_BOTTOM_R+B+SOCKET_TOP_CLEARANCE`; all share the same centre. Tests must examine exported STL arc points (not only code strings), confirm R12/R20/R30 single-body watertight trays, verify nominal height limits, and preserve existing approved cutouts. Maintain v11 only as the matched SCAD/JSON pair.
+The PR8 analytic inner fillet centre is the sole source for the connector profiles: `inner_fillet_center_x(false,false)` and `inner_fillet_center_z()`. Do not recompute another centre for the socket or male dogbone. The socket arc has radius `INNER_BOTTOM_R+B`; the male arc has radius `INNER_BOTTOM_R+B+SOCKET_TOP_CLEARANCE`; all share the same centre. Tests must examine exported STL arc points (not only code strings), confirm R12/R20/R30 single-body watertight trays, verify nominal height limits, and preserve existing approved cutouts. Maintain v12 only as the matched SCAD/JSON pair.
