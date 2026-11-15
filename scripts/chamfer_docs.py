@@ -88,7 +88,7 @@ def run_preview(source: Path, name: str, camera: tuple[int, ...], destination: P
         raise RuntimeError(f"OpenSCAD screenshot {name} failed: {result.stdout}\n{result.stderr}")
 
 
-def trim_preview(path: Path) -> Image.Image:
+def trim_preview(path: Path, *, closeup: bool = False) -> Image.Image:
     image = Image.open(path).convert("RGB")
     rgb = np.asarray(image,dtype=np.int16)
     # Preserve the actual OpenSCAD preview colors and shaded cut surfaces.
@@ -100,7 +100,7 @@ def trim_preview(path: Path) -> Image.Image:
     x0,x1=int(xx.min()),int(xx.max())
     y0,y1=int(yy.min()),int(yy.max())
     width,height=image.size
-    if x0<8 or x1>width-9 or y0<8 or y1>height-9:
+    if not closeup and (x0<8 or x1>width-9 or y0<8 or y1>height-9):
         raise RuntimeError(f"Camera cuts off geometry in {path.name}: {(x0,y0,x1,y1)}")
     if x1-x0<width*0.24 or y1-y0<height*0.20:
         raise RuntimeError(f"Camera too distant in {path.name}: {(x0,y0,x1,y1)}")
@@ -158,7 +158,7 @@ def main() -> None:
             raw=Path(temp)/(name+".png")
             run_preview(fixture,name,camera,raw)
             destination=out/(name+".png")
-            trim_preview(raw).save(destination,optimize=True)
+            trim_preview(raw,closeup=name in {'connector-lobe','connector-web','socket-lips'}).save(destination,optimize=True)
             print("Wrote raw OpenSCAD CAD view",destination)
     # Old numbered, upscaled image cards misrepresented the zoom level and
     # exterior wall. They are intentionally removed rather than retained.
