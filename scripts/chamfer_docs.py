@@ -27,30 +27,30 @@ module inspection_join_cut() {
 }
 module inspection_socket_coupon() {
     difference() {
-        translate([-10,0,0]) cube([20,19,10]);
-        socket_with_entry_chamfer_3d();
-        inspection_join_cut();
+        color([0.28,0.64,0.68]) translate([-10,0,0]) cube([20,19,10]);
+        color([0.96,0.72,0.12]) socket_with_entry_chamfer_3d();
+        color([0.96,0.72,0.12]) inspection_join_cut();
     }
 }
 module inspection_socket_section() {
     difference() {
         inspection_socket_coupon();
-        translate([-20,-10,-1]) cube([20,40,30]);
+        color([0.96,0.72,0.12]) translate([-20,-10,-1]) cube([20,40,30]);
     }
 }
 module inspection_join_edge() {
     difference() {
-        translate([-12,0,0]) cube([24,9,7]);
-        inspection_join_cut();
+        color([0.28,0.64,0.68]) translate([-12,0,0]) cube([24,9,7]);
+        color([0.96,0.72,0.12]) inspection_join_cut();
     }
 }
-// Color comes from OpenSCAD's Tomorrow preview scheme. Its contrasting
-// gold cut surfaces identify the removed pocket/foot material.
+// Preview palette: teal for stock / loose connector and gold for volumes
+// removed by the socket or joining-edge chamfer. STL color is unaffected.
 Inspection_view="connector-foot";
-if(Inspection_view=="connector-foot") loose_dogbone();
+if(Inspection_view=="connector-foot") color([0.28,0.64,0.68]) loose_dogbone();
 else if(Inspection_view=="connector-lobe")
-    translate([0,-HEAD_IN,0]) loose_dogbone();
-else if(Inspection_view=="connector-web") loose_dogbone();
+    translate([0,-HEAD_IN,0]) color([0.28,0.64,0.68]) loose_dogbone();
+else if(Inspection_view=="connector-web") color([0.28,0.64,0.68]) loose_dogbone();
 else if(Inspection_view=="socket-underside")
     rotate([180,0,0]) inspection_socket_coupon();
 else if(Inspection_view=="socket-lips")
