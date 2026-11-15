@@ -182,8 +182,10 @@ def test_bottom_internal_corners_are_rounded(tmp_path):
     vertices=np.vstack(section.discrete)
     # Section through a plain part of the left interior corner: intermediate
     # X and Z coordinates prove it is a round, not a single sharp vertex.
-    curved=vertices[(vertices[:,0]>2) & (vertices[:,0]<9)
-                    & (vertices[:,2]>1.9) & (vertices[:,2]<6.5)]
+    # The R20 default puts the lowest arc near x=20, not near x=2.
+    # Inspect the lower quadrant without hard-coding the former R12 band.
+    curved=vertices[(vertices[:,0]>9) & (vertices[:,0]<20)
+                    & (vertices[:,2]>1.9) & (vertices[:,2]<12)]
     assert len(np.unique(np.round(curved[:,2],2))) >= 3
 
 
@@ -748,7 +750,7 @@ def test_inner_lip_transition_is_delayed_and_continuous(tmp_path):
                left_bound(65)[-1]-left_bound(65)[0]) >= 2.0
 
 def test_cutout_has_two_tangent_rounds_at_requested_riser_angle(tmp_path):
-    mesh,_ = render_stl(tmp_path,"tangent_cutout", {
+    mesh,output = render_stl(tmp_path,"tangent_cutout", {
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
         "Cutout_row_04":True,"Cutout_round_diameter_mm":20,
         "Cutout_riser_angle_deg":60
@@ -756,9 +758,14 @@ def test_cutout_has_two_tangent_rounds_at_requested_riser_angle(tmp_path):
     section=mesh.section(plane_origin=[1,0,0],plane_normal=[1,0,0])
     assert section is not None
     pts=np.vstack(section.discrete)
-    # Inner divider notch side profile contains a protected flat bottom,
-    # an angled riser, and several non-collinear facets at BOTH ends.
-    lower=pts[(pts[:,2]>14)&(pts[:,2]<22)&(pts[:,1]>90)&(pts[:,1]<150)]
+    # The cutout floor moves UP when the inner-bottom radius increases.
+    # Sample its actual reported position rather than the former R12 level.
+    floor_match=re.search(
+        r'"CUTOUT floor Z / protected inner bottom fillet top Z", ([\d.e+-]+),',output)
+    assert floor_match,output[-2000:]
+    floor_z=float(floor_match.group(1))
+    lower=pts[(pts[:,2]>floor_z+0.1)&(pts[:,2]<floor_z+8.5)
+              &(pts[:,1]>90)&(pts[:,1]<150)]
     upper=pts[(pts[:,2]>69)&(pts[:,2]<75.1)&(pts[:,1]>50)&(pts[:,1]<190)]
     assert len(np.unique(np.round(lower[:,2],2))) >= 4
     assert len(np.unique(np.round(upper[:,2],2))) >= 4
