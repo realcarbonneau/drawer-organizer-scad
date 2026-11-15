@@ -396,7 +396,7 @@ def test_larger_bottom_radius_keeps_tray_and_dogbone_watertight(tmp_path,radius)
 @pytest.mark.parametrize("relief",[0,0.4])
 def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
     """The FIRST layers change, but the original straight fitting size remains."""
-    source,_=release_paths()
+    source,preset=release_paths()
     marker="// ----------- Output and non-fatal invalid selection handling -----------"
     prefix=source.read_text().split(marker,1)[0]
     spans={}
@@ -408,7 +408,7 @@ def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
         proc=openscad_render(mesh_path,{
             "Connector_elephant_foot_mm":relief,
             "Inner_bottom_radius_mm":12
-        },source=fixture)
+        },source=fixture,preset=preset)
         require_render_ok(proc,mesh_path)
         mesh=trimesh.load(mesh_path,force="mesh",process=True)
         assert mesh.is_watertight and mesh.body_count==1
@@ -910,7 +910,9 @@ def test_male_connector_actual_mesh_has_same_center_and_larger_radius(tmp_path,r
     coords=np.vstack(section.discrete)
     xs=np.round(coords[:,1],5)
     top=np.array([(v,coords[xs==v,2].max()) for v in np.unique(xs)])
-    arc=top[(top[:,0]>=0)&(top[:,0]<7.24)&(top[:,1]>0.15)&(top[:,1]<5.98)]
+    # Only the first print layers are chamfered. Do not fit these lower
+    # taper vertices to the unchanged concentric TOP circular envelope.
+    arc=top[(top[:,0]>=0)&(top[:,0]<7.24)&(top[:,1]>0.55)&(top[:,1]<5.98)]
     if radius==30:
         assert len(arc)==0  # full-height head after adequate fillet stock
     else:
