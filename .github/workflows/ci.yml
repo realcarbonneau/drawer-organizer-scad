@@ -11,8 +11,8 @@ permissions:
 # Serialize builds for the same branch. Multiple simultaneous pushes used to
 # race while publishing the gallery back to main.
 concurrency:
-  group: drawer-organizer-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  group: drawer-organizer-v12-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify-and-build:
@@ -38,34 +38,37 @@ jobs:
         run: make check
       - name: Generate README product screenshot gallery
         run: python -m scripts.readme_gallery --input build/previews --output docs/images
+      - name: Generate v12 build-plate geometry inspection close-ups
+        run: python -m scripts.chamfer_docs --output docs/images
       - name: Upload rendered STLs and preview screenshots
         uses: actions/upload-artifact@v4
         with:
-          name: drawer-organizer-v11-review-build
+          name: drawer-organizer-v12-review-build
           path: |
             build/*.stl
             build/previews/*.png
             docs/images/*.png
-            drawer-organizer-v11.scad
-            drawer-organizer-v11.json
+            drawer-organizer-v12.scad
+            drawer-organizer-v12.json
             scripts/*.py
             tests/*.py
             requirements-dev.txt
           if-no-files-found: error
       - name: Publish README gallery to main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wip/connector-elephant-foot-relief')
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           # A later push may have advanced main. Let that newer run publish
           # the matching screenshots rather than failing a non-FF git push.
-          git fetch origin main
-          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
-            echo "Main has advanced; skipping stale screenshot publication."
+          branch="${GITHUB_REF#refs/heads/}"
+          git fetch origin "$branch"
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse "origin/$branch")" ]; then
+            echo "Branch has advanced; skipping stale screenshot publication."
             exit 0
           fi
           git add docs/images/
           if ! git diff --cached --quiet; then
             git commit -m 'Refresh README screenshots [skip ci]'
-            git push origin HEAD:main
+            git push origin "HEAD:$branch"
           fi

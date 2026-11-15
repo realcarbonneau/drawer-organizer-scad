@@ -1,4 +1,4 @@
-// DRAWER ORGANIZER v11
+// DRAWER ORGANIZER v12
 // Independent parametric model for a measured, metal-sided kitchen drawer.
 // OpenSCAD 2021.01; no libraries or external geometry required.
 //
@@ -46,7 +46,7 @@ Rim_left = true;
 Rim_right = true;
 Rim_front = false;
 Rim_rear = false;
-// Bottom elephant-foot relief along joining edges, excluding connector mouths.
+// Bottom elephant-foot relief along joining edges, including connector mouths.
 Join_edge_elephant_foot_mm = 1; // [0:0.1:4]
 
 // Shared tray geometry (same drawer-level section).
@@ -60,7 +60,7 @@ Wall_thickness_mm = 2.0; // [0.8:0.1:5]
 // radius cannot compromise the minimum thickness: it will be raised to the
 // structural minimum and a warning is echoed. A larger radius fills more of
 // the tray floor corner and automatically shortens connector head pockets.
-Inner_bottom_radius_mm = 0; // [0:0.5:100]
+Inner_bottom_radius_mm = 20; // [0:0.5:100]
 // Soft touch rounding of exposed top edges and the divider cutout ridge.
 Soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 
@@ -78,7 +78,10 @@ Connector_side_clearance_total_mm = 0.2; // [0:0.05:1]
 // Vertical air gap ABOVE the male connector (under its blind socket roof).
 // Kept independently from side clearance for printer overhang quality.
 Connector_top_clearance_mm = 1; // [0:0.1:3]
-// No locking taper, mouth flare, entry bevel, or internal socket chamfer.
+// Print-bed-only relief: widens socket entries and insets loose dogbone feet.
+// The straight fitting walls and connector tops keep their original dimensions.
+Connector_elephant_foot_mm = 0.4; // [0:0.1:1.5]
+// No locking taper or full-depth socket chamfer.
 // Connector count is automatically inferred from adjoining-edge length.
 // All actual shared edges get matching blind underside sockets.
 Connectors_enabled = true;
@@ -267,6 +270,7 @@ assert(Connector_diameter_protrusion_mm>0 && Connector_center_thickness_mm>=2,
 assert(CONNECTOR_HEIGHT>=1 && CONNECTOR_HEIGHT < H-2*B,
        "Connector height must fit underneath the tray walls.");
 assert(JOIN_Z<=B,"Elephant foot relief must be no deeper than the base thickness.");
+assert(Connector_elephant_foot_mm>=0,"Connector foot chamfer cannot be negative.");
 // Cutouts are clipped by the divider geometry; no restriction on entered gap.
 
 // ----------- 2D section profiles; generated from the measured drawer -----------
@@ -576,6 +580,14 @@ function socket_roof_safe_cap_at(x) =
 function connection_cap_at(x) =
     min(CONNECTOR_HEIGHT,
         connector_offset_circle_z(x,B+SOCKET_TOP_CLEARANCE));
+// A uniform rise/run is shared by the female entry and male print foot.
+// Limit it so the flared socket tip stays BELOW the protected blind roof,
+// and so the narrow connector web remains solid at the build plate.
+CONNECTOR_FOOT_REQUEST=max(0,Connector_elephant_foot_mm);
+CONNECTOR_FOOT_Z=min(CONNECTOR_FOOT_REQUEST,CONNECTOR_HEIGHT/2,
+    max(0,(WEB_R-0.35)*tan(ALPHA)),
+    max(0,socket_roof_safe_cap_at(HEAD_IN+SOCKET_R+CONNECTOR_FOOT_REQUEST/tan(ALPHA))-0.1));
+CONNECTOR_FOOT_X=CONNECTOR_FOOT_Z/tan(ALPHA);
 // The male's larger-radius offset reaches the underside at this X distance.
 // Use the exact zero crossing (plus a tiny inward safety offset) so any
 // extreme small-radius truncation still creates a watertight male STL.
@@ -644,6 +656,26 @@ module socket_opening_3d() {
     );
     polyhedron(points=pts,faces=faces,convexity=10);
 }
+// A shallow flared entry removes the squashed first-layer interference on
+// BOTH straight web walls and the curved lobe, all the way to its rounded tip.
+// The original blind cutter still defines the socket roof and upper fit.
+module socket_with_entry_chamfer_3d() {
+    union() {
+        socket_opening_3d();
+        if(CONNECTOR_FOOT_Z>0) {
+            translate([0,HEAD_IN,-E])
+                cylinder(h=CONNECTOR_FOOT_Z+E,
+                         r1=SOCKET_R+CONNECTOR_FOOT_X,r2=SOCKET_R,
+                         $fn=max(36,Render_facets));
+            translate([0,(HEAD_IN-E)/2,-E])
+                linear_extrude(height=CONNECTOR_FOOT_Z+E,
+                    scale=[(WEB_R+SOCKET_SIDE_CLEARANCE)/
+                           (WEB_R+SOCKET_SIDE_CLEARANCE+CONNECTOR_FOOT_X),1])
+                    square([2*(WEB_R+SOCKET_SIDE_CLEARANCE+CONNECTOR_FOOT_X),
+                            HEAD_IN+E],center=true);
+        }
+    }
+}
 module edge_station(side,at) {
     if(side=="front") translate([at,0,0]) children();
     if(side=="rear") translate([at,0,0]) rotate([0,0,180]) children();
@@ -655,28 +687,44 @@ module edge_station(side,at) {
 module sockets(w,d,front_c,rear_c,left_c,right_c,
                front_stations,rear_stations,side_stations) {
     if(Connectors_enabled) {
-        if(front_c) for(p=front_stations) edge_station("front",p) socket_opening_3d();
-        if(rear_c) for(p=rear_stations) translate([0,d,0]) edge_station("rear",p) socket_opening_3d();
-        if(left_c) for(p=side_stations) edge_station("left",p) socket_opening_3d();
-        if(right_c) for(p=side_stations) translate([w,0,0]) edge_station("right",p) socket_opening_3d();
+        if(front_c) for(p=front_stations) edge_station("front",p) socket_with_entry_chamfer_3d();
+        if(rear_c) for(p=rear_stations) translate([0,d,0]) edge_station("rear",p) socket_with_entry_chamfer_3d();
+        if(left_c) for(p=side_stations) edge_station("left",p) socket_with_entry_chamfer_3d();
+        if(right_c) for(p=side_stations) translate([w,0,0]) edge_station("right",p) socket_with_entry_chamfer_3d();
+    }
+}
+// Taper only the first printed layers, retaining the exact original heads,
+// center bar and fillet-truncated height above the foot-relief height.
+module dogbone_with_print_foot() {
+    if(CONNECTOR_FOOT_Z<=0)
+        linear_extrude(height=CONNECTOR_HEIGHT) full_dogbone_2d();
+    else union() {
+        translate([0,0,CONNECTOR_FOOT_Z-E])
+            linear_extrude(height=CONNECTOR_HEIGHT-CONNECTOR_FOOT_Z+E)
+                full_dogbone_2d();
+        for(y=[-HEAD_IN,HEAD_IN])
+            translate([0,y,0])
+                cylinder(h=CONNECTOR_FOOT_Z+E,
+                         r1=HEAD_R-CONNECTOR_FOOT_X,r2=HEAD_R,
+                         $fn=max(36,Render_facets));
+        linear_extrude(height=CONNECTOR_FOOT_Z+E,
+            scale=[WEB_R/(WEB_R-CONNECTOR_FOOT_X),1])
+            square([2*(WEB_R-CONNECTOR_FOOT_X),2*HEAD_IN],center=true);
     }
 }
 module loose_dogbone() {
     intersection() {
-        linear_extrude(height=CONNECTOR_HEIGHT) full_dogbone_2d();
+        dogbone_with_print_foot();
         connector_height_envelope(true);
     }
 }
 
 // ----------- Joining-edge elephant-foot relief -----------
-// Cut the exposed joining edge after the socket pads are joined to the shell.
-// A small keep-out at each socket mouth prevents the outside relief from
-// becoming a chamfer INSIDE a female dogbone socket. The socket profile itself
-// remains straight through its complete Z depth, with no entry bevel.
+// Keep the entire exposed joining edge relieved, including the narrow lips at
+// each connector mouth. The separate socket chamfer reaches into each pocket.
 module join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
                         front_stations,rear_stations,side_stations) {
-    if(JOIN_Z>0) difference() {
-      union() {
+    if(JOIN_Z>0) {
         if(left_join)
             xz_extrude_2d(d)
                 polygon([[-20,-E],[JOIN_X+E,-E],[JOIN_X,0],[0,JOIN_Z],[-20,JOIN_Z+20]]);
@@ -689,20 +737,6 @@ module join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
         if(rear_join)
             yz_extrude_2d(w)
                 polygon([[d+20,-E],[d-JOIN_X-E,-E],[d-JOIN_X,0],[d,JOIN_Z],[d+20,JOIN_Z+20]]);
-      }
-      // Keep the full-width vertical web opening of each underside socket.
-      // The protected region is only about one web width across each joint.
-      if(Connectors_enabled) {
-        keep=WEB_R+SOCKET_SIDE_CLEARANCE+0.6;
-        if(front_join) for(p=front_stations)
-            translate([p-keep,-JOIN_X-2,-E]) cube([2*keep,2*JOIN_X+4,JOIN_Z+2*E]);
-        if(rear_join) for(p=rear_stations)
-            translate([p-keep,d-JOIN_X-2,-E]) cube([2*keep,2*JOIN_X+4,JOIN_Z+2*E]);
-        if(left_join) for(p=side_stations)
-            translate([-JOIN_X-2,p-keep,-E]) cube([2*JOIN_X+4,2*keep,JOIN_Z+2*E]);
-        if(right_join) for(p=side_stations)
-            translate([w-JOIN_X-2,p-keep,-E]) cube([2*JOIN_X+4,2*keep,JOIN_Z+2*E]);
-      }
     }
 }
 
@@ -949,13 +983,15 @@ module preview_loose_connectors() {
 }
 
 // ----------- Output and non-fatal invalid selection handling -----------
-echo("DRAWER v11 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
+echo("DRAWER v12 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / AUTO OUTER CHAMFER run, rise (from drawer floor radius)",ALPHA,CHAMFER_X,CHAMFER_Z);
 echo("DRAWER FLOOR radius / REQUIRED exterior chamfer rise",Drawer_floor_corner_radius_mm,CHAMFER_Z);
 echo("RIM (angle FROM PRINT BED / fixed height / derived projection)",
      HAS_RIM ? ALPHA : 0, LIP_Z, RIM_PROJECTION);
 echo("CONNECTOR CLEARANCES (total side / each side / top)",
      Connector_side_clearance_total_mm, SOCKET_SIDE_CLEARANCE, SOCKET_TOP_CLEARANCE);
+echo("CONNECTOR PRINT FOOT (requested / effective rise / horizontal run)",
+     CONNECTOR_FOOT_REQUEST,CONNECTOR_FOOT_Z,CONNECTOR_FOOT_X);
 echo("CONNECTOR ROOF CAPS (at seam)",connection_cap_at(0),socket_roof_safe_cap_at(0));
 echo("CONCENTRIC FILLET CENTER (X, Z) / RADII (inner, socket, male)",
      connector_fillet_center_x(),connector_fillet_center_z(),

@@ -44,6 +44,20 @@ def preview_connector_positions(messages):
     return [(int(i),float(x),float(y)) for i,x,y in re.findall(p,messages)]
 
 
+
+def test_v12_default_has_20_mm_inside_fillet(tmp_path):
+    out,_=render_csg(tmp_path,"v12_default_inside_fillet",{
+        "Output_mode":1,"Selected_row":3,"Selected_column":2
+    })
+    match=re.search(
+        r'"INNER BOTTOM ROUNDING \(requested / chamfer-protected minimum / effective\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+    assert match,out[-2000:]
+    requested,minimum,effective=map(float,match.groups())
+    assert requested==pytest.approx(20)
+    assert minimum==pytest.approx(12)
+    assert effective==pytest.approx(20)
+
 @pytest.mark.parametrize("gap", [0, 1, 12, 50])
 def test_preview_separation_is_one_constant_gap_between_tray_edges(tmp_path, gap):
     output, _ = render_csg(tmp_path, f"preview_{gap}", {
@@ -168,8 +182,10 @@ def test_bottom_internal_corners_are_rounded(tmp_path):
     vertices=np.vstack(section.discrete)
     # Section through a plain part of the left interior corner: intermediate
     # X and Z coordinates prove it is a round, not a single sharp vertex.
-    curved=vertices[(vertices[:,0]>2) & (vertices[:,0]<9)
-                    & (vertices[:,2]>1.9) & (vertices[:,2]<6.5)]
+    # The R20 default puts the lowest arc near x=20, not near x=2.
+    # Inspect the lower quadrant without hard-coding the former R12 band.
+    curved=vertices[(vertices[:,0]>9) & (vertices[:,0]<20)
+                    & (vertices[:,2]>1.9) & (vertices[:,2]<12)]
     assert len(np.unique(np.round(curved[:,2],2))) >= 3
 
 
@@ -391,6 +407,43 @@ def test_larger_bottom_radius_keeps_tray_and_dogbone_watertight(tmp_path,radius)
     })
     assert male.body_count==1
     assert male.volume>0
+
+
+@pytest.mark.parametrize("relief",[0,0.4])
+def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
+    """The FIRST layers change, but the original straight fitting size remains."""
+    source,preset=release_paths()
+    marker="// ----------- Output and non-fatal invalid selection handling -----------"
+    prefix=source.read_text().split(marker,1)[0]
+    spans={}
+    for label,module in [("female","socket_with_entry_chamfer_3d"),
+                         ("male","loose_dogbone")]:
+        fixture=tmp_path/f"{label}_foot_{relief}.scad"
+        fixture.write_text(prefix + chr(10) + module + "();" + chr(10))
+        mesh_path=tmp_path/f"{label}_foot_{relief}.stl"
+        proc=openscad_render(mesh_path,{
+            "Connector_elephant_foot_mm":relief,
+            "Inner_bottom_radius_mm":12
+        },source=fixture,preset=preset)
+        require_render_ok(proc,mesh_path)
+        mesh=trimesh.load(mesh_path,force="mesh",process=True)
+        assert mesh.is_watertight and mesh.body_count==1
+        if label=="male":
+            assert mesh.bounds[0,2]==pytest.approx(0,abs=0.03)
+        else:
+            assert mesh.bounds[0,2]<0
+        def width(z):
+            section=mesh.section(plane_origin=[0,0,z],plane_normal=[0,0,1])
+            assert section is not None
+            vertices=np.vstack(section.discrete)
+            return float(vertices[:,0].max()-vertices[:,0].min())
+        spans[label]=(width(0.05),width(0.8))
+    if relief:
+        assert spans["female"][0]-spans["female"][1]>0.25
+        assert spans["male"][1]-spans["male"][0]>0.25
+    else:
+        assert abs(spans["female"][0]-spans["female"][1])<0.05
+        assert abs(spans["male"][0]-spans["male"][1])<0.05
 
 
 @pytest.mark.parametrize("relief",[0,1,1.8])
@@ -697,7 +750,7 @@ def test_inner_lip_transition_is_delayed_and_continuous(tmp_path):
                left_bound(65)[-1]-left_bound(65)[0]) >= 2.0
 
 def test_cutout_has_two_tangent_rounds_at_requested_riser_angle(tmp_path):
-    mesh,_ = render_stl(tmp_path,"tangent_cutout", {
+    mesh,output = render_stl(tmp_path,"tangent_cutout", {
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
         "Cutout_row_04":True,"Cutout_round_diameter_mm":20,
         "Cutout_riser_angle_deg":60
@@ -705,9 +758,14 @@ def test_cutout_has_two_tangent_rounds_at_requested_riser_angle(tmp_path):
     section=mesh.section(plane_origin=[1,0,0],plane_normal=[1,0,0])
     assert section is not None
     pts=np.vstack(section.discrete)
-    # Inner divider notch side profile contains a protected flat bottom,
-    # an angled riser, and several non-collinear facets at BOTH ends.
-    lower=pts[(pts[:,2]>14)&(pts[:,2]<22)&(pts[:,1]>90)&(pts[:,1]<150)]
+    # The cutout floor moves UP when the inner-bottom radius increases.
+    # Sample its actual reported position rather than the former R12 level.
+    floor_match=re.search(
+        r'"CUTOUT floor Z / protected inner bottom fillet top Z", ([\d.e+-]+),',output)
+    assert floor_match,output[-2000:]
+    floor_z=float(floor_match.group(1))
+    lower=pts[(pts[:,2]>floor_z+0.1)&(pts[:,2]<floor_z+8.5)
+              &(pts[:,1]>90)&(pts[:,1]<150)]
     upper=pts[(pts[:,2]>69)&(pts[:,2]<75.1)&(pts[:,1]>50)&(pts[:,1]<190)]
     assert len(np.unique(np.round(lower[:,2],2))) >= 4
     assert len(np.unique(np.round(upper[:,2],2))) >= 4
@@ -873,7 +931,9 @@ def test_male_connector_actual_mesh_has_same_center_and_larger_radius(tmp_path,r
     coords=np.vstack(section.discrete)
     xs=np.round(coords[:,1],5)
     top=np.array([(v,coords[xs==v,2].max()) for v in np.unique(xs)])
-    arc=top[(top[:,0]>=0)&(top[:,0]<7.24)&(top[:,1]>0.15)&(top[:,1]<5.98)]
+    # Only the first print layers are chamfered. Do not fit these lower
+    # taper vertices to the unchanged concentric TOP circular envelope.
+    arc=top[(top[:,0]>=0)&(top[:,0]<7.24)&(top[:,1]>0.55)&(top[:,1]<5.98)]
     if radius==30:
         assert len(arc)==0  # full-height head after adequate fillet stock
     else:

@@ -1,4 +1,4 @@
-"""Build polished README visuals from real OpenSCAD preview PNGs.
+"""Build labeled CAD geometry reference images from real OpenSCAD preview PNGs.
 
 This changes presentation only. It does not modify or invent CAD geometry.
 Run after make build; requires Pillow and DejaVuSans.
@@ -50,14 +50,14 @@ def hero(source,dest):
     label(d,(92,66),'OPENSCAD  /  PARAMETRIC CAD',23,ACCENT,True)
     label(d,(86,132),'Drawer',87,WHITE,True)
     label(d,(86,233),'Organizer',87,WHITE,True)
-    label(d,(91,363),'Print the trays you need. Connect them',27,'#d3e0ea')
-    label(d,(91,408),'underneath. Keep the layout flexible.',27,'#d3e0ea')
+    label(d,(91,363),'Tray sections printed separately; attached',27,'#d3e0ea')
+    label(d,(91,408),'from below using removable dogbones.',27,'#d3e0ea')
     rounded(d,(90,544,360,615),MID,18)
-    label(d,(110,562),'5 TRAYS  /  v11',28,WHITE,True)
+    label(d,(110,562),'5 TRAYS  /  v12',28,WHITE,True)
     rounded(d,(375,544,642,615),MID,18)
     label(d,(402,562),'2 mm WALLS',26,WHITE,True)
     rounded(d,(85,689,1705,750),'#1c354c',15)
-    label(d,(112,704),'Customizable grid  /  Soft edges  /  Underside connectors',24,'#cee0ec')
+    label(d,(112,704),'Nominal dimensions  /  20 mm inner radius  /  underside sockets',24,'#cee0ec')
     rounded(d,(792,97,1710,651),WHITE,26)
     insert(im,source/'full-layout.png',(810,115,1692,633))
     im.save(dest,optimize=True)
@@ -73,7 +73,7 @@ def sheet(dest,source,title,subtitle,left,right):
         insert(im,source/name,(x0+17,y0+12,x1-17,y1-85))
         label(d,(x0+23,y1-72),title,25,INK,True)
         label(d,(x0+23,y1-37),caption,18,MUTED)
-    label(d,(85,833),'Actual OpenSCAD v11 model previews  /  Test print before use',19,MUTED)
+    label(d,(85,833),'Actual OpenSCAD v12 model previews  /  Test print before use',19,MUTED)
     im.save(dest,optimize=True)
 
 def main():
@@ -87,17 +87,17 @@ def main():
             raise FileNotFoundError('Missing OpenSCAD screenshot: '+name+'.png')
     hero(args.input,args.output/'hero.png')
     sheet(args.output/'layout.png',args.input,
-          'Five trays. One configurable grid.',
+          'Tray arrangement: default grid',
           'The kitchen example: one rear, three middle, one front tray.',
           ('full-layout.png','Default five-tray layout','Rear to front: 1 / 3 / 1'),
           ('rear-tray.png','Full-width rear tray','Tapered walls and smooth bottom'))
     sheet(args.output/'details.png',args.input,
-          'Rounded access. Modular storage.',
+          'Interior divider access cutout',
           'A row-4 access opening with smooth tangent risers.',
           ('cutout-closeup.png','Cutout — camera close-up','20 mm transition diameter'),
           ('front-tray.png','Full-width front tray','A separately printed section'))
     sheet(args.output/'connector.png',args.input,
-          'The connector beneath the trays.',
+          'Underside connector geometry',
           'Loose dogbones have independent side and roof clearances.',
           ('dogbone.png','Male dogbone','4 mm core / 6 mm lobes / 6 mm tall'),
           ('middle-tray.png','Individual tray','Blind pockets face down'))
