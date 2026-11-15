@@ -65,11 +65,11 @@ else if(Inspection_view=="joining-edge") inspection_join_edge();
 # underside, hence the negative focal Y/Z coordinates.
 VIEWS = [
     ("connector-foot",    (0,  0,  3, 58,  0, 32, 35)),
-    ("connector-lobe",    (0,  0,  1, 47,  0, 20, 19)),
-    ("connector-web",     (0,  0,  2, 82,  0,  0, 24)),
-    ("socket-underside",  (0, -9, -3, 25,  0, 25, 43)),
-    ("socket-lips",       (0, -5, -1,  7,  0,  0, 32)),
-    ("socket-section",    (0, -9, -4, 48,  0, 55, 40)),
+    ("connector-lobe",    (0,  0,  1, 70,  0, 25, 35)),
+    ("connector-web",     (0,  0,  1, 80,  0, 50, 42)),
+    ("socket-underside",  (0, -9, -3, 65,  0, 25, 55)),
+    ("socket-lips",       (0, -5, -1, 55,  0,  0, 50)),
+    ("socket-section",    (0, -7, -3, 65,  0,110, 48)),
     ("joining-edge",     (0,  4,  2, 62,  0, 42, 40)),
 ]
 
