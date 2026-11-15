@@ -4,6 +4,65 @@ Parametric tray geometry for a measured, metal-sided drawer. Separate printed tr
 
 **Files:** [Model](drawer-organizer-v12.scad) · [Matching Customizer preset](drawer-organizer-v12.json) · [Development and regression requirements](DEVELOPMENT.md)
 
+## OpenSCAD gallery — actual model and print interfaces
+
+These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views shorten only surrounding tray stock. All gallery images use the same 4:3 frame and are paired with the relevant technical setting, following the Rocket Stove README format.
+
+### Assembly and individual trays
+
+| Complete five-tray layout | Full-width rear tray |
+| --- | --- |
+| ![Complete five-tray layout](docs/images/cad/full-layout.png) | ![Full-width rear tray](docs/images/cad/rear-tray.png) |
+| `Output_mode=0`; 3 × 6 logical grid, five separate physical trays | `Output_mode=1`, row 1: full-width rear section |
+
+| Middle tray with dividers | Full-width front tray |
+| --- | --- |
+| ![Middle tray with dividers](docs/images/cad/middle-tray.png) | ![Full-width front tray](docs/images/cad/front-tray.png) |
+| Selected middle section from row 3; 20 mm inner bottom radius | Selected front section from row 6, printed independently |
+
+| Interior divider access cutout | Loose connector output |
+| --- | --- |
+| ![Interior divider access cutout](docs/images/cad/cutout-closeup.png) | ![Loose connector output](docs/images/cad/dogbone.png) |
+| Row-4 access cutout, rounded 20 mm transition diameter | `Output_mode=2`; one dogbone shown for inspection |
+
+### Loose dogbone — footprint and first layers
+
+| Complete connector — angled foot | Top-down connector footprint |
+| --- | --- |
+| ![Complete connector — angled foot](docs/images/cad/connector-foot.png) | ![Top-down connector footprint](docs/images/cad/connector-plan.png) |
+| Both round lobes joined by a straight 4 mm web | 6 mm nominal lobe diameter; no locking undercuts |
+
+| Circular lobe — lower perimeter | Straight web — first-layer edge |
+| --- | --- |
+| ![Circular lobe — lower perimeter](docs/images/cad/connector-lobe.png) | ![Straight web — first-layer edge](docs/images/cad/connector-web.png) |
+| 0.4 mm modeled print-foot relief follows the round lobe | Same foot relief follows both straight web sides |
+
+| Connector underside | Connector side profile |
+| --- | --- |
+| ![Connector underside](docs/images/cad/connector-underside.png) | ![Connector side profile](docs/images/cad/connector-profile.png) |
+| Bottom-facing view of the reduced first-layer footprint | Full fitting profile resumes above the 0.4 mm relief |
+
+### Blind underside socket — mouth and section
+
+| Underside socket entrance | Entrance viewed straight on |
+| --- | --- |
+| ![Underside socket entrance](docs/images/cad/socket-underside.png) | ![Entrance viewed straight on](docs/images/cad/socket-mouth-plan.png) |
+| Female pocket opens at `Z=0` underneath the tray | Lobe and web entry are part of one blind socket |
+
+| Lobe and joining-edge lips | Solid section through socket wall |
+| --- | --- |
+| ![Lobe and joining-edge lips](docs/images/cad/socket-lips.png) | ![Solid section through socket wall](docs/images/cad/socket-section.png) |
+| 0.4 mm entrance chamfer and separate 1 mm joining-edge relief | The roof remains blind; upper fitting walls are not tapered |
+
+### Tray joining edge — first-layer relief
+
+| Joining-edge foot profile | Edge relief at a socket mouth |
+| --- | --- |
+| ![Joining-edge foot profile](docs/images/cad/joining-edge.png) | ![Edge relief at a socket mouth](docs/images/cad/joining-socket.png) |
+| `Join_edge_elephant_foot_mm=1.0`, with ~0.58 mm run at 60° | Relief continues across the short lips beside the pocket |
+
+The larger 10 mm exterior-floor clearance slope is a separate feature, **not** an elephant-foot close-up; the misleading former exterior-wall coupon is intentionally excluded. [Foot-relief dimensions (schematic, not to scale)](docs/images/inspection-section-dimensions.png).
+
 ## Print and export
 
 1. Keep `drawer-organizer-v12.scad` and `drawer-organizer-v12.json` together. Open the SCAD file in OpenSCAD 2021.01 or later.
@@ -39,42 +98,6 @@ The 0.4 mm modeled connector foot relief and the 1.0 mm joining-edge relief are 
 
 At the default preset, nominal floor width after clearance is 189 mm, and usable drawer length before tray-edge wall/fillet losses is 474 mm. Logical cell pitch is 63 × 79 mm. Actual clear floor area is reduced by the walls and circular bottom fillets.
 
-## OpenSCAD gallery — build-plate contact geometry
-
-The following views use the **v12 model**, with surrounding stock shortened to expose local geometry. The images are **OpenSCAD F5 CAD previews**, not photographs, F6 mesh screenshots, or slicer layer previews. The inspection preview uses teal for solid material and gold for subtractive socket/chamfer surfaces; STL exports have no such colors. The model and Customizer dimensions are unchanged by the inspection views.
-
-Each image has a stable descriptive filename, without a sequence number. The captions record the setting or physical feature not apparent from the image.
-
-### Loose connector — first-layer perimeter
-
-| Complete loose dogbone | Circular lobe — close-up |
-| --- | --- |
-| ![Loose connector: both lobes and the straight web at the build plate](docs/images/cad/connector-foot.png) | ![Loose connector: first-layer chamfer around the round head](docs/images/cad/connector-lobe.png) |
-| `Connector_elephant_foot_mm=0.4`; chamfer follows both lobes and the center web | 0.4 mm vertical rise, approximately 0.23 mm horizontal run at 60° |
-
-| Straight web — low-angle view | Female socket — underside overview |
-| --- | --- |
-| ![Loose connector straight web and low first-layer taper](docs/images/cad/connector-web.png) | ![Female socket underside entry with connecting web opening](docs/images/cad/socket-underside.png) |
-| The web returns to full nominal width above the first-layer bevel | Pocket opening at the build-plate plane, `Z=0`; the blind roof is retained |
-
-### Female socket — entrance and roof
-
-| Round lobe and narrow mouth lips | Section through the socket wall |
-| --- | --- |
-| ![Female socket curved end and short joining-edge mouth lips](docs/images/cad/socket-lips.png) | ![Female socket cutaway exposing its blind pocket and first-layer entrance](docs/images/cad/socket-section.png) |
-| 0.4 mm entry bevel on the socket, with the separate 1 mm joining-edge relief continuing through the short lips | Pocket is blind; full-size fitting profile remains above the entry bevel |
-
-### Tray-to-tray joining edge
-
-| Joining-edge print foot | Section dimensions — schematic |
-| --- | --- |
-| ![Tray joining-edge bottom relief in OpenSCAD](docs/images/cad/joining-edge.png) | ![Comparison of connector foot, socket entry and tray joining-edge cross-sections](docs/images/inspection-section-dimensions.png) |
-| `Join_edge_elephant_foot_mm=1.0`; ~0.58 mm horizontal run at 60° | Connector/socket rise: 0.4 mm. Joining-edge rise: 1.0 mm. Schematic not to scale |
-
-The exterior lower sidewall is **not shown as an elephant-foot close-up**: its much larger 10 mm rise is a drawer-floor clearance slope, a separate geometric feature. The previous image was a misleading construction coupon, not the actual exterior tray surface.
-
-For either modeled chamfer, `horizontal_run = vertical_rise / tan(Print_overhang_angle_deg)`. Set `Connector_elephant_foot_mm=0` to disable only the connector/socket foot relief; the independent joining-edge setting remains. Socket relief may be limited internally to preserve stock below the blind roof.
-
 ## Geometry and fit rules
 
 - **Plan and grouping.** Row 1 is farthest from the user (rear). A `Continue previous` row enlarges the tray immediately behind it rather than adding another seam. Column 1 is left when facing the open drawer.
@@ -96,7 +119,7 @@ python -m scripts.readme_gallery --input build/previews --output docs/images
 python -m scripts.chamfer_docs --output docs/images
 ```
 
-`make check` runs the pytest geometry tests and exports the tray STLs plus standard previews. The inspection generator creates seven unnumbered OpenSCAD geometry previews in `docs/images/cad/` and a separate section schematic at `docs/images/inspection-section-dimensions.png`. The main-branch GitHub Actions workflow runs these checks, uploads artifacts, and commits regenerated reference images if they changed.
+`make check` runs the pytest geometry tests and exports the tray STLs plus standard previews. The inspection generator publishes **18 equally sized, unnumbered CAD images** in `docs/images/cad/` (six actual-preset overview/detail views and twelve connector/socket/joining-edge views), plus the linked section schematic. GitHub Actions regenerates and publishes the gallery from the same v12 geometry.
 
 Tests cover OpenSCAD F5/F6 output, watertight individual tray/connector meshes, multiple inner radii, connector clearance envelopes, tray selections, cutout geometry and parameter bounds. Passing these tests does **not** establish actual first-layer printer behavior or connector fit; those need printed samples.
 
