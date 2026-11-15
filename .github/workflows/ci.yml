@@ -54,12 +54,12 @@ jobs:
             tests/*.py
             requirements-dev.txt
           if-no-files-found: error
-      - name: Publish README gallery to main
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wip/connector-elephant-foot-relief')
+      - name: Commit generated CAD reference images to the source branch
+        if: github.event_name == 'push'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          # A later push may have advanced main. Let that newer run publish
+          # A later push may have advanced this branch. Let that newer run publish
           # the matching screenshots rather than failing a non-FF git push.
           branch="${GITHUB_REF#refs/heads/}"
           git fetch origin "$branch"
