@@ -11,8 +11,8 @@ permissions:
 # Serialize builds for the same branch. Multiple simultaneous pushes used to
 # race while publishing the gallery back to main.
 concurrency:
-  group: drawer-organizer-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  group: drawer-organizer-v12-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify-and-build:
