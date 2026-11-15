@@ -1,94 +1,89 @@
-# Drawer Organizer
+# Drawer Organizer — OpenSCAD v12
 
-![Drawer Organizer v11 — a product-style overview made from an actual OpenSCAD screenshot](docs/images/hero.png)
+Parametric tray geometry for a measured, metal-sided drawer. Separate printed trays connect through removable dogbone pieces inserted into blind sockets from underneath. All dimensions below are millimetres unless stated otherwise. This README is a reference for the supplied Customizer preset, geometry rules, exporting, and verification.
 
-**Parametric · Modular · 3D-printable · OpenSCAD 2021.01**
+**Files:** [Model](drawer-organizer-v12.scad) · [Matching Customizer preset](drawer-organizer-v12.json) · [Development and regression requirements](DEVELOPMENT.md)
 
-A customizable set of kitchen-drawer trays for a measured metal-sided drawer. Print each compartment separately, then connect neighboring trays with removable dogbones inserted from underneath. The default example builds **five trays** in a **3-column × 6-row logical grid**.
+## Print and export
 
-**[Open the v11 model](drawer-organizer-v11.scad)** · **[Matching Customizer preset](drawer-organizer-v11.json)** · **[Development guidelines](DEVELOPMENT.md)**
+1. Keep `drawer-organizer-v12.scad` and `drawer-organizer-v12.json` together. Open the SCAD file in OpenSCAD 2021.01 or later.
+2. Select the **Kitchen cutlery drawer** preset and change the drawer/grid dimensions to match the actual drawer.
+3. Set **Output mode** to **Selected tray** (`1`). Select row and column, press **F6**, and export its STL. A continued row belongs to the group started above it; selecting that row exports the complete grouped tray.
+4. Repeat for each physical tray. Set **Output mode** to **Loose dogbone connectors** (`2`) to export the connectors. **Full layout** (`0`) is an inspection view, not a single print job.
+5. Print the trays and connectors with their bottoms on the build plate. Insert dogbones upward into neighboring underside sockets after printing. The connectors are removable; no locking undercuts are modeled.
 
-> These are high-resolution, camera-fitted captures of the actual OpenSCAD model, not photographs of manufactured parts. Screenshots are resized down with antialiasing, never enlarged from crops. Always test fit and material strength on your own printer.
+The 0.4 mm modeled connector foot relief and the 1.0 mm joining-edge relief are included in exported STL geometry. To evaluate the intended geometry, start with slicer elephant-foot compensation **off** and test-fit a single connector/socket pair. Physical printer variation is not measured by the model.
 
-## See the layout
+## Default configuration
 
-![Five-tray arrangement and full-width rear tray, generated from the actual CAD model](docs/images/layout.png)
-
-Use the **Continue previous** dropdown option to extend the preceding tray group. To request 4, 5, or 6 compartments in a row, first increase **Grid columns** to at least that number. If a row exceeds the grid size, OpenSCAD prints a helpful message and draws nothing instead of failing an assertion. In the example, rows 1–2 form the rear tray, rows 3–5 form three middle trays, and row 6 forms the front tray. Looking down into the open drawer, row 1 is at the **rear** and column 1 is on the **left**. Full layout previews also show the specified **Loose connector quantity** as a right-side Y-axis column; selected-tray and standalone connector exports are unchanged.
-
-| Group | Trays | Approximate nominal floor footprint |
-| --- | ---: | ---: |
-| Rear, rows 1–2 | 1 full-width | 189 × 158 mm |
-| Middle, rows 3–5 | 3 long | 63 × 237 mm per tray |
-| Front, row 6 | 1 full-width | 189 × 79 mm |
-| Logical grid cell | 3 columns × 6 rows | **63 × 79 mm** |
-
-The estimated **clear** space for a logical cell is about **59 × 75 mm**, before bottom fillets. Actual space depends on the wall taper, floor corner radius, and calculated rim projection.
-
-## Soft edges and access cutouts
-
-![Middle tray with access cutout and full-width front tray](docs/images/details.png)
-
-The trays default to **2 mm walls and base**, **0.6 mm soft exposed-edge rounding** (also applied with a direct quarter-circle loft around the exposed access-cutout edges, without 3D Minkowski), and a shared calculated bottom interior fillet. **Inner bottom radius** is a **0–100 mm slider** (0.5 mm increments) that defaults to **0 (automatic)**. Its automatic minimum is the larger of base thickness and exterior chamfer rise plus base thickness (12 mm at the defaults). Enter a larger radius to increase the concave floor-to-wall rounding; the male dogbone and matching blind pocket both retain **more height** toward the lobes as the radius grows. The female socket roof follows the effective fillet offset by base stock; the male follows that same fillet offset by base stock plus top clearance, with the original 6 mm maximum male height. A nonzero radius smaller than the calculated structural minimum is ignored with an OpenSCAD echo warning; minimum floor thickness and pocket roof stock are never sacrificed. The inner corners use explicit circular profiles (not a global offset opening): at **R20** there is no horizontal step where the fillet meets the vertical wall. At **R30**, the 63 mm nominal middle-tray width still allows a watertight cavity: the two 30 mm rounds meet in a shallow center valley rather than requiring a flat floor. The echo reports when opposing radii consume the nominal flat floor; only insufficient **vertical room** rejects a large radius. The outer sidewalls taper to suit the measured drawer, while the front/rear outer ends stay vertical. The outer rim can flare outward while the inner rim follows the same slope without an extra vertical return.
-
-One checkbox per logical row enables cutouts along interior dividers. **Row 4 is enabled** in the example. The default cutout has a **25 mm base width**, two tangent blends of **20 mm rounding diameter**, and a **75° straight riser**; the riser angle can be adjusted. The 25 mm measurement is the **unrounded base gap** where the straight risers would intersect the cutout floor *before* the 20 mm-diameter fillets are added. The rounded flat floor is narrower (about **9.6 mm** at 75°), and the top opening is about **74 mm** with the defaults. The base gap and riser angle have unrestricted numeric inputs, including zero; extreme angles are handled with a safe geometry fallback. The Customizer angle for these access notches is independent of the print-overhang angle.
-
-### Rim angle and tray height
-
-The **print overhang angle** and **tray height above the metal rim** are the independent rim settings. A separate rim-projection input is not needed. The model calculates horizontal projection as `height / tan(angle from the print bed)`. With the default 10 mm height and 60° angle, the selected flared edges extend approximately **5.77 mm** horizontally. The lip stays at the chosen height for all printing angles. The **drawer floor corner radius** is the only input controlling the lower exterior chamfer rise; its horizontal run is calculated from the overhang angle (for example, a 10 mm drawer radius at 60° gives 5.77 mm run and 10 mm rise). There is no separate maximum chamfer rise setting. If the required chamfer or connector-protected interior fillet does not fit, OpenSCAD explains the conflicting dimensions and renders nothing rather than silently clipping the chamfer. The cutout floor clears the inner-bottom fillet before its separate convex touch rounding is constructed.
-
-Customizer sections and parameter labels are sentence case. Row labels are shortened to `Row_01`, `Row_02`, and so on, without duplicate explanatory text.
-
-## Connector and tolerances
-
-![Underside dogbone connector and printable middle-tray geometry](docs/images/connector.png)
-
-A loose dogbone inserts upward into **blind, underside-facing sockets**. There are no locking ledges or raised connector pads within the usable tray cavity.
-
-| Setting | Default | Meaning |
+| Parameter | v12 preset | Interpretation |
 | --- | ---: | --- |
-| Connector center thickness | **4 mm** | Straight center width |
-| Lobe protrusion | **1 mm per side** | Each circular head has **6 mm diameter** |
-| Straight center span | **4 mm total** | About 2 mm inserted into each tray |
-| Male connector height | **6 mm** | Maximum connector height |
-| Side tolerance | **0.2 mm total** | The female socket is 0.1 mm wider on each side |
-| Top tolerance | **1 mm** | Additional space between the male and blind pocket roof |
-| Connector elephant-foot chamfer | **0.4 mm rise** | Bevel around each underside socket entrance and the bottom edge of printed dogbones |
+| Drawer top width / nominal floor width | 218 / 190 | Measured drawer dimensions; 1 mm total clearance is subtracted |
+| Drawer inside length / rim height | 475 / 65 | Drawer length and height to rim |
+| Grid | 3 columns × 6 rows | Row 1 is rear; column 1 is left as viewed from the drawer front |
+| Row starts | 1, continued, 3, continued, continued, 1 | Five trays: rear full width, three middle, front full width |
+| Floor / wall thickness | 2 / 2 | Nominal base and divider stock |
+| **Inner bottom radius** | **20 mm** | Requested shared concave floor-to-wall fillet; changed from automatic in v11 |
+| Inner bottom radius = 0 | automatic | Structural minimum, **12 mm** for this preset (10 mm exterior chamfer rise + 2 mm stock) |
+| Soft exposed-edge radius | 0.6 | Top wall and accessible cutout edge treatment |
+| Print overhang angle | 60° above build plate | Shared for exterior slopes, joining-edge relief and connector bevel |
+| Drawer floor corner radius | 10 | Exterior lower sidewall clearance slope: 10 mm rise, ~5.77 mm horizontal run |
+| Joining-edge elephant-foot relief | 1.0 | Rise along adjacent tray edges, including socket-mouth lips; ~0.58 mm horizontal run |
+| Connector elephant-foot relief | 0.4 | Entry bevel around each socket and print-foot inset around each loose dogbone; ~0.23 mm horizontal run |
+| Connector web width / lobe diameter | 4 / 6 | Two circular lobes joined by a straight web |
+| Max male connector height | 6 | Actual head height can be shortened by the inner bottom fillet |
+| Connector side clearance | 0.2 total | Female pocket 0.1 mm larger on each side |
+| Connector top clearance | 1.0 | Female blind pocket roof clearance over the male |
+| Default interior divider cutout | Row 4 enabled | Pre-rounding base width 25; rounding diameter 20; riser angle 75° |
+| Loose connector count in preview/export | 8 | Full-layout inspection and connector-only output |
 
-The **side and top tolerances** enlarge the female pocket only, and the male retains its nominal fitting dimensions above the first printed layers. A separate **connector elephant-foot chamfer** (default 0.4 mm rise) opens each socket entrance—including its narrow web sides and round head—and insets the foot around the loose dogbone perimeter. At the default 60° printing angle its horizontal run is about **0.23 mm**. The existing 1 mm **joining-edge** relief also continues across connector mouths, rather than stopping beside them. Set the new connector setting to **0** to keep the original square foot and socket entry; if the blind socket roof is too low, the connector relief is automatically reduced to preserve it. Both lobe ends are trimmed in height to clear the bottom interior fillet; the socket roof remains closed in the model. Confirm actual fit with a small test print before printing a full set.
+At the default preset, nominal floor width after clearance is 189 mm, and usable drawer length before tray-edge wall/fillet losses is 474 mm. Logical cell pitch is 63 × 79 mm. Actual clear floor area is reduced by the walls and circular bottom fillets.
 
-## Get started
+## Build-plate contact geometry — magnified CAD screenshots
 
-1. Save [drawer-organizer-v11.scad](drawer-organizer-v11.scad) and [drawer-organizer-v11.json](drawer-organizer-v11.json) together.
-2. Open the SCAD file in **OpenSCAD 2021.01** and select **Kitchen cutlery drawer** in the Customizer.
-3. Adjust the drawer dimensions and row/column splits. Select a tray by row and column.
-4. Press **F6** to render, export that tray's STL, and print. Repeat for the other trays and loose dogbones.
+The eight screenshots below are generated from the v12 OpenSCAD geometry by [the inspection generator](scripts/chamfer_docs.py). Only the *surrounding material* is shortened to expose each interface; the actual connector/socket and chamfer calculations are reused. Views 04–06 show underside pockets with the face oriented toward the camera. Images are CAD previews, not photos or slicer toolpaths.
 
-**Full layout** is for visual inspection, **Selected tray** exports one printable part, and **Loose dogbones** exports connectors.
+[Open the eight-view contact sheet](docs/images/inspection-contact-sheet.png) · [Cross-section dimensions (schematic)](docs/images/inspection-section-dimensions.png)
 
-## Build, test and reproduce the screenshots
+| Contact geometry | Close-up |
+| --- | --- |
+| **01. Loose connector — entire print foot**: round lobes and straight center web | ![Connector print-foot overview](docs/images/inspection-01.png) |
+| **02. Loose connector — circular lobe**: 0.4 mm chamfer around round head | ![Connector lobe bottom chamfer](docs/images/inspection-02.png) |
+| **03. Loose connector — straight web**: bottom-only relief along both narrow sides | ![Connector web base chamfer](docs/images/inspection-03.png) |
+| **04. Socket — underside opening**: the flared entry begins at Z=0 | ![Underside female connector socket](docs/images/inspection-04.png) |
+| **05. Socket — round lobe and short mouth lips**: 0.4 mm entry relief plus adjoining tray-edge cut | ![Connector socket lobe and lips](docs/images/inspection-05.png) |
+| **06. Socket — half-wall section**: the entry changes, but the blind roof and upper fitting walls do not | ![Socket wall section](docs/images/inspection-06.png) |
+| **07. Tray joining edge**: 1 mm rise; continuous across socket mouths | ![Tray joining-edge foot relief](docs/images/inspection-07.png) |
+| **08. Exterior bottom sidewall**: 10 mm drawer-floor clearance slope; not the connector elephant-foot feature | ![Outer tray wall clearance slope](docs/images/inspection-08.png) |
 
-Install Python 3 and OpenSCAD, then run:
+The rise and run for the modeled foot relief are related by `horizontal_run = vertical_rise / tan(Print_overhang_angle_deg)`. Connector relief can be set to zero independently of the joining-edge relief. When necessary the connector chamfer is limited to retain stock around the dogbone web and the protected blind socket roof; the OpenSCAD echo reports its effective height and run.
+
+## Geometry and fit rules
+
+- **Plan and grouping.** Row 1 is farthest from the user (rear). A `Continue previous` row enlarges the tray immediately behind it rather than adding another seam. Column 1 is left when facing the open drawer.
+- **Exterior walls.** Left/right outer walls widen with drawer height and can flare above the rim. Front/rear ends are vertical below their optional rim flare. The floor-to-side chamfer derives from the metal drawer's specified lower radius. An impossible exterior fit is rejected with an echo rather than clipped.
+- **Inside fillet.** v12 requests a 20 mm concave inside floor-to-wall radius by default. The effective fillet is the larger of the entered value and its structural minimum. Enter **0** for automatic minimum. Adjacent rounds may meet in a shallow valley rather than leaving a horizontal flat area.
+- **Connector outline.** Each loose dogbone has two circular 6 mm-diameter heads and a 4 mm web. Nominal straight span between lobe intersections is 4 mm at 2 mm tray wall thickness. Male connector upper height follows the same calculated interior fillet as the protected female socket roof, at a different constant radial offset.
+- **Socket position.** All true joining edges receive sockets when connectors are enabled. Their stations are computed from available seam length and connector spacing. The pockets are blind and open on the underside only.
+- **Clearances.** Side and top tolerances change the female pocket, not the male's upper fitting dimensions. The separate first-layer chamfer changes only the socket entrance and the loose piece's build-plate edge; it does not add a locking taper.
+- **Cutout geometry.** Optional cutouts affect internal divider walls only. The 25 mm setting is the *unrounded* gap at the theoretical floor/riser intersection; tangent 10 mm-radius transitions are added. The cutout floor stays above the protected inner fillet and blind socket roofs.
+
+## Reproduce and verify
+
+Run from the repository root after installing OpenSCAD, Python 3, and the packages in `requirements-dev.txt`:
 
 ```sh
 python -m pip install -r requirements-dev.txt
-make test
-make build
 make check
+python -m scripts.readme_gallery --input build/previews --output docs/images
+python -m scripts.chamfer_docs --output docs/images
 ```
 
-On Linux, headless PNG generation requires `xvfb` and `xauth`. The Python dependencies include `pytest`, `trimesh`, `numpy`, `scipy`, `networkx` and `Pillow`.
+`make check` runs the pytest geometry tests and exports the tray STLs plus standard previews. The inspection generator creates `docs/images/inspection-01.png` through `inspection-08.png`, the contact sheet, and a separate schematic. The main-branch GitHub Actions workflow runs these checks, uploads artifacts, and commits regenerated reference images if they changed.
 
-GitHub Actions runs the OpenSCAD geometry tests and builds the **five tray STLs, dogbone connector STL, preview PNGs and README gallery**. Download them as artifacts from the latest successful [workflow run](https://github.com/realcarbonneau/drawer-organizer-scad/actions). The four gallery images in [docs/images](docs/images) are regenerated from **3200 × 2200** OpenSCAD screenshots and exported at **3600 px** wide on successful main-branch builds. Each camera is aimed at the actual printed geometry rather than a large construction bounding box; the build rejects previews where the model is tiny or accidentally clipped.
+Tests cover OpenSCAD F5/F6 output, watertight individual tray/connector meshes, multiple inner radii, connector clearance envelopes, tray selections, cutout geometry and parameter bounds. Passing these tests does **not** establish actual first-layer printer behavior or connector fit; those need printed samples.
 
-The test suite checks mesh validity, geometry variants and connector parameters. **Real-world connector fit, wall thickness at every parameter combination and F5 orbiting speed still require manual testing.**
+## Version history
 
-
-### Native OpenSCAD preview
-
-The same model geometry is used in F5 and F6. There are **no** automatic `render()` calls or separate low-detail preview shapes: OpenSCAD's interface remains responsible for previewing and final rendering. The underside socket geometry is constructed as a single capped solid so the full five-tray scene can be previewed without CSG normalization overflow. F5 rotation speed still depends on your graphics driver and machine.
-
-
-### v11 geometry validation
-
-The inner tray fillet, the blind female socket roof, and the male dogbone upper envelope all reference the **same circular fillet centre**. For the nominal 2 mm base, their true radii are `R`, `R+2`, and `R+2+Connector_top_clearance_mm`. The OpenSCAD connector height is capped at 6 mm, and the blind socket height at 7 mm with default clearance. These are parallel concentric circular profiles—not independently scaled approximations. The R12/R20/R30 tray and socket cross-sections are checked by automated STL mesh tests.
+- **v12:** default requested inside bottom radius changed to 20 mm (0 remains automatic); shallow connector/socket first-layer chamfers added, including joining-edge mouth lips; technical reference screenshots and documentation.
+- **v11:** prior release, retrievable from Git history. Only the current v12 SCAD/JSON pair is retained in the repository root.
