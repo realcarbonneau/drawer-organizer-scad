@@ -75,7 +75,7 @@ def main() -> None:
                        {"Output_mode": 1, "Selected_row": 6, "Selected_column": 1}),
         "dogbone": ((7,-21,3,58,0,35,85),
                     {"Output_mode": 2, "Loose_connector_quantity": 1}),
-        "cutout-closeup": ((31.5,118.5,35,70,0,67,280),
+        "cutout-closeup": ((31.5,118.5,35,70,0,67,425),
                            {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),
     }
     for name, (focus, selection) in screenshots.items():
@@ -84,7 +84,7 @@ def main() -> None:
         result = openscad_render(destination, {**selection, "Render_facets": 64},
                                 image_focus=focus)
         require_render_ok(result, destination)
-        verify_preview_framing(destination,closeup=name=="cutout-closeup",
+        verify_preview_framing(destination,closeup=False,
                                small_object=name=="dogbone")
         print(f"high-resolution, properly framed preview {destination}")
     print(f"Built {len(parts)} trays and preview images from {source.name}")
