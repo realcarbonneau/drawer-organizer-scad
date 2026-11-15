@@ -68,6 +68,7 @@ def openscad_render(
     timeout: int = 180,
     image_camera: tuple[int, int, int] = (58, 0, 35),
     image_focus: tuple[float, float, float, float, float, float, float] | None = None,
+    image_render: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     model, config = release_paths() if source is None or preset is None else (source, preset)
     executable = shutil.which("openscad")
@@ -82,6 +83,9 @@ def openscad_render(
         # camera distance shrank a tray to a few dozen pixels; cropping then
         # enlarged those pixels into jagged README screenshots.
         args.extend(["--imgsize", "3200,2200", "--colorscheme", "Tomorrow"])
+        if image_render:
+            # Resolve OpenCSG preview stripes for published tray screenshots.
+            args.append("--render=true")
         if image_focus is None:
             rx, ry, rz = image_camera
             args.extend(["--camera", f"0,0,0,{rx},{ry},{rz},900",

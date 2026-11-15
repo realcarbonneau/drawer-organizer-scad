@@ -82,7 +82,9 @@ def main() -> None:
         destination = args.output / "previews" / f"{name}.png"
         # Raise facets for published screenshots; printed STL defaults do not change.
         result = openscad_render(destination, {**selection, "Render_facets": 64},
-                                image_focus=focus)
+                                image_focus=focus,
+                                image_render=name in {"rear-tray", "middle-tray",
+                                                      "front-tray", "cutout-closeup"})
         require_render_ok(result, destination)
         verify_preview_framing(destination,closeup=name=="cutout-closeup",
                                small_object=name=="dogbone")

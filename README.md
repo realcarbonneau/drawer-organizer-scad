@@ -6,7 +6,7 @@ Parametric tray geometry for a measured, metal-sided drawer. Separate printed tr
 
 ## OpenSCAD gallery — actual model and print interfaces
 
-These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views shorten only surrounding tray stock. All gallery images use the same 4:3 frame and are paired with the relevant technical setting, following the Rocket Stove README format.
+These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views use isolated CAD inspection crops and shortened surrounding stock while reusing the real connector and socket geometry. All gallery images use the same 4:3 frame and are paired with the relevant technical setting, following the Rocket Stove README format.
 
 ### Assembly and individual trays
 
@@ -32,10 +32,10 @@ These are **OpenSCAD previews from v12 geometry**, not photos or slicer results.
 | ![Complete connector — angled foot](docs/images/cad/connector-foot.png) | ![Top-down connector footprint](docs/images/cad/connector-plan.png) |
 | Both round lobes joined by a straight 4 mm web | 6 mm nominal lobe diameter; no locking undercuts |
 
-| Circular lobe — lower perimeter | Straight web — first-layer edge |
+| Circular lobe — sectioned detail | Straight web — isolated section |
 | --- | --- |
 | ![Circular lobe — lower perimeter](docs/images/cad/connector-lobe.png) | ![Straight web — first-layer edge](docs/images/cad/connector-web.png) |
-| 0.4 mm modeled print-foot relief follows the round lobe | Same foot relief follows both straight web sides |
+| Rounded head locally sectioned to expose its 0.4 mm foot relief | Center web locally sectioned to expose both straight foot edges |
 
 | Connector underside | Connector side profile |
 | --- | --- |

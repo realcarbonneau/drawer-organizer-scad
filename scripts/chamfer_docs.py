@@ -26,6 +26,9 @@ module inspection_join_cut() {
         polygon([[-20,-E],[JOIN_X+E,-E],[JOIN_X,0],[0,JOIN_Z],[-20,JOIN_Z+20]]);
 }
 module inspection_socket_coupon() {
+    // F6 evaluation removes OpenCSG stripe artifacts at the blind pocket
+    // roof and mouth; all actual production subtractors are retained.
+    render(convexity=10)
     difference() {
         color([0.30,0.68,0.83]) translate([-10,0,0]) cube([20,19,10]);
         color([0.96,0.72,0.12]) socket_with_entry_chamfer_3d();
@@ -55,7 +58,7 @@ else if(Inspection_view=="connector-lobe")
     // Crop at a real lobe: this inspection section makes the round head
     // large enough to distinguish from the complete dogbone overview.
     translate([0,-HEAD_IN,0]) color([0.90,0.62,0.25])
-        intersection() {
+        render(convexity=10) intersection() {
             loose_dogbone();
             translate([-5,HEAD_IN-3.2,-0.2])
                 cube([10,8,CONNECTOR_HEIGHT+2]);
@@ -63,7 +66,7 @@ else if(Inspection_view=="connector-lobe")
 else if(Inspection_view=="connector-web")
     // Crop away the heads to expose the actual straight center relief.
     color([0.90,0.62,0.25])
-        intersection() {
+        render(convexity=10) intersection() {
             loose_dogbone();
             translate([-WEB_R-0.4,-HEAD_IN+2,-0.2])
                 cube([2*(WEB_R+0.4),2*(HEAD_IN-2),CONNECTOR_HEIGHT+2]);
