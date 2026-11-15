@@ -92,8 +92,8 @@ else if(Inspection_view=="joining-socket")
 VIEWS = [
     ("connector-foot",      (0,  0,  1.2, 78, 0, 34, 49)),
     ("connector-plan",      (0,  0,  3.0,  0, 0,  0, 38)),
-    ("connector-lobe",      (0,  0,  1.0, 75, 0, 28, 26)),
-    ("connector-web",       (0,  0,  1.0, 80, 0, 52, 25)),
+    ("connector-lobe",      (0,  0,  1.0, 75, 0, 28, 42)),
+    ("connector-web",       (0,  0,  1.0, 80, 0, 52, 42)),
     ("connector-underside", (0,  0, -2.8, 38, 0, 20, 43)),
     ("connector-profile",   (0,  0,  1.2, 90, 0,  0, 49)),
     ("socket-underside",    (0, -8, -1.7, 52, 0,190, 92)),
@@ -136,8 +136,8 @@ BACKGROUND = (248, 248, 248)
 def uniform_frame(path: Path, *, name: str) -> Image.Image:
     """Place uncropped CAD geometry on equal 4:3 canvases at a consistent scale.
 
-    A camera render is never enlarged after the fact; the 2200/3200 px
-    OpenSCAD source is downsampled to the same 1200x900 figure for every view.
+    A high-resolution camera render is fitted to a constant 1200x900 frame.
+    Detail crops may receive at most 1.5x resizing, never the former huge upscale.
     """
     source = Image.open(path).convert("RGB")
     rgb = np.asarray(source, dtype=np.int16)
@@ -157,7 +157,7 @@ def uniform_frame(path: Path, *, name: str) -> Image.Image:
     crop = source.crop((max(0,x0-margin), max(0,y0-margin),
                         min(w,x1+margin), min(h,y1+margin)))
     max_w, max_h = int(FRAME_SIZE[0]*.84), int(FRAME_SIZE[1]*.84)
-    factor = min(max_w/crop.width, max_h/crop.height, 1.0)
+    factor = min(max_w/crop.width, max_h/crop.height, 1.5)
     size = (max(1,round(crop.width*factor)), max(1,round(crop.height*factor)))
     resized = crop.resize(size,Image.Resampling.LANCZOS)
     canvas = Image.new("RGB",FRAME_SIZE,BACKGROUND)
