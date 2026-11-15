@@ -27,7 +27,7 @@ module inspection_join_cut() {
 }
 module inspection_socket_coupon() {
     difference() {
-        color([0.28,0.64,0.68]) translate([-10,0,0]) cube([20,19,10]);
+        color([0.30,0.68,0.83]) translate([-10,0,0]) cube([20,19,10]);
         color([0.96,0.72,0.12]) socket_with_entry_chamfer_3d();
         color([0.96,0.72,0.12]) inspection_join_cut();
     }
@@ -43,17 +43,31 @@ module inspection_socket_section() {
 }
 module inspection_join_edge() {
     difference() {
-        color([0.28,0.64,0.68]) translate([-12,0,0]) cube([24,9,3]);
+        color([0.30,0.68,0.83]) translate([-12,0,0]) cube([24,9,3]);
         color([0.96,0.72,0.12]) inspection_join_cut();
     }
 }
 // Preview palette: teal for stock / loose connector and gold for volumes
 // removed by the socket or joining-edge chamfer. STL color is unaffected.
 Inspection_view="connector-foot";
-if(Inspection_view=="connector-foot") color([0.28,0.64,0.68]) loose_dogbone();
+if(Inspection_view=="connector-foot") color([0.90,0.62,0.25]) loose_dogbone();
 else if(Inspection_view=="connector-lobe")
-    translate([0,-HEAD_IN,0]) color([0.28,0.64,0.68]) loose_dogbone();
-else if(Inspection_view=="connector-web") color([0.28,0.64,0.68]) loose_dogbone();
+    // Crop at a real lobe: this inspection section makes the round head
+    // large enough to distinguish from the complete dogbone overview.
+    translate([0,-HEAD_IN,0]) color([0.90,0.62,0.25])
+        intersection() {
+            loose_dogbone();
+            translate([-5,HEAD_IN-3.2,-0.2])
+                cube([10,8,CONNECTOR_HEIGHT+2]);
+        }
+else if(Inspection_view=="connector-web")
+    // Crop away the heads to expose the actual straight center relief.
+    color([0.90,0.62,0.25])
+        intersection() {
+            loose_dogbone();
+            translate([-WEB_R-0.4,-HEAD_IN+2,-0.2])
+                cube([2*(WEB_R+0.4),2*(HEAD_IN-2),CONNECTOR_HEIGHT+2]);
+        }
 else if(Inspection_view=="socket-underside")
     rotate([180,0,0]) inspection_socket_coupon();
 else if(Inspection_view=="socket-lips")
@@ -62,11 +76,11 @@ else if(Inspection_view=="socket-section")
     rotate([180,0,0]) inspection_socket_section();
 else if(Inspection_view=="joining-edge") inspection_join_edge();
 else if(Inspection_view=="connector-plan")
-    color([0.28,0.64,0.68]) loose_dogbone();
+    color([0.90,0.62,0.25]) loose_dogbone();
 else if(Inspection_view=="connector-underside")
-    rotate([180,0,0]) color([0.28,0.64,0.68]) loose_dogbone();
+    rotate([180,0,0]) color([0.90,0.62,0.25]) loose_dogbone();
 else if(Inspection_view=="connector-profile")
-    color([0.28,0.64,0.68]) loose_dogbone();
+    color([0.90,0.62,0.25]) loose_dogbone();
 else if(Inspection_view=="socket-mouth-plan")
     rotate([180,0,0]) inspection_socket_coupon();
 else if(Inspection_view=="joining-socket")
