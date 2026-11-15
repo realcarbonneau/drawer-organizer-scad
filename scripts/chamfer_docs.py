@@ -148,7 +148,9 @@ def uniform_frame(path: Path, *, name: str) -> Image.Image:
     x0, x1 = int(xs.min()), int(xs.max()) + 1
     y0, y1 = int(ys.min()), int(ys.max()) + 1
     w, h = source.size
-    if x0 <= 1 or y0 <= 1 or x1 >= w-1 or y1 >= h-1:
+    # The interior-divider detail is intentionally a camera crop of a tray,
+    # unlike the complete fitting interfaces, which must not be clipped.
+    if name != "cutout-closeup" and (x0 <= 1 or y0 <= 1 or x1 >= w-1 or y1 >= h-1):
         raise RuntimeError(f"CAD model clipped by the source camera: {name}")
     box_w, box_h = x1-x0, y1-y0
     margin = max(24, round(max(box_w, box_h) * .05))

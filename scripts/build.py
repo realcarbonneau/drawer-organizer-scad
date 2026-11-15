@@ -84,7 +84,7 @@ def main() -> None:
         result = openscad_render(destination, {**selection, "Render_facets": 64},
                                 image_focus=focus)
         require_render_ok(result, destination)
-        verify_preview_framing(destination,closeup=False,
+        verify_preview_framing(destination,closeup=name=="cutout-closeup",
                                small_object=name=="dogbone")
         print(f"high-resolution, properly framed preview {destination}")
     print(f"Built {len(parts)} trays and preview images from {source.name}")
