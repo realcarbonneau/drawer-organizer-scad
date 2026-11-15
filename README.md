@@ -8,59 +8,59 @@ Parametric tray geometry for a measured, metal-sided drawer. Separate printed tr
 
 These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views use isolated CAD inspection crops and shortened surrounding stock while reusing the real connector and socket geometry. All gallery images use the same 4:3 frame and are paired with the relevant technical setting. Tap a thumbnail to open its full-resolution PNG.
 
-<!-- Intentionally fixed 128 × 96 display thumbnails for balanced two-column GitHub mobile tables. Full-resolution PNG links are kept in each cell. -->
+<!-- Intentionally fixed 256 × 192 display thumbnails for balanced two-column GitHub mobile tables. Full-resolution PNG links are kept in each cell. -->
 
 ### Assembly and individual trays
 
 | Complete five-tray layout | Full-width rear tray |
 | --- | --- |
-| <a href="docs/images/cad/full-layout.png"><img src="docs/images/cad/full-layout.png" alt="Complete five-tray layout" width="128" height="96"></a> | <a href="docs/images/cad/rear-tray.png"><img src="docs/images/cad/rear-tray.png" alt="Full-width rear tray" width="128" height="96"></a> |
+| <a href="docs/images/cad/full-layout.png"><img src="docs/images/cad/full-layout.png" alt="Complete five-tray layout" width="256" height="192"></a> | <a href="docs/images/cad/rear-tray.png"><img src="docs/images/cad/rear-tray.png" alt="Full-width rear tray" width="256" height="192"></a> |
 | `Output_mode=0`; 3 × 6 logical grid, five separate physical trays | `Output_mode=1`, row 1: full-width rear section |
 
 | Middle tray with dividers | Full-width front tray |
 | --- | --- |
-| <a href="docs/images/cad/middle-tray.png"><img src="docs/images/cad/middle-tray.png" alt="Middle tray with dividers" width="128" height="96"></a> | <a href="docs/images/cad/front-tray.png"><img src="docs/images/cad/front-tray.png" alt="Full-width front tray" width="128" height="96"></a> |
+| <a href="docs/images/cad/middle-tray.png"><img src="docs/images/cad/middle-tray.png" alt="Middle tray with dividers" width="256" height="192"></a> | <a href="docs/images/cad/front-tray.png"><img src="docs/images/cad/front-tray.png" alt="Full-width front tray" width="256" height="192"></a> |
 | Selected middle section from row 3; 20 mm inner bottom radius | Selected front section from row 6, printed independently |
 
 | Interior divider access cutout | Loose connector output |
 | --- | --- |
-| <a href="docs/images/cad/cutout-closeup.png"><img src="docs/images/cad/cutout-closeup.png" alt="Interior divider access cutout" width="128" height="96"></a> | <a href="docs/images/cad/dogbone.png"><img src="docs/images/cad/dogbone.png" alt="Loose connector output" width="128" height="96"></a> |
+| <a href="docs/images/cad/cutout-closeup.png"><img src="docs/images/cad/cutout-closeup.png" alt="Interior divider access cutout" width="256" height="192"></a> | <a href="docs/images/cad/dogbone.png"><img src="docs/images/cad/dogbone.png" alt="Loose connector output" width="256" height="192"></a> |
 | Row-4 access cutout, rounded 20 mm transition diameter | `Output_mode=2`; one dogbone shown for inspection |
 
 ### Loose dogbone — footprint and first layers
 
 | Complete connector — angled foot | Top-down connector footprint |
 | --- | --- |
-| <a href="docs/images/cad/connector-foot.png"><img src="docs/images/cad/connector-foot.png" alt="Complete connector — angled foot" width="128" height="96"></a> | <a href="docs/images/cad/connector-plan.png"><img src="docs/images/cad/connector-plan.png" alt="Top-down connector footprint" width="128" height="96"></a> |
+| <a href="docs/images/cad/connector-foot.png"><img src="docs/images/cad/connector-foot.png" alt="Complete connector — angled foot" width="256" height="192"></a> | <a href="docs/images/cad/connector-plan.png"><img src="docs/images/cad/connector-plan.png" alt="Top-down connector footprint" width="256" height="192"></a> |
 | Both round lobes joined by a straight 4 mm web | 6 mm nominal lobe diameter; no locking undercuts |
 
 | Circular lobe — sectioned detail | Straight web — isolated section |
 | --- | --- |
-| <a href="docs/images/cad/connector-lobe.png"><img src="docs/images/cad/connector-lobe.png" alt="Circular lobe — lower perimeter" width="128" height="96"></a> | <a href="docs/images/cad/connector-web.png"><img src="docs/images/cad/connector-web.png" alt="Straight web — first-layer edge" width="128" height="96"></a> |
+| <a href="docs/images/cad/connector-lobe.png"><img src="docs/images/cad/connector-lobe.png" alt="Circular lobe — lower perimeter" width="256" height="192"></a> | <a href="docs/images/cad/connector-web.png"><img src="docs/images/cad/connector-web.png" alt="Straight web — first-layer edge" width="256" height="192"></a> |
 | Rounded head locally sectioned to expose its 0.4 mm foot relief | Center web locally sectioned to expose both straight foot edges |
 
 | Connector underside | Connector side profile |
 | --- | --- |
-| <a href="docs/images/cad/connector-underside.png"><img src="docs/images/cad/connector-underside.png" alt="Connector underside" width="128" height="96"></a> | <a href="docs/images/cad/connector-profile.png"><img src="docs/images/cad/connector-profile.png" alt="Connector side profile" width="128" height="96"></a> |
+| <a href="docs/images/cad/connector-underside.png"><img src="docs/images/cad/connector-underside.png" alt="Connector underside" width="256" height="192"></a> | <a href="docs/images/cad/connector-profile.png"><img src="docs/images/cad/connector-profile.png" alt="Connector side profile" width="256" height="192"></a> |
 | Bottom-facing view of the reduced first-layer footprint | Full fitting profile resumes above the 0.4 mm relief |
 
 ### Blind underside socket — mouth and section
 
 | Underside socket entrance | Entrance viewed straight on |
 | --- | --- |
-| <a href="docs/images/cad/socket-underside.png"><img src="docs/images/cad/socket-underside.png" alt="Underside socket entrance" width="128" height="96"></a> | <a href="docs/images/cad/socket-mouth-plan.png"><img src="docs/images/cad/socket-mouth-plan.png" alt="Entrance viewed straight on" width="128" height="96"></a> |
+| <a href="docs/images/cad/socket-underside.png"><img src="docs/images/cad/socket-underside.png" alt="Underside socket entrance" width="256" height="192"></a> | <a href="docs/images/cad/socket-mouth-plan.png"><img src="docs/images/cad/socket-mouth-plan.png" alt="Entrance viewed straight on" width="256" height="192"></a> |
 | Female pocket opens at `Z=0` underneath the tray | Lobe and web entry are part of one blind socket |
 
 | Lobe and joining-edge lips | Solid section through socket wall |
 | --- | --- |
-| <a href="docs/images/cad/socket-lips.png"><img src="docs/images/cad/socket-lips.png" alt="Lobe and joining-edge lips" width="128" height="96"></a> | <a href="docs/images/cad/socket-section.png"><img src="docs/images/cad/socket-section.png" alt="Solid section through socket wall" width="128" height="96"></a> |
+| <a href="docs/images/cad/socket-lips.png"><img src="docs/images/cad/socket-lips.png" alt="Lobe and joining-edge lips" width="256" height="192"></a> | <a href="docs/images/cad/socket-section.png"><img src="docs/images/cad/socket-section.png" alt="Solid section through socket wall" width="256" height="192"></a> |
 | 0.4 mm entrance chamfer and separate 1 mm joining-edge relief | The roof remains blind; upper fitting walls are not tapered |
 
 ### Tray joining edge — first-layer relief
 
 | Joining-edge foot profile | Edge relief at a socket mouth |
 | --- | --- |
-| <a href="docs/images/cad/joining-edge.png"><img src="docs/images/cad/joining-edge.png" alt="Joining-edge foot profile" width="128" height="96"></a> | <a href="docs/images/cad/joining-socket.png"><img src="docs/images/cad/joining-socket.png" alt="Edge relief at a socket mouth" width="128" height="96"></a> |
+| <a href="docs/images/cad/joining-edge.png"><img src="docs/images/cad/joining-edge.png" alt="Joining-edge foot profile" width="256" height="192"></a> | <a href="docs/images/cad/joining-socket.png"><img src="docs/images/cad/joining-socket.png" alt="Edge relief at a socket mouth" width="256" height="192"></a> |
 | Joining-edge foot relief: 1.0 mm; ~0.58 mm run at 60° | Relief also covers the lips beside the socket mouth |
 
 The larger 10 mm exterior-floor clearance slope is a separate feature, **not** an elephant-foot close-up; the misleading former exterior-wall coupon is intentionally excluded. [Foot-relief dimensions (schematic, not to scale)](docs/images/inspection-section-dimensions.png).
