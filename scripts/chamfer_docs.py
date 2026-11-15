@@ -92,8 +92,8 @@ else if(Inspection_view=="joining-socket")
 VIEWS = [
     ("connector-foot",      (0,  0,  1.2, 78, 0, 34, 49)),
     ("connector-plan",      (0,  0,  3.0,  0, 0,  0, 38)),
-    ("connector-lobe",      (0,  2,  1.0, 80, 0, 28, 50)),
-    ("connector-web",       (0,  0,  1.0, 84, 0, 52, 52)),
+    ("connector-lobe",      (0,  0,  1.0, 75, 0, 28, 26)),
+    ("connector-web",       (0,  0,  1.0, 80, 0, 52, 25)),
     ("connector-underside", (0,  0, -2.8, 38, 0, 20, 43)),
     ("connector-profile",   (0,  0,  1.2, 90, 0,  0, 49)),
     ("socket-underside",    (0, -8, -1.7, 52, 0,190, 92)),
