@@ -69,7 +69,7 @@ VIEWS = [
     ("connector-web",     (0,  0,  1, 80,  0, 50, 42)),
     ("socket-underside",  (0, -9, -3, 65,  0, 25, 95)),
     ("socket-lips",       (0, -5, -1, 55,  0,  0, 75)),
-    ("socket-section",    (0, -7, -3, 65,  0,110, 90)),
+    ("socket-section",    (0, -7, -3, 62,  0,210, 90)),
     ("joining-edge",     (0,  4,  2, 62,  0, 42, 85)),
 ]
 
