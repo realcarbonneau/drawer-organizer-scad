@@ -41,7 +41,7 @@ At the default preset, nominal floor width after clearance is 189 mm, and usable
 
 ## OpenSCAD gallery — build-plate contact geometry
 
-The following views use the **v12 model**, with surrounding stock shortened to expose local geometry. The images are **OpenSCAD F5 CAD previews**, not photographs, F6 mesh screenshots, or slicer layer previews. OpenSCAD's *Tomorrow* color scheme uses teal for material and gold for subtractive surfaces. The model and Customizer dimensions are unchanged by the inspection views.
+The following views use the **v12 model**, with surrounding stock shortened to expose local geometry. The images are **OpenSCAD F5 CAD previews**, not photographs, F6 mesh screenshots, or slicer layer previews. The inspection preview uses teal for solid material and gold for subtractive socket/chamfer surfaces; STL exports have no such colors. The model and Customizer dimensions are unchanged by the inspection views.
 
 Each image has a stable descriptive filename, without a sequence number. The captions record the setting or physical feature not apparent from the image.
 
