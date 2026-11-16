@@ -1004,5 +1004,5 @@ def test_front_and_rear_exterior_bed_edges_use_unified_relief(tmp_path):
     assert "ERROR:" not in output
     scad=release_paths()[0].read_text()
     assert "outside ? concat([[JOIN_X,0],[0,JOIN_Z],[0,H]]" in scad
-    assert "JOIN_Z=Elephant_foot_mm;" in scad
+    assert "JOIN_Z=ELEPHANT_FOOT_Z;" in scad
     assert "CONNECTOR_FOOT_REQUEST=max(0,Elephant_foot_mm);" in scad
