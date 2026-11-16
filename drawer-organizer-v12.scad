@@ -1066,7 +1066,7 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
 } else if(CHAMFER_FIT_ERROR) {
     echo(str("DRAWER CHAMFER DOES NOT FIT: The drawer floor radius of ",
              Drawer_floor_corner_radius_mm," mm and elephant foot of ",Elephant_foot_mm,
-             " mm at ",ALPHA," degrees require 
+             " mm at ",ALPHA," degrees require ",
              CHAMFER_X," mm horizontal run and ",CHAMFER_Z,
              " mm rise. Available side widening is ",SIDE_EXPAND,
              " mm at drawer rim height ",H,
