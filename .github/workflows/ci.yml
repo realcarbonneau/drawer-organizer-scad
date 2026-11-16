@@ -50,6 +50,16 @@ jobs:
           o.parent.mkdir(parents=True,exist_ok=True)
           uniform_frame(p,name="full-layout").save(o,optimize=True)
           print("Generated actual v12 OpenSCAD full-layout screenshot:",o)
+          # Keep the standalone male-connector overview consistent with the
+          # orange loose connectors shown alongside the teal layout.
+          dogbone=Path("build/previews/dogbone.png")
+          r=openscad_render(dogbone,{"Output_mode":2,
+              "Loose_connector_quantity":1,"Render_facets":64},
+              image_focus=(7,-21,3,58,0,35,85),timeout=240)
+          require_render_ok(r,dogbone)
+          o=Path("docs/images/cad/dogbone.png")
+          uniform_frame(dogbone,name="dogbone").save(o,optimize=True)
+          print("Generated matching orange connector overview:",o)
           PY
           else
             make check
