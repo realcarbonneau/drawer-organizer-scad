@@ -46,8 +46,11 @@ Rim_left = true;
 Rim_right = true;
 Rim_front = false;
 Rim_rear = false;
-// Bottom elephant-foot relief along joining edges, including connector mouths.
-Join_edge_elephant_foot_mm = 1; // [0:0.1:4]
+// Uniform print-bed elephant-foot rise on EVERY printed part perimeter,
+// including tray joining edges, exposed front/rear ends, socket entrances,
+// and loose dogbones. Exterior left/right drawer-corner relief is at least
+// this rise but stays larger where the drawer floor radius requires it.
+Elephant_foot_mm = 1; // [0:0.1:2]
 
 // Shared tray geometry (same drawer-level section).
 // Floor thickness is also the MINIMUM distance to every outer wall surface.
@@ -78,9 +81,8 @@ Connector_side_clearance_total_mm = 0.2; // [0:0.05:1]
 // Vertical air gap ABOVE the male connector (under its blind socket roof).
 // Kept independently from side clearance for printer overhang quality.
 Connector_top_clearance_mm = 1; // [0:0.1:3]
-// Print-bed-only relief: widens socket entries and insets loose dogbone feet.
-// The straight fitting walls and connector tops keep their original dimensions.
-Connector_elephant_foot_mm = 0.4; // [0:0.1:1.5]
+// Socket mouths and loose connectors share the same Elephant_foot_mm
+// setting as the tray perimeter. Their fitting walls remain unchanged.
 // No locking taper or full-depth socket chamfer.
 // Connector count is automatically inferred from adjoining-edge length.
 // All actual shared edges get matching blind underside sockets.
@@ -147,13 +149,13 @@ B=Base_thickness_mm;
 T=Wall_thickness_mm;
 SIDE_EXPAND=(WT-W0)/2;
 ALPHA=Print_overhang_angle_deg;
-// The metal floor rounding decides the required lower exterior chamfer rise.
-// Its run is determined ONLY by the specified print overhang angle. Never
-// quietly clamp the requested geometry: impossible fit gets an echo and no
-// geometry (see the explicit configuration checks at the output stage).
-CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm);
+// The floor corner requires the large left/right chamfer. The ONE universal
+// elephant-foot setting governs every other bed-contacting part perimeter.
+// If a drawer corner requires less relief, elephant-foot relief takes over.
+// Rise -> horizontal run at the SAME overhang angle everywhere.
+CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm,Elephant_foot_mm);
 CHAMFER_X=CHAMFER_Z/tan(ALPHA);
-JOIN_Z=Join_edge_elephant_foot_mm;
+JOIN_Z=Elephant_foot_mm;
 JOIN_X=JOIN_Z/tan(ALPHA);
 // The print angle and specified tray height are the ONLY independent rim
 // dimensions. Its horizontal run is mathematically derived, never another
@@ -275,8 +277,8 @@ assert(Connector_diameter_protrusion_mm>0 && Connector_center_thickness_mm>=2,
        "Dogbone lobe diameter protrusion must be positive.");
 assert(CONNECTOR_HEIGHT>=1 && CONNECTOR_HEIGHT < H-2*B,
        "Connector height must fit underneath the tray walls.");
-assert(JOIN_Z<=B,"Elephant foot relief must be no deeper than the base thickness.");
-assert(Connector_elephant_foot_mm>=0,"Connector foot chamfer cannot be negative.");
+assert(Elephant_foot_mm>=0 && Elephant_foot_mm<=B,
+       "Elephant foot relief must be nonnegative and no deeper than base thickness.");
 // Cutouts are clipped by the divider geometry; no restriction on entered gap.
 
 // ----------- 2D section profiles; generated from the measured drawer -----------
@@ -291,12 +293,11 @@ function left_profile(outside, rim, top_extra=0)=
 function right_profile(w,outside,rim,top_extra=0)=
     [for(p=left_profile(outside,rim,top_extra)) [w-p[0],p[1]]];
 // Front and rear are vertical at the metal rim (side-wall widening is X only).
-// Front/back drawer ends are VERTICAL: the X-axis widening applies to
-// METAL SIDES ONLY. There must be no bottom-to-rim inward lean at rear/front.
-// An exterior end can optionally have an upper rim flare but no large side
-// chamfer. The small internal joiner-edge chamfer remains at internal seams.
+// Front/back drawer ends remain VERTICAL from the end of the universal
+// elephant-foot rise to the rim. They do not inherit the much larger
+// left/right drawer-floor corner chamfer (which exists only on metal sides).
 function end_profile(outside,rim,top_extra=0)=
-    outside ? concat([[0,0],[0,H]],
+    outside ? concat([[JOIN_X,0],[0,JOIN_Z],[0,H]],
              [[-(rim?lip_run_at_z(ZTOP+top_extra):0),ZTOP+top_extra]])
             : [[JOIN_X,0],[0,JOIN_Z],[0,ZTOP+top_extra]];
 function profile_polygon(a,b)=concat(a,[for(i=[len(b)-1:-1:0]) b[i]]);
@@ -310,8 +311,9 @@ module yz_extrude_2d(span) {
         linear_extrude(height=span+100,convexity=8) children();
 }
 
-// 2D material envelopes. At joining edges, the mini-chamfer starts at the
-// floor and runs continuously under the entire socket pad footprint.
+// 2D material envelopes. Every edge gets at least the SAME elephant-foot
+// relief; the larger floor-corner chamfer takes precedence only at left/right
+// outer drawer sides.
 module xz_outer_2d(w,left_outer,right_outer,extra=0) {
     polygon(profile_polygon(left_profile(left_outer,Rim_left&&left_outer,extra),
                             right_profile(w,right_outer,Rim_right&&right_outer,extra)));
@@ -589,7 +591,7 @@ function connection_cap_at(x) =
 // A uniform rise/run is shared by the female entry and male print foot.
 // Limit it so the flared socket tip stays BELOW the protected blind roof,
 // and so the narrow connector web remains solid at the build plate.
-CONNECTOR_FOOT_REQUEST=max(0,Connector_elephant_foot_mm);
+CONNECTOR_FOOT_REQUEST=max(0,Elephant_foot_mm);
 CONNECTOR_FOOT_Z=min(CONNECTOR_FOOT_REQUEST,CONNECTOR_HEIGHT/2,
     max(0,(WEB_R-0.35)*tan(ALPHA)),
     max(0,socket_roof_safe_cap_at(HEAD_IN+SOCKET_R+CONNECTOR_FOOT_REQUEST/tan(ALPHA))-0.1));
@@ -726,8 +728,8 @@ module loose_dogbone() {
 }
 
 // ----------- Joining-edge elephant-foot relief -----------
-// Keep the entire exposed joining edge relieved, including the narrow lips at
-// each connector mouth. The separate socket chamfer reaches into each pocket.
+// Match the same universal print-bed slope on whole joining edges, including
+// the narrow lips alongside the socket openings.
 module join_foot_relief(w,d,left_join,right_join,front_join,rear_join,
                         front_stations,rear_stations,side_stations) {
     if(JOIN_Z>0) {
@@ -999,6 +1001,8 @@ module preview_loose_connectors() {
 echo("DRAWER v12 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / AUTO OUTER CHAMFER run, rise (from drawer floor radius)",ALPHA,CHAMFER_X,CHAMFER_Z);
 echo("DRAWER FLOOR radius / REQUIRED exterior chamfer rise",Drawer_floor_corner_radius_mm,CHAMFER_Z);
+echo("UNIFIED ELEPHANT FOOT (requested / inner and end edge rise / outer side rise)",
+     Elephant_foot_mm,JOIN_Z,CHAMFER_Z);
 echo("RIM (angle FROM PRINT BED / fixed height / derived projection)",
      HAS_RIM ? ALPHA : 0, LIP_Z, RIM_PROJECTION);
 echo("CONNECTOR CLEARANCES (total side / each side / top)",
@@ -1061,7 +1065,8 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
                  " (or reduce Row_",r,"). Nothing rendered."));
 } else if(CHAMFER_FIT_ERROR) {
     echo(str("DRAWER CHAMFER DOES NOT FIT: The drawer floor radius of ",
-             Drawer_floor_corner_radius_mm," mm at ",ALPHA," degrees requires ",
+             Drawer_floor_corner_radius_mm," mm and elephant foot of ",Elephant_foot_mm,
+             " mm at ",ALPHA," degrees require 
              CHAMFER_X," mm horizontal run and ",CHAMFER_Z,
              " mm rise. Available side widening is ",SIDE_EXPAND,
              " mm at drawer rim height ",H,

@@ -90,7 +90,7 @@ def test_customizer_controls_and_defaults():
     assert params["Drawer_floor_corner_radius_mm"] == "10"
     assert "Outer_bottom_chamfer_max_rise_mm" not in params
     assert "Outer_bottom_chamfer_max_rise_mm" not in scad
-    assert "CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm);" in scad
+    assert "CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm,Elephant_foot_mm);" in scad
     assert "CHAMFER_X=CHAMFER_Z/tan(ALPHA);" in scad
     assert "CHAMFER_FIT_ERROR" in scad
     assert "function cutout_floor_z()" in scad
@@ -200,11 +200,18 @@ def test_connector_clearance_semantics_and_independent_controls():
     p=preset_parameters(preset)
     assert p["Connector_side_clearance_total_mm"]=="0.2"
     assert p["Connector_top_clearance_mm"]=="1"
-    assert p["Connector_elephant_foot_mm"]=="0.4"
-    assert "Connector_elephant_foot_mm = 0.4; // [0:0.1:1.5]" in scad
+    assert p["Elephant_foot_mm"]=="1"
+    assert "Elephant_foot_mm = 1; // [0:0.1:2]" in scad
+    assert "Join_edge_elephant_foot_mm" not in p
+    assert "Connector_elephant_foot_mm" not in p
+    assert "Join_edge_elephant_foot_mm" not in scad
+    assert "Connector_elephant_foot_mm" not in scad
     assert "connector_clearance_mm" not in p
     assert "connector_clearance_mm" not in scad
     assert "SOCKET_SIDE_CLEARANCE=Connector_side_clearance_total_mm/2;" in scad
+    assert "JOIN_Z=Elephant_foot_mm;" in scad
+    assert "CONNECTOR_FOOT_REQUEST=max(0,Elephant_foot_mm);" in scad
+    assert "outside ? concat([[JOIN_X,0],[0,JOIN_Z],[0,H]]" in scad
     assert "function connector_offset_circle_z(x,extra_radius)" in scad
     assert "connector_offset_circle_z(x,B)" in scad
     assert "connector_offset_circle_z(x,B+SOCKET_TOP_CLEARANCE)" in scad
