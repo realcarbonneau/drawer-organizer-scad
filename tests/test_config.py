@@ -90,7 +90,10 @@ def test_customizer_controls_and_defaults():
     assert params["Drawer_floor_corner_radius_mm"] == "10"
     assert "Outer_bottom_chamfer_max_rise_mm" not in params
     assert "Outer_bottom_chamfer_max_rise_mm" not in scad
-    assert "CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm,Elephant_foot_mm);" in scad
+    assert "DRAWER_CORNER_CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm);" in scad
+    assert "ELEPHANT_FOOT_Z=max(0,Elephant_foot_mm);" in scad
+    assert "CHAMFER_Z=max(DRAWER_CORNER_CHAMFER_Z,ELEPHANT_FOOT_Z);" in scad
+    assert "JOIN_Z=ELEPHANT_FOOT_Z;" in scad
     assert "CHAMFER_X=CHAMFER_Z/tan(ALPHA);" in scad
     assert "CHAMFER_FIT_ERROR" in scad
     assert "function cutout_floor_z()" in scad
@@ -209,7 +212,7 @@ def test_connector_clearance_semantics_and_independent_controls():
     assert "connector_clearance_mm" not in p
     assert "connector_clearance_mm" not in scad
     assert "SOCKET_SIDE_CLEARANCE=Connector_side_clearance_total_mm/2;" in scad
-    assert "JOIN_Z=Elephant_foot_mm;" in scad
+    assert "JOIN_Z=ELEPHANT_FOOT_Z;" in scad
     assert "CONNECTOR_FOOT_REQUEST=max(0,Elephant_foot_mm);" in scad
     assert "outside ? concat([[JOIN_X,0],[0,JOIN_Z],[0,H]]" in scad
     assert "function connector_offset_circle_z(x,extra_radius)" in scad

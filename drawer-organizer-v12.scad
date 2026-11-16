@@ -149,14 +149,19 @@ B=Base_thickness_mm;
 T=Wall_thickness_mm;
 SIDE_EXPAND=(WT-W0)/2;
 ALPHA=Print_overhang_angle_deg;
-// The floor corner requires the large left/right chamfer. The ONE universal
-// elephant-foot setting governs every other bed-contacting part perimeter.
-// If a drawer corner requires less relief, elephant-foot relief takes over.
-// Rise -> horizontal run at the SAME overhang angle everywhere.
-CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm,Elephant_foot_mm);
+// Keep the two *different* features independent:
+// (1) Drawer floor corner clearance exists only on outer left/right sides.
+// (2) Universal elephant-foot compensation exists on all bed-contacting edges.
+// Only at the outer left/right sides do we choose the larger required rise.
+DRAWER_CORNER_CHAMFER_Z=max(0,Drawer_floor_corner_radius_mm);
+DRAWER_CORNER_CHAMFER_X=DRAWER_CORNER_CHAMFER_Z/tan(ALPHA);
+ELEPHANT_FOOT_Z=max(0,Elephant_foot_mm);
+ELEPHANT_FOOT_X=ELEPHANT_FOOT_Z/tan(ALPHA);
+CHAMFER_Z=max(DRAWER_CORNER_CHAMFER_Z,ELEPHANT_FOOT_Z);
 CHAMFER_X=CHAMFER_Z/tan(ALPHA);
-JOIN_Z=Elephant_foot_mm;
-JOIN_X=JOIN_Z/tan(ALPHA);
+// Joining, front and rear perimeter edges never inherit the drawer-corner rise.
+JOIN_Z=ELEPHANT_FOOT_Z;
+JOIN_X=ELEPHANT_FOOT_X;
 // The print angle and specified tray height are the ONLY independent rim
 // dimensions. Its horizontal run is mathematically derived, never another
 // Customizer input: run = rise / tan(angle from the print bed).
