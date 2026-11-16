@@ -199,10 +199,10 @@ def test_sidewalls_are_outward_drafted_and_rear_wall_is_vertical(tmp_path):
         "Output_mode":1,"Selected_row":1,"Selected_column":1
     })
     # The REAR exterior lies on y=d for the complete metal wall height;
-    # no unwanted inward draft or oversized bottom chamfer at this end.
+    # no unwanted side-wall draft or oversized drawer-corner chamfer at this end.
     rear = m.vertices[np.abs(m.vertices[:,1]-158)<0.03]
     assert rear.size > 0
-    assert rear[:,2].min() == pytest.approx(0, abs=0.03)
+    assert rear[:,2].min() >= 0
     assert np.any((rear[:,2]>=64.5)&(rear[:,2]<=65.5))
     assert m.bounds[0,0] < -10, "Outer left wall must slope outward to top"
     assert m.bounds[1,0] > 189, "Outer right wall must slope outward to top"
@@ -234,8 +234,8 @@ def test_drawer_corner_radius_drives_exterior_chamfer(tmp_path,radius,angle):
     match=re.search(r'"ANGLE / AUTO OUTER CHAMFER run, rise \(from drawer floor radius\)", ([\d.]+), ([\d.]+), ([\d.]+)',out)
     assert match
     _,run,rise=map(float,match.groups())
-    assert rise==pytest.approx(radius,abs=0.001)
-    assert run==pytest.approx(radius/math.tan(math.radians(angle)),abs=0.002)
+    assert rise==pytest.approx(max(radius,1),abs=0.001)
+    assert run==pytest.approx(max(radius,1)/math.tan(math.radians(angle)),abs=0.002)
 
 
 @pytest.mark.parametrize("radius,angle",[(10,25),(35,60),(20,75)])
@@ -365,7 +365,7 @@ def test_larger_inner_rounding_expands_male_and_female_connector_lobes(tmp_path)
         if male_far>0: assert female_far-male_far>=0.999
 
 
-@pytest.mark.parametrize("outer_radius,expected",[(0,2),(4,6),(10,12)])
+@pytest.mark.parametrize("outer_radius,expected",[(0,3),(4,6),(10,12)])
 def test_chamfer_alone_determines_minimum_radius(tmp_path,outer_radius,expected):
     output,_=render_csg(tmp_path,f"chamfer_min_{outer_radius}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
@@ -457,7 +457,7 @@ def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
         fixture.write_text(prefix + chr(10) + module + "();" + chr(10))
         mesh_path=tmp_path/f"{label}_foot_{relief}.stl"
         proc=openscad_render(mesh_path,{
-            "Connector_elephant_foot_mm":relief,
+            "Elephant_foot_mm":relief,
             "Inner_bottom_radius_mm":12
         },source=fixture,preset=preset)
         require_render_ok(proc,mesh_path)
@@ -485,7 +485,7 @@ def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
 def test_joining_edge_elephant_foot_settings(tmp_path,relief):
     render_stl(tmp_path,f"foot_{relief}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
-        "Join_edge_elephant_foot_mm":relief
+        "Elephant_foot_mm":relief
     })
 
 
@@ -975,3 +975,34 @@ def test_male_connector_actual_mesh_has_same_center_and_larger_radius(tmp_path,r
         assert len(arc)>=10
         fitted=np.hypot(arc[:,0]-(radius+2),arc[:,1]-(radius+2))
         assert np.max(np.abs(fitted-(radius+3)))<0.07
+
+
+@pytest.mark.parametrize("foot,corner", [(0,0),(1,0),(1,0.5),(1,4),(1,10),(1.5,0)])
+def test_single_elephant_foot_controls_all_bed_contact_edges(tmp_path,foot,corner):
+    out,_=render_csg(tmp_path,f"unified_foot_{foot}_{corner}",{
+        "Output_mode":1,"Selected_row":1,"Selected_column":1,
+        "Elephant_foot_mm":foot,"Drawer_floor_corner_radius_mm":corner
+    })
+    match=re.search(
+        r'"UNIFIED ELEPHANT FOOT \(requested / inner and end edge rise / outer side rise\)", '
+        r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
+    assert match,out[-2000:]
+    request,join,outer=map(float,match.groups())
+    assert request==pytest.approx(foot)
+    assert join==pytest.approx(foot)
+    assert outer==pytest.approx(max(foot,corner))
+
+
+def test_front_and_rear_exterior_bed_edges_use_unified_relief(tmp_path):
+    """On a rear tray, the exterior rear Y edge must have the SAME small
+    chamfer as its front seam, not the 10 mm drawer-side corner slope.
+    """
+    output,_=render_csg(tmp_path,"unified_front_rear",{
+        "Output_mode":1,"Selected_row":1,"Selected_column":1,
+        "Elephant_foot_mm":1.5
+    })
+    assert "ERROR:" not in output
+    scad=release_paths()[0].read_text()
+    assert "outside ? concat([[JOIN_X,0],[0,JOIN_Z],[0,H]]" in scad
+    assert "JOIN_Z=ELEPHANT_FOOT_Z;" in scad
+    assert "CONNECTOR_FOOT_REQUEST=max(0,Elephant_foot_mm);" in scad

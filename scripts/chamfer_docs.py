@@ -195,7 +195,7 @@ def schematic(output: Path) -> None:
     d=ImageDraw.Draw(image)
     d.rectangle((0,0,1400,110),fill=(23,38,58))
     d.text((30,30),"Foot relief sections (schematic, not to scale)",font=font(36,True),fill="white")
-    specs=[("Male dogbone",.4,True),("Female socket",.4,False),("Joining edge",1.0,False)]
+    specs=[("Male dogbone",1.0,True),("Female socket",1.0,False),("Joining edge",1.0,False)]
     for i,(title,rise,male) in enumerate(specs):
         x=20+i*464
         d.rounded_rectangle((x,145,x+445,715),radius=12,
