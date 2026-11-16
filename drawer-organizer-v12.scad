@@ -1089,7 +1089,7 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
         if(Selected_column<1||Selected_column>splits_at(start))
             echo(str("SELECTION INVALID: Column ",Selected_column," does not exist in row ",Selected_row,
                      " (1..",splits_at(start),"). Nothing drawn."));
-        else display_tray(start,Selected_column);
+        else color([0.18,0.49,0.51]) display_tray(start,Selected_column);
 } else if(Output_mode==2) {
     stride=2*(HEAD_IN+HEAD_R)+4;
     for(i=[0:Loose_connector_quantity-1])

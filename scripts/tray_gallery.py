@@ -3,6 +3,7 @@
 Uses the shipped kitchen-drawer preset. Each image comes from the selected
 physical tray (Output_mode=1), not a mockup or a reassembled depiction.
 Five alternate angles and five detail/underside images supplement the gallery.
+Uses actual OpenSCAD F5 geometry previews; model colors match the other trays.
 """
 from __future__ import annotations
 
@@ -69,8 +70,8 @@ def main() -> None:
         proc = openscad_render(
             raw, params,
             image_focus=view.camera,
-            image_render=True,  # F6 avoids OpenCSG stripes on tall walls.
-            timeout=240,
+            image_render=False,  # F5 actual geometry preview; teal color is set in the model.
+            timeout=120,
         )
         require_render_ok(proc, raw)
         dest = destdir / f"{view.name}.png"

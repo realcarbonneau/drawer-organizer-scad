@@ -29,7 +29,7 @@ These are **OpenSCAD previews from v12 geometry**, not photos or slicer results.
 
 ### Each physical tray — alternate angle and details
 
-These ten additional **F6 OpenSCAD renders** cover every physical tray in the five-piece preset. The alternate angles show the complete selected tray; the closer views show its underside connection interfaces or row-4 divider access cutouts. Images remain 1200 × 900 pixels and open at full resolution when tapped.
+These ten additional **OpenSCAD CAD previews** cover every physical tray in the five-piece preset. The alternate angles show the complete selected tray; the closer views show its underside connection interfaces or row-4 divider access cutouts. Images remain 1200 × 900 pixels and open at full resolution when tapped.
 
 | Rear tray — opposite corner | Rear tray — underside |
 | --- | --- |
