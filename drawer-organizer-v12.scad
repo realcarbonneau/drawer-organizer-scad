@@ -117,9 +117,9 @@ Manual_join_rear = false;
 /* [07 - Part selection and preview] */
 // Full layout is for inspection; select one tray when exporting an STL.
 Output_mode = 0; // [0:Full layout preview,1:Selected tray,2:Loose dogbone connectors]
+Selected_column = 1; // [1:Selected column 1,2:Selected column 2,3:Selected column 3,4:Selected column 4,5:Selected column 5,6:Selected column 6,7:Selected column 7,8:Selected column 8,9:Selected column 9,10:Selected column 10]
 // Selected row 1=REAR; a continued row selects its whole multi-row tray.
 Selected_row = 1; // [1:Selected row 1,2:Selected row 2,3:Selected row 3,4:Selected row 4,5:Selected row 5,6:Selected row 6,7:Selected row 7,8:Selected row 8,9:Selected row 9,10:Selected row 10]
-Selected_column = 1; // [1:Selected column 1,2:Selected column 2,3:Selected column 3,4:Selected column 4,5:Selected column 5,6:Selected column 6,7:Selected column 7,8:Selected column 8,9:Selected column 9,10:Selected column 10]
 Loose_connector_quantity = 8; // [1:1:60]
 // Clear edge-to-edge gap between adjacent loose dogbones in the full layout.
 // Independent of the socket pitch and the separated tray preview.
