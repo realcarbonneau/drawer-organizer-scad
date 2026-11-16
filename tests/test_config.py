@@ -143,6 +143,16 @@ def test_readme_visuals_are_camera_fitted_and_never_cropped():
     assert "SCALE=2" in gallery
 
 
+def test_underside_preview_uses_f6_not_opencsg():
+    # F5 OpenCSG showed white holes through the rear blind connector roofs.
+    from scripts.tray_gallery import TRAY_VIEWS
+    source = (release_paths()[0].parent / "scripts/tray_gallery.py").read_text()
+    assert 'image_render=view.name.endswith("-underside")' in source
+    assert {v.name for v in TRAY_VIEWS if v.name.endswith("-underside")} == {
+        "tray-rear-underside", "tray-front-underside"
+    }
+
+
 def test_every_physical_tray_has_two_distinct_real_cad_gallery_views():
     from scripts.tray_gallery import TRAY_VIEWS
 

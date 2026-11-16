@@ -29,12 +29,12 @@ These are **OpenSCAD previews from v12 geometry**, not photos or slicer results.
 
 ### Each physical tray — alternate angle and details
 
-These ten additional **OpenSCAD CAD previews** cover every physical tray in the five-piece preset. The alternate angles show the complete selected tray; the closer views show its underside connection interfaces or row-4 divider access cutouts. Images remain 1200 × 900 pixels and open at full resolution when tapped.
+These ten additional **OpenSCAD CAD previews** cover every physical tray in the five-piece preset. The alternate angles show the complete selected tray; the closer views show its underside connection interfaces or row-4 divider access cutouts. Underside screenshots are fully rendered (F6): the sockets open at the bottom but have closed roofs, not through-holes. Images remain 1200 × 900 pixels and open at full resolution when tapped.
 
 | Rear tray — opposite corner | Rear tray — underside |
 | --- | --- |
 | <a href="docs/images/cad/tray-rear-angle.png"><img src="docs/images/cad/tray-rear-angle.png" alt="Rear tray from opposite corner" width="256" height="192"></a> | <a href="docs/images/cad/tray-rear-underside.png"><img src="docs/images/cad/tray-rear-underside.png" alt="Rear tray underside and joining sockets" width="256" height="192"></a> |
-| Rows 1–2, column 1; alternate raised camera angle | Same physical tray; underside joining interfaces |
+| Rows 1–2, column 1; alternate raised camera angle | Blind underside sockets; closed roofs above the openings |
 
 | Middle left — alternate angle | Middle left — access cutout |
 | --- | --- |
@@ -54,7 +54,7 @@ These ten additional **OpenSCAD CAD previews** cover every physical tray in the 
 | Front tray — opposite corner | Front tray — underside |
 | --- | --- |
 | <a href="docs/images/cad/tray-front-angle.png"><img src="docs/images/cad/tray-front-angle.png" alt="Front tray from opposite corner" width="256" height="192"></a> | <a href="docs/images/cad/tray-front-underside.png"><img src="docs/images/cad/tray-front-underside.png" alt="Front tray underside and joining sockets" width="256" height="192"></a> |
-| Row 6, column 1; alternate raised camera angle | Same physical tray; underside joining interfaces |
+| Row 6, column 1; alternate raised camera angle | Blind underside sockets; closed roofs above the openings |
 
 ### Loose dogbone — footprint and first layers
 
