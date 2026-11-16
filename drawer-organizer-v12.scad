@@ -119,7 +119,13 @@ Output_mode = 0; // [0:Full layout preview,1:Selected tray,2:Loose dogbone conne
 Selected_row = 1; // [1:Selected row 1,2:Selected row 2,3:Selected row 3,4:Selected row 4,5:Selected row 5,6:Selected row 6,7:Selected row 7,8:Selected row 8,9:Selected row 9,10:Selected row 10]
 Selected_column = 1; // [1:Selected column 1,2:Selected column 2,3:Selected column 3,4:Selected column 4,5:Selected column 5,6:Selected column 6,7:Selected column 7,8:Selected column 8,9:Selected column 9,10:Selected column 10]
 Loose_connector_quantity = 8; // [1:1:60]
-// Visual spacing between parts; does not affect an individual tray.
+// Clear edge-to-edge gap between adjacent loose dogbones in the full layout.
+// Independent of the socket pitch and the separated tray preview.
+Preview_loose_connector_gap_mm = 12; // [0:0.5:60]
+// Clear horizontal distance from the OUTERMOST right-hand tray edge (including
+// lip flare and exploded tray spacing) to the nearest loose connector tip.
+Preview_loose_connector_offset_mm = 12; // [0:0.5:100]
+// Visual spacing BETWEEN TRAYS; never controls loose connector spacing/offset.
 Preview_separation_mm = 0; // [0:1:50]
 Render_facets = 20; // [3:1:200]
 
@@ -955,17 +961,21 @@ module all_trays() {
         }
 }
 
-// Full-layout ONLY: show the requested loose connector quantity in one
-// non-overlapping column parallel to Y, to the right of ALL tray groups.
-// Include the largest preview column separation and the outer lip projection
-// so even the rightmost flared rim cannot touch the loose dogbones.
+// Full-layout ONLY: one Y-aligned row of loose dogbones to the right of the
+// outermost tray edge. Rotate EACH dogbone about its own Z axis, not the row.
+// Preview tray explosion affects the far-right tray edge, but the two loose
+// dogbone distances are explicit, independent Customizer controls.
 function preview_group_count()=len([for(r=[1:Grid_rows]) if(splits_at(r)>0) r]);
 function preview_max_columns()=max([for(r=[1:Grid_rows]) splits_at(r)]);
-function preview_connector_pitch()=2*(HEAD_IN+HEAD_R)+4;
-function preview_connector_x()=
+// After the 90-degree Z rotation, the dogbone's Y footprint is the lobe
+// DIAMETER rather than the full dogbone length.
+function preview_connector_pitch()=2*HEAD_R+Preview_loose_connector_gap_mm;
+function preview_tray_right_edge()=
     W0+SIDE_EXPAND+(Rim_right?RIM_PROJECTION:0)
-    +(preview_max_columns()-1)*Preview_separation_mm/2
-    +max(6,Preview_separation_mm)+HEAD_R;
+    +(preview_max_columns()-1)*Preview_separation_mm/2;
+function preview_connector_x()=
+    preview_tray_right_edge()+Preview_loose_connector_offset_mm
+    +(HEAD_IN+HEAD_R);
 function preview_connector_y_center()=
     (DY+(preview_group_count()-1)*Preview_separation_mm
        +(Rim_rear?RIM_PROJECTION:0)-(Rim_front?RIM_PROJECTION:0))/2;
@@ -977,8 +987,9 @@ module preview_loose_connectors() {
         y=yc+((Loose_connector_quantity-1)/2-i)*pitch;
         echo("PREVIEW LOOSE CONNECTOR (index, x, y)",i+1,x,y);
         translate([x,y,0])
-            color([0.96,0.68,0.34])
-                loose_dogbone();
+            rotate([0,0,90])
+                color([0.96,0.68,0.34])
+                    loose_dogbone();
     }
 }
 

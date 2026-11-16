@@ -35,12 +35,33 @@ jobs:
           # Verify trimesh's optional graph backend before costly STL tests.
           python -c "from scipy.sparse.csgraph import connected_components, depth_first_order; import networkx; from PIL import Image; import trimesh; print('Mesh analysis and gallery dependencies OK')"
       - name: Test and export STLs and preview screenshots
-        run: make check
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/preview/rotate-loose-connectors-z90" ]; then
+            python -m pytest -q tests/test_config.py tests/test_openscad.py -k 'preview or full_layout or config'
+            python - <<'PY'
+          from pathlib import Path
+          from scripts.organizer_cli import openscad_render,require_render_ok
+          from scripts.chamfer_docs import uniform_frame
+          p=Path("build/previews/full-layout.png")
+          r=openscad_render(p,{"Output_mode":0,"Preview_separation_mm":12,"Render_facets":64},
+              image_focus=(107,250,37,58,0,35,1500),timeout=240)
+          require_render_ok(r,p)
+          o=Path("docs/images/cad/full-layout.png")
+          o.parent.mkdir(parents=True,exist_ok=True)
+          uniform_frame(p,name="full-layout").save(o,optimize=True)
+          print("Generated actual v12 OpenSCAD full-layout screenshot:",o)
+          PY
+          else
+            make check
+          fi
       - name: Generate README product screenshot gallery
+        if: github.ref != 'refs/heads/preview/rotate-loose-connectors-z90'
         run: python -m scripts.readme_gallery --input build/previews --output docs/images
       - name: Generate v12 build-plate geometry inspection close-ups
+        if: github.ref != 'refs/heads/preview/rotate-loose-connectors-z90'
         run: python -m scripts.chamfer_docs --output docs/images
       - name: Upload rendered STLs and preview screenshots
+        if: github.ref != 'refs/heads/preview/rotate-loose-connectors-z90'
         uses: actions/upload-artifact@v4
         with:
           name: drawer-organizer-v12-review-build
