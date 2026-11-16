@@ -70,8 +70,9 @@ jobs:
       - name: Generate v12 build-plate geometry inspection close-ups
         if: github.ref != 'refs/heads/preview/rotate-loose-connectors-z90'
         run: python -m scripts.chamfer_docs --output docs/images
+      - name: Generate ten alternate physical-tray CAD screenshots
+        run: python -m scripts.tray_gallery
       - name: Upload rendered STLs and preview screenshots
-        if: github.ref != 'refs/heads/preview/rotate-loose-connectors-z90'
         uses: actions/upload-artifact@v4
         with:
           name: drawer-organizer-v12-review-build

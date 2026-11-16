@@ -143,6 +143,24 @@ def test_readme_visuals_are_camera_fitted_and_never_cropped():
     assert "SCALE=2" in gallery
 
 
+def test_every_physical_tray_has_two_distinct_real_cad_gallery_views():
+    from scripts.tray_gallery import TRAY_VIEWS
+
+    _, preset = release_paths()
+    physical_parts = set(default_parts(preset_parameters(preset)))
+    assert len(TRAY_VIEWS) == 10
+    assert { (v.row, v.col) for v in TRAY_VIEWS } == physical_parts
+    assert len({v.name for v in TRAY_VIEWS}) == 10
+    for row, col in physical_parts:
+        views = [v for v in TRAY_VIEWS if (v.row, v.col) == (row, col)]
+        assert len(views) == 2
+        assert len({v.camera for v in views}) == 2
+    assert sum(v.closeup for v in TRAY_VIEWS) == 3
+    readme = (release_paths()[0].parent / "README.md").read_text()
+    for v in TRAY_VIEWS:
+        assert f'docs/images/cad/{v.name}.png' in readme
+
+
 def test_preview_frame_validator_catches_tiny_and_clipped_models(tmp_path):
     from PIL import Image, ImageDraw
     from scripts.build import verify_preview_framing

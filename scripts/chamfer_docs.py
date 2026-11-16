@@ -138,7 +138,7 @@ FRAME_SIZE = (1200, 900)
 BACKGROUND = (248, 248, 248)
 
 
-def uniform_frame(path: Path, *, name: str) -> Image.Image:
+def uniform_frame(path: Path, *, name: str, allow_clipping: bool = False) -> Image.Image:
     """Place uncropped CAD geometry on equal 4:3 canvases at a consistent scale.
 
     A high-resolution camera render is fitted to a constant 1200x900 frame.
@@ -155,7 +155,7 @@ def uniform_frame(path: Path, *, name: str) -> Image.Image:
     w, h = source.size
     # The interior-divider detail is intentionally a camera crop of a tray,
     # unlike the complete fitting interfaces, which must not be clipped.
-    if name != "cutout-closeup" and (x0 <= 1 or y0 <= 1 or x1 >= w-1 or y1 >= h-1):
+    if not (allow_clipping or name == "cutout-closeup") and (x0 <= 1 or y0 <= 1 or x1 >= w-1 or y1 >= h-1):
         raise RuntimeError(f"CAD model clipped by the source camera: {name}")
     box_w, box_h = x1-x0, y1-y0
     margin = max(24, round(max(box_w, box_h) * .05))
