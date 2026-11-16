@@ -83,7 +83,9 @@ else if(Inspection_view=="connector-plan")
 else if(Inspection_view=="connector-underside")
     rotate([180,0,0]) color([0.90,0.62,0.25]) loose_dogbone();
 else if(Inspection_view=="connector-profile")
-    color([0.90,0.62,0.25]) loose_dogbone();
+    // Evaluate the real CSG intersection before previewing the side profile.
+    // OpenCSG's coplanar faces otherwise draw a false notch at the lobe top.
+    color([0.90,0.62,0.25]) render(convexity=10) loose_dogbone();
 else if(Inspection_view=="socket-mouth-plan")
     rotate([180,0,0]) inspection_socket_coupon();
 else if(Inspection_view=="joining-socket")
