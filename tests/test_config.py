@@ -74,6 +74,9 @@ def test_customizer_controls_and_defaults():
     assert params["Inner_bottom_radius_mm"] == "20"
     assert "Inner_bottom_radius_mm = 20; // [0:0.5:100]" in scad
     assert "preview_loose_connectors();" in scad
+    assert "color([0.18,0.49,0.51])" in scad
+    assert scad.count("color([0.90,0.62,0.25])") >= 2
+    assert "color([0.78+0.03*((r+c)%3),0.84,0.91-0.04*(c%3)])" not in scad
     assert "module inner_corner_fillet_keepouts(" in scad
     assert "offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R)" not in scad
     assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_Z+B);" in scad

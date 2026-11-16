@@ -6,7 +6,7 @@ Parametric tray geometry for a measured, metal-sided drawer. Separate printed tr
 
 ## OpenSCAD gallery — actual model and print interfaces
 
-These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views use isolated CAD inspection crops and shortened surrounding stock while reusing the real connector and socket geometry. All gallery images use the same 4:3 frame and are paired with the relevant technical setting. Tap a thumbnail to open its full-resolution PNG.
+These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views use isolated CAD inspection crops and shortened surrounding stock while reusing the real connector and socket geometry. All gallery images use the same 4:3 frame and are paired with the relevant technical setting. Tap a thumbnail to open its full-resolution PNG. **Color convention:** teal = printed trays, orange = loose male connectors, blue = socket inspection sections.
 
 <!-- Intentionally fixed 256 × 192 display thumbnails for balanced two-column GitHub mobile tables. Full-resolution PNG links are kept in each cell. -->
 

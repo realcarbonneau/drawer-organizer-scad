@@ -945,6 +945,8 @@ module display_tray(start,col,report=true) {
 // Count tray GROUP boundaries in front of (closer to the viewer than) this group.
 // Separation is applied once PER TRAY JOIN, not once per logical row.
 function groups_ahead(start) = len([for(k=[1:Grid_rows]) if(k>start && splits_at(k)>0) k]);
+// Gallery convention: teal = printed trays, orange = loose male dogbones.
+// Socket inspection coupons in scripts/chamfer_docs.py are blue.
 module all_trays() {
     for(r=[1:Grid_rows]) if(splits_at(r)>0)
         for(c=[1:splits_at(r)]) {
@@ -956,7 +958,7 @@ module all_trays() {
             y=group_y(r)+groups_ahead(r)*Preview_separation_mm;
             echo("PREVIEW ORIGIN (row, column, x, y, w, depth)",r,c,x,y,w,d);
             translate([x,y,0])
-                color([0.78+0.03*((r+c)%3),0.84,0.91-0.04*(c%3)])
+                color([0.18,0.49,0.51])
                     display_tray(r,c,false);
         }
 }
@@ -988,7 +990,7 @@ module preview_loose_connectors() {
         echo("PREVIEW LOOSE CONNECTOR (index, x, y)",i+1,x,y);
         translate([x,y,0])
             rotate([0,0,90])
-                color([0.96,0.68,0.34])
+                color([0.90,0.62,0.25])
                     loose_dogbone();
     }
 }
@@ -1092,5 +1094,5 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
     stride=2*(HEAD_IN+HEAD_R)+4;
     for(i=[0:Loose_connector_quantity-1])
         translate([((i%10)+0.5)*stride,-(floor(i/10)+1.5)*stride,0])
-            loose_dogbone();
+            color([0.90,0.62,0.25]) loose_dogbone();
 } else echo("OUTPUT INVALID: choose Full layout, Selected tray or Loose dogbones.");
