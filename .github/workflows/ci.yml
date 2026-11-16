@@ -40,6 +40,8 @@ jobs:
         run: python -m scripts.readme_gallery --input build/previews --output docs/images
       - name: Generate v12 build-plate geometry inspection close-ups
         run: python -m scripts.chamfer_docs --output docs/images
+      - name: Generate ten additional individual-tray screenshots
+        run: python -m scripts.tray_gallery --input build/previews --output docs/images
       - name: Upload rendered STLs and preview screenshots
         uses: actions/upload-artifact@v4
         with:

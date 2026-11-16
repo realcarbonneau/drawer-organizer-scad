@@ -56,6 +56,12 @@ def test_customizer_controls_and_defaults():
     scad=source.read_text()
     params=preset_parameters(preset)
     assert "Preview_separation_mm = 0; // [0:1:50]" in scad
+    assert "Preview_loose_connector_gap_mm = 12; // [0:0.5:60]" in scad
+    assert "Preview_loose_connector_offset_mm = 12; // [0:0.5:100]" in scad
+    assert params["Preview_loose_connector_gap_mm"] == "12"
+    assert params["Preview_loose_connector_offset_mm"] == "12"
+    assert scad.index("Preview_loose_connector_gap_mm =") < scad.index("Render_facets =")
+    assert scad.index("Preview_loose_connector_offset_mm =") < scad.index("Render_facets =")
     assert "Render_facets = 20; // [3:1:200]" in scad
     assert int(params["Render_facets"])==20
     assert int(params["Print_overhang_angle_deg"])==60
@@ -68,6 +74,9 @@ def test_customizer_controls_and_defaults():
     assert params["Inner_bottom_radius_mm"] == "20"
     assert "Inner_bottom_radius_mm = 20; // [0:0.5:100]" in scad
     assert "preview_loose_connectors();" in scad
+    assert "color([0.18,0.49,0.51])" in scad
+    assert scad.count("color([0.90,0.62,0.25])") >= 2
+    assert "color([0.78+0.03*((r+c)%3),0.84,0.91-0.04*(c%3)])" not in scad
     assert "module inner_corner_fillet_keepouts(" in scad
     assert "offset(r=INNER_BOTTOM_R) offset(delta=-INNER_BOTTOM_R)" not in scad
     assert "INNER_BOTTOM_R_MIN=max(B,CHAMFER_Z+B);" in scad
@@ -132,6 +141,34 @@ def test_readme_visuals_are_camera_fitted_and_never_cropped():
     assert ".crop(" not in gallery
     assert "min(size[0]/im.width,size[1]/im.height,1.0)" in gallery
     assert "SCALE=2" in gallery
+
+
+def test_underside_preview_uses_f6_not_opencsg():
+    # F5 OpenCSG showed white holes through the rear blind connector roofs.
+    from scripts.tray_gallery import TRAY_VIEWS
+    source = (release_paths()[0].parent / "scripts/tray_gallery.py").read_text()
+    assert 'image_render=view.name.endswith("-underside")' in source
+    assert {v.name for v in TRAY_VIEWS if v.name.endswith("-underside")} == {
+        "tray-rear-underside", "tray-front-underside"
+    }
+
+
+def test_every_physical_tray_has_two_distinct_real_cad_gallery_views():
+    from scripts.tray_gallery import TRAY_VIEWS
+
+    _, preset = release_paths()
+    physical_parts = set(default_parts(preset_parameters(preset)))
+    assert len(TRAY_VIEWS) == 10
+    assert { (v.row, v.col) for v in TRAY_VIEWS } == physical_parts
+    assert len({v.name for v in TRAY_VIEWS}) == 10
+    for row, col in physical_parts:
+        views = [v for v in TRAY_VIEWS if (v.row, v.col) == (row, col)]
+        assert len(views) == 2
+        assert len({v.camera for v in views}) == 2
+    assert sum(v.closeup for v in TRAY_VIEWS) == 3
+    readme = (release_paths()[0].parent / "README.md").read_text()
+    for v in TRAY_VIEWS:
+        assert f'docs/images/cad/{v.name}.png' in readme
 
 
 def test_preview_frame_validator_catches_tiny_and_clipped_models(tmp_path):

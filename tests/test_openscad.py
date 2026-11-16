@@ -89,13 +89,48 @@ def test_full_preview_shows_loose_dogbones_in_right_hand_y_column(tmp_path,quant
     # The three-column group has one full preview gap on its right.
     rim_right=189+14+10/math.tan(math.radians(60))+gap
     head_radius=3.0
-    assert min(xs)-head_radius>=rim_right+5.9
+    head_in=2+math.sqrt(head_radius**2-2**2)
+    assert min(xs)-(head_in+head_radius)==pytest.approx(rim_right+12,abs=0.02)
     assert (ys[0]+ys[-1])/2==pytest.approx((474+2*gap)/2,abs=0.01)
     if quantity>1:
-        head_in=2+math.sqrt(3**2-2**2)
-        pitch=2*(head_in+head_radius)+4
+        pitch=2*head_radius+12
         assert np.allclose(np.diff(ys),-pitch,atol=0.002)
     assert path.stat().st_size>1000
+
+
+@pytest.mark.parametrize("connector_gap", [0, 4, 12, 25])
+@pytest.mark.parametrize("right_offset", [0, 4, 12, 35])
+def test_full_layout_loose_connectors_have_independent_gap_and_edge_offset(
+        tmp_path, connector_gap, right_offset):
+    """Each part rotates around its own Z axis; its Y row is unchanged."""
+    out, _ = render_csg(tmp_path, f"connector_gap{connector_gap}_offset{right_offset}", {
+        "Output_mode": 0, "Preview_separation_mm": 12,
+        "Preview_loose_connector_gap_mm": connector_gap,
+        "Preview_loose_connector_offset_mm": right_offset,
+        "Loose_connector_quantity": 8,
+    })
+    loc = preview_connector_positions(out)
+    xs = np.array([x for _, x, _ in loc])
+    ys = np.array([y for _, _, y in loc])
+    assert len(loc) == 8
+    assert np.allclose(xs, xs[0], atol=0.001)
+    assert np.allclose(np.diff(ys), -(6+connector_gap), atol=0.002)
+    assert (ys[0]+ys[-1])/2 == pytest.approx((474+24)/2, abs=0.02)
+    outermost_tray_right = 189+14+10/math.tan(math.radians(60))+12
+    rotated_half_length = (2+math.sqrt(5))+3
+    assert xs[0]-rotated_half_length == pytest.approx(
+        outermost_tray_right+right_offset, abs=0.02)
+
+
+def test_full_layout_rotates_individual_connector_not_placement_row():
+    source,_=release_paths()
+    scad=source.read_text()
+    preview=scad[scad.index("module preview_loose_connectors()"):scad.index(
+        "// ----------- Output and non-fatal invalid selection handling")]
+    assert "translate([x,y,0])\n            rotate([0,0,90])" in preview
+    assert "pitch=preview_connector_pitch();" in preview
+    assert "y=yc+((Loose_connector_quantity-1)/2-i)*pitch;" in preview
+    assert "function preview_connector_pitch()=2*HEAD_R+Preview_loose_connector_gap_mm;" in scad
 
 
 @pytest.mark.parametrize("mode",[1,2])

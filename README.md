@@ -6,7 +6,7 @@ Parametric tray geometry for a measured, metal-sided drawer. Separate printed tr
 
 ## OpenSCAD gallery — actual model and print interfaces
 
-These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views use isolated CAD inspection crops and shortened surrounding stock while reusing the real connector and socket geometry. All gallery images use the same 4:3 frame and are paired with the relevant technical setting. Tap a thumbnail to open its full-resolution PNG.
+These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views use isolated CAD inspection crops and shortened surrounding stock while reusing the real connector and socket geometry. All gallery images use the same 4:3 frame and are paired with the relevant technical setting. Tap a thumbnail to open its full-resolution PNG. **Color convention:** teal = printed trays, orange = loose male connectors, blue = socket inspection sections.
 
 <!-- Intentionally fixed 256 × 192 display thumbnails for balanced two-column GitHub mobile tables. Full-resolution PNG links are kept in each cell. -->
 
@@ -26,6 +26,35 @@ These are **OpenSCAD previews from v12 geometry**, not photos or slicer results.
 | --- | --- |
 | <a href="docs/images/cad/cutout-closeup.png"><img src="docs/images/cad/cutout-closeup.png" alt="Interior divider access cutout" width="256" height="192"></a> | <a href="docs/images/cad/dogbone.png"><img src="docs/images/cad/dogbone.png" alt="Loose connector output" width="256" height="192"></a> |
 | Row-4 access cutout, rounded 20 mm transition diameter | `Output_mode=2`; one dogbone shown for inspection |
+
+### Each physical tray — alternate angle and details
+
+These ten additional **OpenSCAD CAD previews** cover every physical tray in the five-piece preset. The alternate angles show the complete selected tray; the closer views show its underside connection interfaces or row-4 divider access cutouts. Underside screenshots are fully rendered (F6): the sockets open at the bottom but have closed roofs, not through-holes. Images remain 1200 × 900 pixels and open at full resolution when tapped.
+
+| Rear tray — opposite corner | Rear tray — underside |
+| --- | --- |
+| <a href="docs/images/cad/tray-rear-angle.png"><img src="docs/images/cad/tray-rear-angle.png" alt="Rear tray from opposite corner" width="256" height="192"></a> | <a href="docs/images/cad/tray-rear-underside.png"><img src="docs/images/cad/tray-rear-underside.png" alt="Rear tray underside and joining sockets" width="256" height="192"></a> |
+| Rows 1–2, column 1; alternate raised camera angle | Blind underside sockets; closed roofs above the openings |
+
+| Middle left — alternate angle | Middle left — access cutout |
+| --- | --- |
+| <a href="docs/images/cad/tray-middle-left-angle.png"><img src="docs/images/cad/tray-middle-left-angle.png" alt="Middle left tray alternate angle" width="256" height="192"></a> | <a href="docs/images/cad/tray-middle-left-cutout.png"><img src="docs/images/cad/tray-middle-left-cutout.png" alt="Middle left tray row 4 divider cutout" width="256" height="192"></a> |
+| Rows 3–5, column 1; full individual tray | Row-4 access opening in the right-hand divider |
+
+| Middle center — alternate angle | Middle center — access cutout |
+| --- | --- |
+| <a href="docs/images/cad/tray-middle-center-angle.png"><img src="docs/images/cad/tray-middle-center-angle.png" alt="Middle center tray alternate angle" width="256" height="192"></a> | <a href="docs/images/cad/tray-middle-center-cutout.png"><img src="docs/images/cad/tray-middle-center-cutout.png" alt="Middle center tray row 4 divider cutout" width="256" height="192"></a> |
+| Rows 3–5, column 2; full individual tray | Row-4 rounded access opening in the divider |
+
+| Middle right — alternate angle | Middle right — access cutout |
+| --- | --- |
+| <a href="docs/images/cad/tray-middle-right-angle.png"><img src="docs/images/cad/tray-middle-right-angle.png" alt="Middle right tray alternate angle" width="256" height="192"></a> | <a href="docs/images/cad/tray-middle-right-cutout.png"><img src="docs/images/cad/tray-middle-right-cutout.png" alt="Middle right tray row 4 divider cutout" width="256" height="192"></a> |
+| Rows 3–5, column 3; full individual tray | Row-4 access opening in the left-hand divider |
+
+| Front tray — opposite corner | Front tray — underside |
+| --- | --- |
+| <a href="docs/images/cad/tray-front-angle.png"><img src="docs/images/cad/tray-front-angle.png" alt="Front tray from opposite corner" width="256" height="192"></a> | <a href="docs/images/cad/tray-front-underside.png"><img src="docs/images/cad/tray-front-underside.png" alt="Front tray underside and joining sockets" width="256" height="192"></a> |
+| Row 6, column 1; alternate raised camera angle | Blind underside sockets; closed roofs above the openings |
 
 ### Loose dogbone — footprint and first layers
 
