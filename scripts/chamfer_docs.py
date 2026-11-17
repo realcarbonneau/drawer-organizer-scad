@@ -30,7 +30,10 @@ module inspection_socket_coupon() {
     // roof and mouth; all actual production subtractors are retained.
     render(convexity=10)
     difference() {
-        color([0.30,0.68,0.83]) translate([-10,0,0]) cube([20,19,10]);
+        // Leave stock ABOVE the blind pocket's 13 mm roof in the technical coupon.
+        // Otherwise a harmless inspection crop would misleadingly show the sky.
+        color([0.30,0.68,0.83]) translate([-11,0,0])
+            cube([22,21,max(17,CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+1)]);
         color([0.96,0.72,0.12]) socket_with_entry_chamfer_3d();
         color([0.96,0.72,0.12]) inspection_join_cut();
     }
@@ -53,7 +56,7 @@ module inspection_join_edge() {
 // Preview palette: teal for stock / loose connector and gold for volumes
 // removed by the socket or joining-edge chamfer. STL color is unaffected.
 Inspection_view="connector-foot";
-if(Inspection_view=="connector-foot") color([0.90,0.62,0.25]) loose_dogbone();
+if(Inspection_view=="connector-foot") color([0.90,0.62,0.25]) render(convexity=10) loose_dogbone();
 else if(Inspection_view=="connector-lobe")
     // Crop at a real lobe: this inspection section makes the round head
     // large enough to distinguish from the complete dogbone overview.
@@ -79,9 +82,9 @@ else if(Inspection_view=="socket-section")
     rotate([180,0,0]) inspection_socket_section();
 else if(Inspection_view=="joining-edge") inspection_join_edge();
 else if(Inspection_view=="connector-plan")
-    color([0.90,0.62,0.25]) loose_dogbone();
+    color([0.90,0.62,0.25]) render(convexity=10) loose_dogbone();
 else if(Inspection_view=="connector-underside")
-    rotate([180,0,0]) color([0.90,0.62,0.25]) loose_dogbone();
+    rotate([180,0,0]) color([0.90,0.62,0.25]) render(convexity=10) loose_dogbone();
 else if(Inspection_view=="connector-profile")
     // Evaluate the real CSG intersection before previewing the side profile.
     // OpenCSG's coplanar faces otherwise draw a false notch at the lobe top.
@@ -95,18 +98,18 @@ else if(Inspection_view=="joining-socket")
 # Stable semantic filenames. Camera: target X/Y/Z, rotation X/Y/Z, distance.
 # Image dimensions are uniform; close-ups differ by view angle, not PNG size.
 VIEWS = [
-    ("connector-foot",      (0,  0,  1.2, 78, 0, 34, 49)),
-    ("connector-plan",      (0,  0,  3.0,  0, 0,  0, 38)),
-    ("connector-lobe",      (0,  0,  1.0, 75, 0, 28, 42)),
-    ("connector-web",       (0,  0,  1.0, 80, 0, 52, 42)),
-    ("connector-underside", (0,  0, -2.8, 38, 0, 20, 43)),
-    ("connector-profile",   (0,  0,  1.2, 90, 0,  0, 49)),
-    ("socket-underside",    (0, -8, -1.7, 52, 0,190, 92)),
-    ("socket-mouth-plan",   (0, -9, -1.0,  0, 0,180, 86)),
-    ("socket-lips",         (0, -7, -0.8, 60, 0,180, 88)),
-    ("socket-section",      (0, -6, -3.2, 60, 0,220, 94)),
+    ("connector-foot",      (0,  0,  3.0, 78, 0, 34, 85)),
+    ("connector-plan",      (0,  0,  5.0,  0, 0,  0, 78)),
+    ("connector-lobe",      (0,  0,  2.5, 75, 0, 28, 68)),
+    ("connector-web",       (0,  0,  2.5, 80, 0, 52, 70)),
+    ("connector-underside", (0,  0, -2.8, 38, 0, 20, 97)),
+    ("connector-profile",   (0,  0,  4.0, 90, 0,  0, 86)),
+    ("socket-underside",    (0, -8,  0.0, 52, 0,190, 118)),
+    ("socket-mouth-plan",   (0, -9,  0.0,  0, 0,180, 108)),
+    ("socket-lips",         (0, -7,  0.0, 60, 0,180, 118)),
+    ("socket-section",      (0, -6,  0.0, 60, 0,220, 122)),
     ("joining-edge",        (0,  4,  1.0, 80, 0, 32, 71)),
-    ("joining-socket",      (0, -6, -1.4, 80, 0,190, 96)),
+    ("joining-socket",      (0, -6,  0.0, 80, 0,190, 115)),
 ]
 
 # Raw F5 views of the actual preset, without any card art or marketing copy.
@@ -124,7 +127,7 @@ def run_preview(source: Path, name: str, camera: tuple[int, ...], destination: P
     command = [
         "openscad", "--hardwarnings", "--imgsize=2200,1500",
         "--colorscheme=Tomorrow", "--camera="+",".join(map(str,camera)),
-        "-D", "Render_facets=128", "-D", 'Inspection_view="'+name+'"',
+        "-D", "Render_facets=64", "-D", 'Inspection_view="'+name+'"',
         "-o", str(destination), str(source),
     ]
     if shutil.which("xvfb-run"):

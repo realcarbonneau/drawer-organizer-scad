@@ -20,7 +20,7 @@ These are **OpenSCAD previews from v12 geometry**, not photos or slicer results.
 | Middle tray with dividers | Full-width front tray |
 | --- | --- |
 | <a href="docs/images/cad/middle-tray.png"><img src="docs/images/cad/middle-tray.png" alt="Middle tray with dividers" width="256" height="192"></a> | <a href="docs/images/cad/front-tray.png"><img src="docs/images/cad/front-tray.png" alt="Full-width front tray" width="256" height="192"></a> |
-| Selected middle section from row 3; 20 mm inner bottom radius | Selected front section from row 6, printed independently |
+| Selected middle section from row 3; 30 mm inner bottom radius | Selected front section from row 6, printed independently |
 
 | Interior divider access cutout | Loose connector output |
 | --- | --- |
@@ -61,7 +61,7 @@ These ten additional **OpenSCAD CAD previews** cover every physical tray in the 
 | Complete connector — angled foot | Top-down connector footprint |
 | --- | --- |
 | <a href="docs/images/cad/connector-foot.png"><img src="docs/images/cad/connector-foot.png" alt="Complete connector — angled foot" width="256" height="192"></a> | <a href="docs/images/cad/connector-plan.png"><img src="docs/images/cad/connector-plan.png" alt="Top-down connector footprint" width="256" height="192"></a> |
-| Both round lobes joined by a straight 4 mm web | 6 mm nominal lobe diameter; no locking undercuts |
+| Both 12 mm lobes joined by a straight 8 mm web | 12 mm nominal lobe diameter; no locking undercuts |
 
 | Circular lobe — sectioned detail | Straight web — isolated section |
 | --- | --- |
@@ -113,14 +113,14 @@ One **Elephant_foot_mm = 1** setting now controls all printed first-layer edges:
 | Grid | 3 columns × 6 rows | Row 1 is rear; column 1 is left as viewed from the drawer front |
 | Row starts | 1, continued, 3, continued, continued, 1 | Five trays: rear full width, three middle, front full width |
 | Floor / wall thickness | 2 / 2 | Nominal base and divider stock |
-| **Inner bottom radius** | **20 mm** | Requested shared concave floor-to-wall fillet; changed from automatic in v11 |
+| **Inner bottom radius** | **30 mm** | Requested shared concave floor-to-wall fillet; changed from automatic in v11 |
 | Inner bottom radius = 0 | automatic | Structural minimum, **12 mm** for this preset (10 mm exterior chamfer rise + 2 mm stock) |
 | Soft exposed-edge radius | 0.6 | Top wall and accessible cutout edge treatment |
 | Print overhang angle | 60° above build plate | Shared for exterior slopes, joining-edge relief and connector bevel |
 | Drawer floor corner radius | 10 | Exterior lower sidewall clearance slope: 10 mm rise, ~5.77 mm horizontal run |
 | **Elephant foot** | **1 mm** | One first-layer relief on all tray/connector perimeters and socket entries; ~0.58 mm horizontal run at 60°; outer drawer-side corner relief is at least this large |
-| Connector web width / lobe diameter | 4 / 6 | Two circular lobes joined by a straight web |
-| Max male connector height | 6 | Actual head height can be shortened by the inner bottom fillet |
+| Connector web width / lobe diameter | 8 / 12 | Two circular lobes joined by a straight web |
+| Max male connector height | 12 | Actual head height can be shortened by the inner bottom fillet |
 | Connector side clearance | 0.2 total | Female pocket 0.1 mm larger on each side |
 | Connector top clearance | 1.0 | Female blind pocket roof clearance over the male |
 | Default interior divider cutout | Row 4 enabled | Pre-rounding base width 25; rounding diameter 20; riser angle 75° |
@@ -132,8 +132,8 @@ At the default preset, nominal floor width after clearance is 189 mm, and usable
 
 - **Plan and grouping.** Row 1 is farthest from the user (rear). A `Continue previous` row enlarges the tray immediately behind it rather than adding another seam. Column 1 is left when facing the open drawer.
 - **Exterior walls.** Left/right outer walls widen with drawer height and can flare above the rim. Front/rear ends remain vertical above their 1 mm elephant-foot rise and below any optional rim flare. The floor-to-side chamfer rises by the larger of the metal drawer's required lower corner radius and Elephant_foot_mm. An impossible exterior fit is rejected with an echo rather than clipped.
-- **Inside fillet.** v12 requests a 20 mm concave inside floor-to-wall radius by default. The effective fillet is the larger of the entered value and its structural minimum. Enter **0** for automatic minimum. Adjacent rounds may meet in a shallow valley rather than leaving a horizontal flat area.
-- **Connector outline.** Each loose dogbone has two circular 6 mm-diameter heads and a 4 mm web. Nominal straight span between lobe intersections is 4 mm at 2 mm tray wall thickness. Male connector upper height follows the same calculated interior fillet as the protected female socket roof, at a different constant radial offset.
+- **Inside fillet.** v12 requests a 30 mm concave inside floor-to-wall radius by default. The effective fillet is the larger of the entered value and its structural minimum. Enter **0** for automatic minimum. Adjacent rounds may meet in a shallow valley rather than leaving a horizontal flat area.
+- **Connector outline.** Each loose dogbone has two circular 12 mm-diameter heads and an 8 mm web. Nominal straight span between lobe intersections is 4 mm at 2 mm tray wall thickness. Male connector upper height follows the same calculated interior fillet as the protected female socket roof, at a different constant radial offset.
 - **Socket position.** All true joining edges receive sockets when connectors are enabled. Their stations are computed from available seam length and connector spacing. The pockets are blind and open on the underside only.
 - **Clearances.** Side and top tolerances change the female pocket, not the male's upper fitting dimensions. The same generalized elephant-foot chamfer changes only the socket entrance and the loose piece's build-plate edge; it does not add a locking taper.
 - **Cutout geometry.** Optional cutouts affect internal divider walls only. The 25 mm setting is the *unrounded* gap at the theoretical floor/riser intersection; tangent 10 mm-radius transitions are added. The cutout floor stays above the protected inner fillet and blind socket roofs.
@@ -155,5 +155,29 @@ Tests cover OpenSCAD F5/F6 output, watertight individual tray/connector meshes, 
 
 ## Version history
 
-- **v12:** default requested inside bottom radius changed to 20 mm (0 remains automatic); shallow connector/socket first-layer chamfers added, including joining-edge mouth lips; technical reference screenshots and documentation.
+- **v12:** configurable inner bottom radius (currently 30 mm by default; 0 remains automatic), unified first-layer relief, and geometry-matched underside connector sockets; technical reference screenshots and documentation.
 - **v11:** prior release, retrievable from Git history. Only the current v12 SCAD/JSON pair is retained in the repository root.
+
+## Reference drawers
+
+Square-sided drawers with vertical walls and a sharp floor-to-wall junction do not need the special lower-side clearance. Their profile can be rectangular (90°), with equal top/floor widths and a zero drawer-floor corner radius. Metal-sided systems such as **Blum TANDEMBOX** and **IKEA MAXIMERA** can have tapered sides and a shaped junction at the floor; an organizer placed against those sides needs clearance.
+
+In this model, `Drawer_floor_width_mm` and `Drawer_top_width_mm` describe side taper; `Drawer_floor_corner_radius_mm` sets the **outside** lower-side clearance; and `Print_overhang_angle_deg` determines the clearance chamfer's slope and any rim projection. `Inner_bottom_radius_mm` is the separate **inside radius of the printed tray**. Measure the individual drawer; these photos illustrate drawer construction, not nominal dimensions or interchangeable profiles.
+
+**IKEA MAXIMERA — high drawer**
+
+<a href="docs/images/reference-drawers/maximera-ikea.jpg"><img src="docs/images/reference-drawers/maximera-ikea.jpg" alt="IKEA MAXIMERA high drawer with metal-sided rails" width="780"></a>
+
+<small>Image: [IKEA](https://www.ikea.com/ca/en/images/products/maximera-drawer-high-white__0625584_pe692375_s5.jpg?f=s); local, resized copy.</small>
+
+**IKEA MAXIMERA — installed, without front**
+
+<a href="docs/images/reference-drawers/maximera-installed.jpg"><img src="docs/images/reference-drawers/maximera-installed.jpg" alt="Installed IKEA MAXIMERA drawer with its floor and tapered metal sides visible" width="780"></a>
+
+<small>Photo: [Stilfehler, Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Maximera_drawer_without_front.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); resized, otherwise unmodified.</small>
+
+**Blum TANDEMBOX — drawer-side profile components**
+
+<a href="docs/images/reference-drawers/tandembox-blum.jpg"><img src="docs/images/reference-drawers/tandembox-blum.jpg" alt="Blum TANDEMBOX antaro metal drawer-side profile and runners" width="780"></a>
+
+<small>Image: [Lee Valley](https://www.leevalley.com/); local, resized copy of the supplied TANDEMBOX antaro product photograph.</small>

@@ -10,6 +10,36 @@ import pytest
 from scripts.organizer_cli import default_parts,preset_parameters,release_paths
 
 
+def test_connector_camera_tracks_lobe_and_web_growth():
+    """A single loose connector must remain centered after parameter changes."""
+    from math import sqrt
+    from scripts.build import dogbone_preview_camera
+    _, preset = release_paths()
+    original = preset_parameters(preset)
+    for web, protrusion, height in [(4, 1, 6), (5.5, 1.25, 9), (8, 2, 12)]:
+        p = dict(original)
+        p["Connector_center_thickness_mm"] = str(web)
+        p["Connector_diameter_protrusion_mm"] = str(protrusion)
+        p["Connector_height_mm"] = str(height)
+        x, y, z, rx, ry, rz, distance = dogbone_preview_camera(p)
+        radius = web / 2 + protrusion
+        pitch = 2 * (float(p["Wall_thickness_mm"]) +
+                     sqrt(radius**2 - (web / 2)**2) + radius) + 4
+        assert x == pytest.approx(pitch / 2)
+        assert y == pytest.approx(-1.5 * pitch)
+        assert z == pytest.approx(height / 2)
+        assert (rx, ry, rz) == (58, 0, 35)
+        assert distance >= pitch * 4.85
+
+
+def test_inspection_render_facets_are_bounded_for_blind_socket_coupon():
+    # Avoid CGAL timeouts on the 12-mm connector's blind socket cutaways.
+    source, _ = release_paths()
+    inspection = (source.parent / "scripts/chamfer_docs.py").read_text()
+    assert '"Render_facets=64"' in inspection
+    assert '"Render_facets=128"' not in inspection
+
+
 def test_only_one_current_release_pair():
     source,preset=release_paths()
     assert source.stem==preset.stem
@@ -65,14 +95,14 @@ def test_customizer_controls_and_defaults():
     assert "Render_facets = 40; // [3:1:200]" in scad
     assert int(params["Render_facets"])==40
     assert int(params["Print_overhang_angle_deg"])==60
-    assert params["Connector_diameter_protrusion_mm"] == "1"
-    assert params["Connector_center_thickness_mm"] == "4"
+    assert params["Connector_diameter_protrusion_mm"] == "2"
+    assert params["Connector_center_thickness_mm"] == "8"
     assert "connector_diameter_addition_mm" not in params
     assert params["Base_thickness_mm"] == "2"
     assert params["Wall_thickness_mm"] == "2"
     assert params["Soft_edge_radius_mm"] == "0.6"
-    assert params["Inner_bottom_radius_mm"] == "20"
-    assert "Inner_bottom_radius_mm = 20; // [0:0.5:100]" in scad
+    assert params["Inner_bottom_radius_mm"] == "30"
+    assert "Inner_bottom_radius_mm = 30; // [0:0.5:100]" in scad
     assert "preview_loose_connectors();" in scad
     assert "color([0.18,0.49,0.51])" in scad
     assert scad.count("color([0.90,0.62,0.25])") >= 2
@@ -99,6 +129,7 @@ def test_customizer_controls_and_defaults():
     assert "function cutout_floor_z()" in scad
     assert params["Cutout_row_04"] == "true"
     assert "Connector_center_thickness_mm" in params
+    assert params["Connector_height_mm"] == "12"
     assert "Connector_height_mm" in params
     assert "Cutout_round_diameter_mm" in params
     assert params["Cutout_riser_angle_deg"] == "75"
@@ -123,6 +154,32 @@ def test_cutout_soft_touch_roundover_tracks_the_same_radius():
     assert "soft_cutout_face_3d(1+T,-1)" in scad
     assert "polyhedron(points=vertices,faces=faces,convexity=8);" in scad
     assert "minkowski()" not in scad
+
+
+def test_reference_drawer_images_are_local_and_full_width():
+    root=release_paths()[0].parent
+    readme=(root/"README.md").read_text()
+    assert readme.endswith("</small>\n")
+    assert "## Reference drawers" in readme
+    assert readme.index("## Reference drawers") > readme.index("## Version history")
+    for filename in ("maximera-ikea.jpg", "maximera-installed.jpg",
+                     "tandembox-blum.jpg"):
+        path=f"docs/images/reference-drawers/{filename}"
+        assert (root/path).is_file(), path
+        assert f'<img src="{path}"' in readme
+        assert f'<a href="{path}">' in readme
+    # Standalone photographs, not two-column CAD tables.
+    assert readme.count('width="780"')==3
+
+
+def test_socket_inspection_stock_has_closed_roof_at_max_connector_height():
+    # A 12 mm male with 1 mm top allowance opens a 13 mm-deep pocket.
+    # The documentation coupon must be taller, or its screenshot shows
+    # false through-holes despite the printed tray having a blind roof.
+    model,_=release_paths()
+    src=(model.parent/"scripts/chamfer_docs.py").read_text()
+    assert "max(17,CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+1)" in src
+    assert 'cube([22,21,max(17,' in src
 
 
 def test_readme_visuals_are_camera_fitted_and_never_cropped():

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from math import sqrt
 from pathlib import Path
 from PIL import Image
 
@@ -41,6 +42,21 @@ def verify_preview_framing(path: Path, *, closeup: bool = False, small_object: b
               f"{width_fraction:.0%} width, {height_fraction:.0%} height")
 
 
+
+def dogbone_preview_camera(parameters: dict[str, str]) -> tuple[float, float, float, int, int, int, float]:
+    """Center on the first connector in Output_mode=2, including its own stride.
+
+    The source lays out connectors at (0.5 * stride, -1.5 * stride, 0).
+    A fixed camera for the original smaller connector clipped newer models.
+    """
+    web_half = float(parameters["Connector_center_thickness_mm"]) / 2
+    head_radius = web_half + float(parameters["Connector_diameter_protrusion_mm"])
+    head_in = float(parameters["Wall_thickness_mm"]) + sqrt(head_radius**2 - web_half**2)
+    stride = 2 * (head_in + head_radius) + 4
+    z = float(parameters["Connector_height_mm"]) / 2
+    return (0.5 * stride, -1.5 * stride, z, 58, 0, 35, max(110.0, 4.85 * stride))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("build"))
@@ -73,7 +89,7 @@ def main() -> None:
                         {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),
         "front-tray": ((94.5,39.5,35,62,0,35,750),
                        {"Output_mode": 1, "Selected_row": 6, "Selected_column": 1}),
-        "dogbone": ((7,-21,3,58,0,35,85),
+        "dogbone": (dogbone_preview_camera(params),
                     {"Output_mode": 2, "Loose_connector_quantity": 1}),
         "cutout-closeup": ((31.5,118.5,35,70,0,67,425),
                            {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),
