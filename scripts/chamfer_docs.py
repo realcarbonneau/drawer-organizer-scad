@@ -127,7 +127,7 @@ def run_preview(source: Path, name: str, camera: tuple[int, ...], destination: P
     command = [
         "openscad", "--hardwarnings", "--imgsize=2200,1500",
         "--colorscheme=Tomorrow", "--camera="+",".join(map(str,camera)),
-        "-D", "Render_facets=128", "-D", 'Inspection_view="'+name+'"',
+        "-D", "Render_facets=64", "-D", 'Inspection_view="'+name+'"',
         "-o", str(destination), str(source),
     ]
     if shutil.which("xvfb-run"):
