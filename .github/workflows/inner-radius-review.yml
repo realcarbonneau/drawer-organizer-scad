@@ -1,0 +1,29 @@
+name: Review 30mm inner radius and connector options
+
+on:
+  push:
+    branches:
+      - preview/inner-radius-30-review
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-review:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish source snapshot for local CAD validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: inner-radius-review-source
+          path: |
+            drawer-organizer-v12.scad
+            drawer-organizer-v12.json
+            scripts/*.py
+            tests/*.py
+            README.md
+            requirements-dev.txt
+            Makefile
+          if-no-files-found: error
