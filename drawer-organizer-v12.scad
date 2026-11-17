@@ -69,12 +69,12 @@ Soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 
 /* [04 - Connector specifications] */
 Connector_spacing_mm = 59; // [18:1:160]
-Connector_center_thickness_mm = 7; // [2:0.5:12]
+Connector_center_thickness_mm = 8; // [2:0.5:12]
 // Radial protrusion on EACH side of a circular lobe, beyond center thickness.
-// Example: 7 mm center + 1.5 mm per side = 10 mm lobe diameter.
-Connector_diameter_protrusion_mm = 1.5; // [0.25:0.25:5]
+// Example: 8 mm center + 2 mm per side = 12 mm lobe diameter.
+Connector_diameter_protrusion_mm = 2; // [0.25:0.25:5]
 // Lobe ends automatically shorten near the bottom fillet.
-Connector_height_mm = 10; // [1:0.2:12]
+Connector_height_mm = 12; // [1:0.2:12]
 // TOTAL side clearance across two opposing faces: 0.2 mm means 0.1 mm
 // radial allowance on EACH side of the female pocket, not 0.2 per side.
 Connector_side_clearance_total_mm = 0.2; // [0:0.05:1]

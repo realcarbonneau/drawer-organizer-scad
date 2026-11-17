@@ -99,7 +99,7 @@ def main():
     sheet(args.output/'connector.png',args.input,
           'Underside connector geometry',
           'Loose dogbones have independent side and roof clearances.',
-          ('dogbone.png','Male dogbone','7 mm core / 10 mm lobes / 10 mm tall'),
+          ('dogbone.png','Male dogbone','8 mm core / 12 mm lobes / 12 mm tall'),
           ('middle-tray.png','Individual tray','Blind pockets face down'))
     for f in sorted(args.output.glob('*.png')):print('Generated high-res, uncropped',f)
 
