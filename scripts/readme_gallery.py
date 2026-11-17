@@ -57,7 +57,7 @@ def hero(source,dest):
     rounded(d,(375,544,642,615),MID,18)
     label(d,(402,562),'2 mm WALLS',26,WHITE,True)
     rounded(d,(85,689,1705,750),'#1c354c',15)
-    label(d,(112,704),'Nominal dimensions  /  20 mm inner radius  /  underside sockets',24,'#cee0ec')
+    label(d,(112,704),'Nominal dimensions  /  30 mm inner radius  /  underside sockets',24,'#cee0ec')
     rounded(d,(792,97,1710,651),WHITE,26)
     insert(im,source/'full-layout.png',(810,115,1692,633))
     im.save(dest,optimize=True)
@@ -99,7 +99,7 @@ def main():
     sheet(args.output/'connector.png',args.input,
           'Underside connector geometry',
           'Loose dogbones have independent side and roof clearances.',
-          ('dogbone.png','Male dogbone','4 mm core / 6 mm lobes / 6 mm tall'),
+          ('dogbone.png','Male dogbone','5 mm core / 7 mm lobes / 8 mm tall'),
           ('middle-tray.png','Individual tray','Blind pockets face down'))
     for f in sorted(args.output.glob('*.png')):print('Generated high-res, uncropped',f)
 

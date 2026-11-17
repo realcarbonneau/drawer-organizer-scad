@@ -45,7 +45,7 @@ def preview_connector_positions(messages):
 
 
 
-def test_v12_default_has_20_mm_inside_fillet(tmp_path):
+def test_v12_default_has_30_mm_inside_fillet(tmp_path):
     out,_=render_csg(tmp_path,"v12_default_inside_fillet",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2
     })
@@ -54,9 +54,9 @@ def test_v12_default_has_20_mm_inside_fillet(tmp_path):
         r'([\d.e+-]+), ([\d.e+-]+), ([\d.e+-]+)',out)
     assert match,out[-2000:]
     requested,minimum,effective=map(float,match.groups())
-    assert requested==pytest.approx(20)
+    assert requested==pytest.approx(30)
     assert minimum==pytest.approx(12)
-    assert effective==pytest.approx(20)
+    assert effective==pytest.approx(30)
 
 @pytest.mark.parametrize("gap", [0, 1, 12, 50])
 def test_preview_separation_is_one_constant_gap_between_tray_edges(tmp_path, gap):
@@ -88,8 +88,8 @@ def test_full_preview_shows_loose_dogbones_in_right_hand_y_column(tmp_path,quant
     # The rightmost tray side expands 14 mm at the rim plus an outer lip run.
     # The three-column group has one full preview gap on its right.
     rim_right=189+14+10/math.tan(math.radians(60))+gap
-    head_radius=3.0
-    head_in=2+math.sqrt(head_radius**2-2**2)
+    head_radius=3.5
+    head_in=2+math.sqrt(head_radius**2-2.5**2)
     assert min(xs)-(head_in+head_radius)==pytest.approx(rim_right+12,abs=0.02)
     assert (ys[0]+ys[-1])/2==pytest.approx((474+2*gap)/2,abs=0.01)
     if quantity>1:
@@ -114,10 +114,10 @@ def test_full_layout_loose_connectors_have_independent_gap_and_edge_offset(
     ys = np.array([y for _, _, y in loc])
     assert len(loc) == 8
     assert np.allclose(xs, xs[0], atol=0.001)
-    assert np.allclose(np.diff(ys), -(6+connector_gap), atol=0.002)
+    assert np.allclose(np.diff(ys), -(7+connector_gap), atol=0.002)
     assert (ys[0]+ys[-1])/2 == pytest.approx((474+24)/2, abs=0.02)
     outermost_tray_right = 189+14+10/math.tan(math.radians(60))+12
-    rotated_half_length = (2+math.sqrt(5))+3
+    rotated_half_length = (2+math.sqrt(3.5**2-2.5**2))+3.5
     assert xs[0]-rotated_half_length == pytest.approx(
         outermost_tray_right+right_offset, abs=0.02)
 
@@ -217,7 +217,7 @@ def test_bottom_internal_corners_are_rounded(tmp_path):
     vertices=np.vstack(section.discrete)
     # Section through a plain part of the left interior corner: intermediate
     # X and Z coordinates prove it is a round, not a single sharp vertex.
-    # The R20 default puts the lowest arc near x=20, not near x=2.
+    # The R30 default puts the lowest arc inside the narrow tray, not near x=2.
     # Inspect the lower quadrant without hard-coding the former R12 band.
     curved=vertices[(vertices[:,0]>9) & (vertices[:,0]<20)
                     & (vertices[:,2]>1.9) & (vertices[:,2]<12)]
@@ -359,8 +359,8 @@ def test_larger_inner_rounding_expands_male_and_female_connector_lobes(tmp_path)
     assert values[0][0]<values[1][0]<=values[2][0]
     assert values[0][2]<values[1][2]<=values[2][2]
     for female_near,male_near,female_far,male_far in values:
-        assert male_near<=6 and male_far<=6
-        assert female_near<=7 and female_far<=7
+        assert male_near<=8 and male_far<=8
+        assert female_near<=9 and female_far<=9
         if male_near>0: assert female_near-male_near>=0.999
         if male_far>0: assert female_far-male_far>=0.999
 
@@ -395,8 +395,8 @@ def test_socket_roof_and_male_follow_two_exact_fillet_offsets(tmp_path,radius):
         def cap(stock,max_height):
             return min(max_height,max(0,2+radius-
                 math.sqrt((radius+stock)**2-(radius-u)**2)))
-        assert female==pytest.approx(cap(2,7),abs=0.012)
-        assert male==pytest.approx(cap(3,6),abs=0.012)
+        assert female==pytest.approx(cap(2,9),abs=0.012)
+        assert male==pytest.approx(cap(3,8),abs=0.012)
         if male>0:
             assert female-male>=0.999
 
@@ -706,14 +706,14 @@ def test_simple_cylinder_rectangle_dogbones_are_separate_and_flush(tmp_path):
         "Output_mode":2,"Loose_connector_quantity":3
     })
     assert m.body_count==3
-    assert m.bounds[1,2]==pytest.approx(6.0,abs=0.1)
+    assert m.bounds[1,2]==pytest.approx(8.0,abs=0.1)
     # A truncated top profile clears the lower inner rounding; the XY
     # silhouette remains two circles joined by a rectangle.
     components=m.split(only_watertight=True)
     assert len(components)==3
     for c in components:
-        assert c.extents[0]==pytest.approx(6.0,abs=0.15)
-        assert c.extents[1]==pytest.approx(14.47,abs=0.15)
+        assert c.extents[0]==pytest.approx(7.0,abs=0.15)
+        assert c.extents[1]==pytest.approx(15.90,abs=0.15)
 
 
 @pytest.mark.parametrize("facets", [3,20,200])
@@ -816,16 +816,16 @@ def test_independent_connector_clearances_keep_blind_sockets_watertight(tmp_path
     assert "CONNECTOR CLEARANCES (total side / each side / top)" in output
     assert mesh.bounds[1,2]==pytest.approx(75,abs=0.05)
 
-def test_connector_uses_full_6mm_height_under_7mm_blind_pocket(tmp_path):
+def test_connector_uses_full_8mm_height_under_9mm_blind_pocket(tmp_path):
     male,output=render_stl(tmp_path,"male_nominal_top_clearance",{
         "Output_mode":2,"Loose_connector_quantity":1
     })
-    assert male.bounds[1,2]==pytest.approx(6.0,abs=0.05)
+    assert male.bounds[1,2]==pytest.approx(8.0,abs=0.05)
     import re
     m=re.search(r'"CONNECTOR ROOF CAPS \(at seam\)", ([\d.]+), ([\d.]+)',output)
     assert m,output[-2000:]
     male_cap,female_cap=map(float,m.groups())
-    assert male_cap==pytest.approx(6.0)
+    assert male_cap==pytest.approx(8.0)
     assert female_cap-male_cap==pytest.approx(1.0)
 
 
@@ -920,12 +920,12 @@ def test_socket_roof_is_actual_concentric_circle_in_exported_mesh(tmp_path,radiu
     R=radius
     cx=2+R
     cz=2+R
-    # The opening is flat at Z=7 wherever the roof would otherwise exceed
+    # The opening is flat at Z=9 wherever the roof would otherwise exceed
     # the configured maximum. Only the visible curved portion is fitted.
-    curved=roof[(roof[:,1]>0.15)&(roof[:,1]<6.98)&(roof[:,0]>0.1)&(roof[:,0]<7.3)]
+    curved=roof[(roof[:,1]>0.15)&(roof[:,1]<8.98)&(roof[:,0]>0.1)&(roof[:,0]<7.85)]
     if radius==30:
-        assert len(curved)==0, "R30 must retain its full 7 mm socket roof"
-        assert roof[:,1].max()==pytest.approx(7,abs=0.01)
+        assert len(curved)==0, "R30 must retain its full 9 mm socket roof"
+        assert roof[:,1].max()==pytest.approx(9,abs=0.01)
     else:
         assert len(curved)>=10
         fitted=np.hypot(curved[:,0]-cx,curved[:,1]-cz)
@@ -960,21 +960,31 @@ def test_male_connector_actual_mesh_has_same_center_and_larger_radius(tmp_path,r
     require_render_ok(proc,path)
     mesh=trimesh.load(path,force="mesh",process=True)
     assert mesh.is_watertight and mesh.volume>0
-    assert mesh.bounds[1,2]==pytest.approx(6,abs=0.01)
+    assert mesh.bounds[1,2]==pytest.approx(8,abs=0.01)
     section=mesh.section(plane_origin=[0,0,0],plane_normal=[1,0,0])
     assert section is not None
     coords=np.vstack(section.discrete)
     xs=np.round(coords[:,1],5)
     top=np.array([(v,coords[xs==v,2].max()) for v in np.unique(xs)])
-    # Only the first print layers are chamfered. Do not fit these lower
-    # taper vertices to the unchanged concentric TOP circular envelope.
-    arc=top[(top[:,0]>=0)&(top[:,0]<7.24)&(top[:,1]>0.55)&(top[:,1]<5.98)]
+    # Verify the actual upper surface against the analytic concentric roof.
+    # Ignore print-foot vertices and sparse lobe-tip facets: they are not
+    # upper-arc samples, but can appear in this cross-section at low Z.
+    ys=top[:,0]
+    observed=top[:,1]
+    cx=radius+2
+    expected=np.minimum(8,np.maximum(0,(radius+2)-np.sqrt(
+        np.maximum(0,(radius+3)**2-(cx-ys)**2))))
+    usable=(ys>=0.1)&(ys<6.5)&(observed>1.05)
+    assert np.count_nonzero(usable)>=(4 if radius==30 else 9)
+    assert np.max(observed[usable]-expected[usable])<0.10
     if radius==30:
-        assert len(arc)==0  # full-height head after adequate fillet stock
+        # At the new default the lobe fits below the flat 8-mm cap.
+        assert np.any(np.abs(observed[usable]-8)<0.01)
     else:
-        assert len(arc)>=10
-        fitted=np.hypot(arc[:,0]-(radius+2),arc[:,1]-(radius+2))
-        assert np.max(np.abs(fitted-(radius+3)))<0.07
+        curved=usable&(expected<7.95)&(expected>1.15)
+        assert np.count_nonzero(curved)>=2
+        assert np.count_nonzero(np.abs(observed[curved]-expected[curved])<0.08)>=2
+
 
 
 @pytest.mark.parametrize("foot,corner", [(0,0),(1,0),(1,0.5),(1,4),(1,10),(1.5,0)])

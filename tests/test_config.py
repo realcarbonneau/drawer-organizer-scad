@@ -66,13 +66,13 @@ def test_customizer_controls_and_defaults():
     assert int(params["Render_facets"])==40
     assert int(params["Print_overhang_angle_deg"])==60
     assert params["Connector_diameter_protrusion_mm"] == "1"
-    assert params["Connector_center_thickness_mm"] == "4"
+    assert params["Connector_center_thickness_mm"] == "5"
     assert "connector_diameter_addition_mm" not in params
     assert params["Base_thickness_mm"] == "2"
     assert params["Wall_thickness_mm"] == "2"
     assert params["Soft_edge_radius_mm"] == "0.6"
-    assert params["Inner_bottom_radius_mm"] == "20"
-    assert "Inner_bottom_radius_mm = 20; // [0:0.5:100]" in scad
+    assert params["Inner_bottom_radius_mm"] == "30"
+    assert "Inner_bottom_radius_mm = 30; // [0:0.5:100]" in scad
     assert "preview_loose_connectors();" in scad
     assert "color([0.18,0.49,0.51])" in scad
     assert scad.count("color([0.90,0.62,0.25])") >= 2
@@ -99,6 +99,7 @@ def test_customizer_controls_and_defaults():
     assert "function cutout_floor_z()" in scad
     assert params["Cutout_row_04"] == "true"
     assert "Connector_center_thickness_mm" in params
+    assert params["Connector_height_mm"] == "8"
     assert "Connector_height_mm" in params
     assert "Cutout_round_diameter_mm" in params
     assert params["Cutout_riser_angle_deg"] == "75"
