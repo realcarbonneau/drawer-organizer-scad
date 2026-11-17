@@ -126,6 +126,22 @@ def test_cutout_soft_touch_roundover_tracks_the_same_radius():
     assert "minkowski()" not in scad
 
 
+def test_reference_drawer_images_are_local_and_full_width():
+    root=release_paths()[0].parent
+    readme=(root/"README.md").read_text()
+    assert readme.endswith("</small>\n")
+    assert "## Reference drawers" in readme
+    assert readme.index("## Reference drawers") > readme.index("## Version history")
+    for filename in ("maximera-ikea.jpg", "maximera-installed.jpg",
+                     "tandembox-blum.jpg"):
+        path=f"docs/images/reference-drawers/{filename}"
+        assert (root/path).is_file(), path
+        assert f'<img src="{path}"' in readme
+        assert f'<a href="{path}">' in readme
+    # Standalone photographs, not two-column CAD tables.
+    assert readme.count('width="780"')==3
+
+
 def test_readme_visuals_are_camera_fitted_and_never_cropped():
     root=release_paths()[0].parent
     cli=(root/"scripts/organizer_cli.py").read_text()

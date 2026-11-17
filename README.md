@@ -155,5 +155,29 @@ Tests cover OpenSCAD F5/F6 output, watertight individual tray/connector meshes, 
 
 ## Version history
 
-- **v12:** default requested inside bottom radius changed to 20 mm (0 remains automatic); shallow connector/socket first-layer chamfers added, including joining-edge mouth lips; technical reference screenshots and documentation.
+- **v12:** configurable inner bottom radius (currently 30 mm by default; 0 remains automatic), unified first-layer relief, and geometry-matched underside connector sockets; technical reference screenshots and documentation.
 - **v11:** prior release, retrievable from Git history. Only the current v12 SCAD/JSON pair is retained in the repository root.
+
+## Reference drawers
+
+Square-sided drawers with vertical walls and a sharp floor-to-wall junction do not need the special lower-side clearance. Their profile can be rectangular (90°), with equal top/floor widths and a zero drawer-floor corner radius. Metal-sided systems such as **Blum TANDEMBOX** and **IKEA MAXIMERA** can have tapered sides and a shaped junction at the floor; an organizer placed against those sides needs clearance.
+
+In this model, `Drawer_floor_width_mm` and `Drawer_top_width_mm` describe side taper; `Drawer_floor_corner_radius_mm` sets the **outside** lower-side clearance; and `Print_overhang_angle_deg` determines the clearance chamfer's slope and any rim projection. `Inner_bottom_radius_mm` is the separate **inside radius of the printed tray**. Measure the individual drawer; these photos illustrate drawer construction, not nominal dimensions or interchangeable profiles.
+
+**IKEA MAXIMERA — high drawer**
+
+<a href="docs/images/reference-drawers/maximera-ikea.jpg"><img src="docs/images/reference-drawers/maximera-ikea.jpg" alt="IKEA MAXIMERA high drawer with metal-sided rails" width="780"></a>
+
+<small>Image: [IKEA](https://www.ikea.com/ca/en/images/products/maximera-drawer-high-white__0625584_pe692375_s5.jpg?f=s); local, resized copy.</small>
+
+**IKEA MAXIMERA — installed, without front**
+
+<a href="docs/images/reference-drawers/maximera-installed.jpg"><img src="docs/images/reference-drawers/maximera-installed.jpg" alt="Installed IKEA MAXIMERA drawer with its floor and tapered metal sides visible" width="780"></a>
+
+<small>Photo: [Stilfehler, Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Maximera_drawer_without_front.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); resized, otherwise unmodified.</small>
+
+**Blum TANDEMBOX — drawer-side profile components**
+
+<a href="docs/images/reference-drawers/tandembox-blum.jpg"><img src="docs/images/reference-drawers/tandembox-blum.jpg" alt="Blum TANDEMBOX antaro metal drawer-side profile and runners" width="780"></a>
+
+<small>Image: [Lee Valley](https://www.leevalley.com/); local, resized copy of the supplied TANDEMBOX antaro product photograph.</small>
