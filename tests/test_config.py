@@ -10,6 +10,28 @@ import pytest
 from scripts.organizer_cli import default_parts,preset_parameters,release_paths
 
 
+def test_connector_camera_tracks_lobe_and_web_growth():
+    """A single loose connector must remain centered after parameter changes."""
+    from math import sqrt
+    from scripts.build import dogbone_preview_camera
+    _, preset = release_paths()
+    original = preset_parameters(preset)
+    for web, protrusion, height in [(4, 1, 6), (5.5, 1.25, 9), (8, 2, 12)]:
+        p = dict(original)
+        p["Connector_center_thickness_mm"] = str(web)
+        p["Connector_diameter_protrusion_mm"] = str(protrusion)
+        p["Connector_height_mm"] = str(height)
+        x, y, z, rx, ry, rz, distance = dogbone_preview_camera(p)
+        radius = web / 2 + protrusion
+        pitch = 2 * (float(p["Wall_thickness_mm"]) +
+                     sqrt(radius**2 - (web / 2)**2) + radius) + 4
+        assert x == pytest.approx(pitch / 2)
+        assert y == pytest.approx(-1.5 * pitch)
+        assert z == pytest.approx(height / 2)
+        assert (rx, ry, rz) == (58, 0, 35)
+        assert distance >= pitch * 4.85
+
+
 def test_only_one_current_release_pair():
     source,preset=release_paths()
     assert source.stem==preset.stem
