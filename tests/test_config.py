@@ -142,6 +142,16 @@ def test_reference_drawer_images_are_local_and_full_width():
     assert readme.count('width="780"')==3
 
 
+def test_socket_inspection_stock_has_closed_roof_at_max_connector_height():
+    # A 12 mm male with 1 mm top allowance opens a 13 mm-deep pocket.
+    # The documentation coupon must be taller, or its screenshot shows
+    # false through-holes despite the printed tray having a blind roof.
+    model,_=release_paths()
+    src=(model.parent/"scripts/chamfer_docs.py").read_text()
+    assert "max(17,CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+1)" in src
+    assert 'cube([22,21,max(17,' in src
+
+
 def test_readme_visuals_are_camera_fitted_and_never_cropped():
     root=release_paths()[0].parent
     cli=(root/"scripts/organizer_cli.py").read_text()

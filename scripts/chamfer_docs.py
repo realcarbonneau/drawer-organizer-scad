@@ -30,7 +30,10 @@ module inspection_socket_coupon() {
     // roof and mouth; all actual production subtractors are retained.
     render(convexity=10)
     difference() {
-        color([0.30,0.68,0.83]) translate([-10,0,0]) cube([20,19,10]);
+        // Leave stock ABOVE the blind pocket's 13 mm roof in the technical coupon.
+        // Otherwise a harmless inspection crop would misleadingly show the sky.
+        color([0.30,0.68,0.83]) translate([-11,0,0])
+            cube([22,21,max(17,CONNECTOR_HEIGHT+SOCKET_TOP_CLEARANCE+SOCKET_STOCK+1)]);
         color([0.96,0.72,0.12]) socket_with_entry_chamfer_3d();
         color([0.96,0.72,0.12]) inspection_join_cut();
     }
@@ -101,12 +104,12 @@ VIEWS = [
     ("connector-web",       (0,  0,  2.5, 80, 0, 52, 70)),
     ("connector-underside", (0,  0, -2.8, 38, 0, 20, 97)),
     ("connector-profile",   (0,  0,  4.0, 90, 0,  0, 86)),
-    ("socket-underside",    (0, -8, -1.7, 52, 0,190, 92)),
-    ("socket-mouth-plan",   (0, -9, -1.0,  0, 0,180, 86)),
-    ("socket-lips",         (0, -7, -0.8, 60, 0,180, 88)),
-    ("socket-section",      (0, -6, -3.2, 60, 0,220, 94)),
+    ("socket-underside",    (0, -8,  0.0, 52, 0,190, 118)),
+    ("socket-mouth-plan",   (0, -9,  0.0,  0, 0,180, 108)),
+    ("socket-lips",         (0, -7,  0.0, 60, 0,180, 118)),
+    ("socket-section",      (0, -6,  0.0, 60, 0,220, 122)),
     ("joining-edge",        (0,  4,  1.0, 80, 0, 32, 71)),
-    ("joining-socket",      (0, -6, -1.4, 80, 0,190, 96)),
+    ("joining-socket",      (0, -6,  0.0, 80, 0,190, 115)),
 ]
 
 # Raw F5 views of the actual preset, without any card art or marketing copy.
