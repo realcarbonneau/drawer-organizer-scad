@@ -5,7 +5,7 @@ on:
       - .github/workflows/reference-photos-review.yml
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   images:
     runs-on: ubuntu-24.04
@@ -68,3 +68,23 @@ jobs:
           name: reference-drawer-review-photos
           path: reference-review/
           if-no-files-found: error
+      - name: Archive the three reference images into the review branch
+        run: |
+          set -eu
+          for file in ikea-manufacturer maximera-commons blum-leevalley; do
+            test -s "reference-review/${file}.jpg"
+          done
+          branch="${GITHUB_REF#refs/heads/}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin "$branch"
+          git reset --hard "origin/$branch"
+          mkdir -p docs/images/reference-drawers
+          cp reference-review/ikea-manufacturer.jpg docs/images/reference-drawers/maximera-ikea.jpg
+          cp reference-review/maximera-commons.jpg docs/images/reference-drawers/maximera-installed.jpg
+          cp reference-review/blum-leevalley.jpg docs/images/reference-drawers/tandembox-blum.jpg
+          git add docs/images/reference-drawers/
+          if ! git diff --cached --quiet; then
+            git commit -m 'Archive reference drawer photographs [skip ci]'
+            git push origin "HEAD:$branch"
+          fi
