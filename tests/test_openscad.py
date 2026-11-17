@@ -458,7 +458,10 @@ def test_connector_socket_entry_and_male_print_foot_chamfers(tmp_path,relief):
         mesh_path=tmp_path/f"{label}_foot_{relief}.stl"
         proc=openscad_render(mesh_path,{
             "Elephant_foot_mm":relief,
-            "Inner_bottom_radius_mm":12
+            # The expanded 12 mm lobe reaches the blind roof at R12 and
+            # correctly clamps entry relief to zero. Test the chamfer at the
+            # approved R30 preset, where the flare has geometric clearance.
+            "Inner_bottom_radius_mm":30
         },source=fixture,preset=preset)
         require_render_ok(proc,mesh_path)
         mesh=trimesh.load(mesh_path,force="mesh",process=True)
