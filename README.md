@@ -61,7 +61,7 @@ These ten additional **OpenSCAD CAD previews** cover every physical tray in the 
 | Complete connector — angled foot | Top-down connector footprint |
 | --- | --- |
 | <a href="docs/images/cad/connector-foot.png"><img src="docs/images/cad/connector-foot.png" alt="Complete connector — angled foot" width="256" height="192"></a> | <a href="docs/images/cad/connector-plan.png"><img src="docs/images/cad/connector-plan.png" alt="Top-down connector footprint" width="256" height="192"></a> |
-| Both 8 mm lobes joined by a straight 5.5 mm web | 8 mm nominal lobe diameter; no locking undercuts |
+| Both 10 mm lobes joined by a straight 7 mm web | 10 mm nominal lobe diameter; no locking undercuts |
 
 | Circular lobe — sectioned detail | Straight web — isolated section |
 | --- | --- |
@@ -119,8 +119,8 @@ One **Elephant_foot_mm = 1** setting now controls all printed first-layer edges:
 | Print overhang angle | 60° above build plate | Shared for exterior slopes, joining-edge relief and connector bevel |
 | Drawer floor corner radius | 10 | Exterior lower sidewall clearance slope: 10 mm rise, ~5.77 mm horizontal run |
 | **Elephant foot** | **1 mm** | One first-layer relief on all tray/connector perimeters and socket entries; ~0.58 mm horizontal run at 60°; outer drawer-side corner relief is at least this large |
-| Connector web width / lobe diameter | 5.5 / 8 | Two circular lobes joined by a straight web |
-| Max male connector height | 9 | Actual head height can be shortened by the inner bottom fillet |
+| Connector web width / lobe diameter | 7 / 10 | Two circular lobes joined by a straight web |
+| Max male connector height | 10 | Actual head height can be shortened by the inner bottom fillet |
 | Connector side clearance | 0.2 total | Female pocket 0.1 mm larger on each side |
 | Connector top clearance | 1.0 | Female blind pocket roof clearance over the male |
 | Default interior divider cutout | Row 4 enabled | Pre-rounding base width 25; rounding diameter 20; riser angle 75° |
@@ -133,7 +133,7 @@ At the default preset, nominal floor width after clearance is 189 mm, and usable
 - **Plan and grouping.** Row 1 is farthest from the user (rear). A `Continue previous` row enlarges the tray immediately behind it rather than adding another seam. Column 1 is left when facing the open drawer.
 - **Exterior walls.** Left/right outer walls widen with drawer height and can flare above the rim. Front/rear ends remain vertical above their 1 mm elephant-foot rise and below any optional rim flare. The floor-to-side chamfer rises by the larger of the metal drawer's required lower corner radius and Elephant_foot_mm. An impossible exterior fit is rejected with an echo rather than clipped.
 - **Inside fillet.** v12 requests a 30 mm concave inside floor-to-wall radius by default. The effective fillet is the larger of the entered value and its structural minimum. Enter **0** for automatic minimum. Adjacent rounds may meet in a shallow valley rather than leaving a horizontal flat area.
-- **Connector outline.** Each loose dogbone has two circular 8 mm-diameter heads and a 5.5 mm web. Nominal straight span between lobe intersections is 4 mm at 2 mm tray wall thickness. Male connector upper height follows the same calculated interior fillet as the protected female socket roof, at a different constant radial offset.
+- **Connector outline.** Each loose dogbone has two circular 10 mm-diameter heads and a 7 mm web. Nominal straight span between lobe intersections is 4 mm at 2 mm tray wall thickness. Male connector upper height follows the same calculated interior fillet as the protected female socket roof, at a different constant radial offset.
 - **Socket position.** All true joining edges receive sockets when connectors are enabled. Their stations are computed from available seam length and connector spacing. The pockets are blind and open on the underside only.
 - **Clearances.** Side and top tolerances change the female pocket, not the male's upper fitting dimensions. The same generalized elephant-foot chamfer changes only the socket entrance and the loose piece's build-plate edge; it does not add a locking taper.
 - **Cutout geometry.** Optional cutouts affect internal divider walls only. The 25 mm setting is the *unrounded* gap at the theoretical floor/riser intersection; tangent 10 mm-radius transitions are added. The cutout floor stays above the protected inner fillet and blind socket roofs.

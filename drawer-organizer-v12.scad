@@ -69,12 +69,12 @@ Soft_edge_radius_mm = 0.6; // [0:0.1:1.5]
 
 /* [04 - Connector specifications] */
 Connector_spacing_mm = 59; // [18:1:160]
-Connector_center_thickness_mm = 5.5; // [2:0.5:12]
+Connector_center_thickness_mm = 7; // [2:0.5:12]
 // Radial protrusion on EACH side of a circular lobe, beyond center thickness.
-// Example: 5.5 mm center + 1.25 mm per side = 8 mm lobe diameter.
-Connector_diameter_protrusion_mm = 1.25; // [0.25:0.25:5]
+// Example: 7 mm center + 1.5 mm per side = 10 mm lobe diameter.
+Connector_diameter_protrusion_mm = 1.5; // [0.25:0.25:5]
 // Lobe ends automatically shorten near the bottom fillet.
-Connector_height_mm = 9; // [1:0.2:12]
+Connector_height_mm = 10; // [1:0.2:12]
 // TOTAL side clearance across two opposing faces: 0.2 mm means 0.1 mm
 // radial allowance on EACH side of the female pocket, not 0.2 per side.
 Connector_side_clearance_total_mm = 0.2; // [0:0.05:1]
@@ -708,23 +708,37 @@ module sockets(w,d,front_c,rear_c,left_c,right_c,
 }
 // Taper only the first printed layers, retaining the exact original heads,
 // center bar and fillet-truncated height above the foot-relief height.
+// Start with ONE closed, straight-extruded dogbone silhouette (two circles
+// plus the center web). SUBTRACT the external first-layer perimeter shell,
+// then intersect the continuous solid with the concentric fillet-height
+// envelope in loose_dogbone(). No lobe/web solids are spliced together at
+// coincident z planes. E extends CUTTERS only; not the finished fitting shape.
 module dogbone_with_print_foot() {
-    if(CONNECTOR_FOOT_Z<=0)
+    difference() {
         linear_extrude(height=CONNECTOR_HEIGHT) full_dogbone_2d();
-    else union() {
-        translate([0,0,CONNECTOR_FOOT_Z-E])
-            linear_extrude(height=CONNECTOR_HEIGHT-CONNECTOR_FOOT_Z+E)
-                full_dogbone_2d();
-        for(y=[-HEAD_IN,HEAD_IN])
-            translate([0,y,0])
-                cylinder(h=CONNECTOR_FOOT_Z+E,
-                         r1=HEAD_R-CONNECTOR_FOOT_X,r2=HEAD_R,
-                         $fn=max(36,Render_facets));
-        linear_extrude(height=CONNECTOR_FOOT_Z+E,
-            scale=[WEB_R/(WEB_R-CONNECTOR_FOOT_X),1])
-            square([2*(WEB_R-CONNECTOR_FOOT_X),2*HEAD_IN],center=true);
+        if (CONNECTOR_FOOT_Z>0)
+            difference() {
+                // Outer cutter exceeds the part perimeter and first-layer
+                // height so that Boolean subtraction has no coincident faces.
+                linear_extrude(height=CONNECTOR_FOOT_Z+E)
+                    offset(delta=E) full_dogbone_2d();
+                // Preserve the smoothly expanded interior footprint. The
+                // two lobes and web overlap by real volume inside the cutter.
+                union() {
+                    for(y=[-HEAD_IN,HEAD_IN])
+                        translate([0,y,0])
+                            cylinder(h=CONNECTOR_FOOT_Z+E,
+                                r1=HEAD_R-CONNECTOR_FOOT_X,
+                                r2=HEAD_R+E/tan(ALPHA),
+                                $fn=max(36,Render_facets));
+                    linear_extrude(height=CONNECTOR_FOOT_Z+E,
+                        scale=[(WEB_R+E/tan(ALPHA))/(WEB_R-CONNECTOR_FOOT_X),1])
+                            square([2*(WEB_R-CONNECTOR_FOOT_X),2*HEAD_IN],center=true);
+                }
+            }
     }
 }
+
 module loose_dogbone() {
     intersection() {
         dogbone_with_print_foot();

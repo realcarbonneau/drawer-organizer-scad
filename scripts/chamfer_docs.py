@@ -53,7 +53,7 @@ module inspection_join_edge() {
 // Preview palette: teal for stock / loose connector and gold for volumes
 // removed by the socket or joining-edge chamfer. STL color is unaffected.
 Inspection_view="connector-foot";
-if(Inspection_view=="connector-foot") color([0.90,0.62,0.25]) loose_dogbone();
+if(Inspection_view=="connector-foot") color([0.90,0.62,0.25]) render(convexity=10) loose_dogbone();
 else if(Inspection_view=="connector-lobe")
     // Crop at a real lobe: this inspection section makes the round head
     // large enough to distinguish from the complete dogbone overview.
@@ -79,9 +79,9 @@ else if(Inspection_view=="socket-section")
     rotate([180,0,0]) inspection_socket_section();
 else if(Inspection_view=="joining-edge") inspection_join_edge();
 else if(Inspection_view=="connector-plan")
-    color([0.90,0.62,0.25]) loose_dogbone();
+    color([0.90,0.62,0.25]) render(convexity=10) loose_dogbone();
 else if(Inspection_view=="connector-underside")
-    rotate([180,0,0]) color([0.90,0.62,0.25]) loose_dogbone();
+    rotate([180,0,0]) color([0.90,0.62,0.25]) render(convexity=10) loose_dogbone();
 else if(Inspection_view=="connector-profile")
     // Evaluate the real CSG intersection before previewing the side profile.
     // OpenCSG's coplanar faces otherwise draw a false notch at the lobe top.
@@ -95,12 +95,12 @@ else if(Inspection_view=="joining-socket")
 # Stable semantic filenames. Camera: target X/Y/Z, rotation X/Y/Z, distance.
 # Image dimensions are uniform; close-ups differ by view angle, not PNG size.
 VIEWS = [
-    ("connector-foot",      (0,  0,  2.0, 78, 0, 34, 60)),
-    ("connector-plan",      (0,  0,  3.5,  0, 0,  0, 52)),
-    ("connector-lobe",      (0,  0,  1.0, 75, 0, 28, 49)),
-    ("connector-web",       (0,  0,  1.0, 80, 0, 52, 50)),
-    ("connector-underside", (0,  0, -2.8, 38, 0, 20, 74)),
-    ("connector-profile",   (0,  0,  2.5, 90, 0,  0, 60)),
+    ("connector-foot",      (0,  0,  3.0, 78, 0, 34, 72)),
+    ("connector-plan",      (0,  0,  4.0,  0, 0,  0, 64)),
+    ("connector-lobe",      (0,  0,  1.5, 75, 0, 28, 56)),
+    ("connector-web",       (0,  0,  1.5, 80, 0, 52, 58)),
+    ("connector-underside", (0,  0, -2.8, 38, 0, 20, 86)),
+    ("connector-profile",   (0,  0,  3.0, 90, 0,  0, 72)),
     ("socket-underside",    (0, -8, -1.7, 52, 0,190, 92)),
     ("socket-mouth-plan",   (0, -9, -1.0,  0, 0,180, 86)),
     ("socket-lips",         (0, -7, -0.8, 60, 0,180, 88)),
