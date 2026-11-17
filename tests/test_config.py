@@ -32,6 +32,14 @@ def test_connector_camera_tracks_lobe_and_web_growth():
         assert distance >= pitch * 4.85
 
 
+def test_inspection_render_facets_are_bounded_for_blind_socket_coupon():
+    # Avoid CGAL timeouts on the 12-mm connector's blind socket cutaways.
+    source, _ = release_paths()
+    inspection = (source.parent / "scripts/chamfer_docs.py").read_text()
+    assert '"Render_facets=64"' in inspection
+    assert '"Render_facets=128"' not in inspection
+
+
 def test_only_one_current_release_pair():
     source,preset=release_paths()
     assert source.stem==preset.stem
