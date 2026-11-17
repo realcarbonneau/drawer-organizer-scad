@@ -95,12 +95,12 @@ else if(Inspection_view=="joining-socket")
 # Stable semantic filenames. Camera: target X/Y/Z, rotation X/Y/Z, distance.
 # Image dimensions are uniform; close-ups differ by view angle, not PNG size.
 VIEWS = [
-    ("connector-foot",      (0,  0,  1.2, 78, 0, 34, 49)),
-    ("connector-plan",      (0,  0,  3.0,  0, 0,  0, 38)),
-    ("connector-lobe",      (0,  0,  1.0, 75, 0, 28, 42)),
-    ("connector-web",       (0,  0,  1.0, 80, 0, 52, 42)),
-    ("connector-underside", (0,  0, -2.8, 38, 0, 20, 43)),
-    ("connector-profile",   (0,  0,  1.2, 90, 0,  0, 49)),
+    ("connector-foot",      (0,  0,  2.0, 78, 0, 34, 60)),
+    ("connector-plan",      (0,  0,  3.5,  0, 0,  0, 52)),
+    ("connector-lobe",      (0,  0,  1.0, 75, 0, 28, 49)),
+    ("connector-web",       (0,  0,  1.0, 80, 0, 52, 50)),
+    ("connector-underside", (0,  0, -2.8, 38, 0, 20, 74)),
+    ("connector-profile",   (0,  0,  2.5, 90, 0,  0, 60)),
     ("socket-underside",    (0, -8, -1.7, 52, 0,190, 92)),
     ("socket-mouth-plan",   (0, -9, -1.0,  0, 0,180, 86)),
     ("socket-lips",         (0, -7, -0.8, 60, 0,180, 88)),

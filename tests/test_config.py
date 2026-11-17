@@ -65,8 +65,8 @@ def test_customizer_controls_and_defaults():
     assert "Render_facets = 40; // [3:1:200]" in scad
     assert int(params["Render_facets"])==40
     assert int(params["Print_overhang_angle_deg"])==60
-    assert params["Connector_diameter_protrusion_mm"] == "1"
-    assert params["Connector_center_thickness_mm"] == "5"
+    assert params["Connector_diameter_protrusion_mm"] == "1.25"
+    assert params["Connector_center_thickness_mm"] == "5.5"
     assert "connector_diameter_addition_mm" not in params
     assert params["Base_thickness_mm"] == "2"
     assert params["Wall_thickness_mm"] == "2"
@@ -99,7 +99,7 @@ def test_customizer_controls_and_defaults():
     assert "function cutout_floor_z()" in scad
     assert params["Cutout_row_04"] == "true"
     assert "Connector_center_thickness_mm" in params
-    assert params["Connector_height_mm"] == "8"
+    assert params["Connector_height_mm"] == "9"
     assert "Connector_height_mm" in params
     assert "Cutout_round_diameter_mm" in params
     assert params["Cutout_riser_angle_deg"] == "75"
