@@ -34,6 +34,7 @@ jobs:
             ],
             'maximera-commons': [
               'https://upload.wikimedia.org/wikipedia/commons/8/81/Maximera_drawer_without_front.jpg',
+              'https://commons.wikimedia.org/wiki/Special:Redirect/file/Maximera_drawer_without_front.jpg',
             ],
             'blum-leevalley': [
               'https://www.leevalley.com/_next/image?url=https%3A%2F%2Fimages.contentstack.io%2Fv3%2Fassets%2Fblt050573defaf102e3%2Fblt28b0ee032f9e7f70%2F669bd304c607cdd6287e11c7%2Fhttps_assets.leevalley.com_Size5_10006_02K2440-blum-tandembox-antaro-soft-close-drawer-kit-type-m-400mm-15-3-4-inch-l-x-68mm-2-5-8-h-f-40.jpg%3Fbranch%3Dproduction&w=640&q=75',
