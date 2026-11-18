@@ -14,7 +14,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PRESET_NAME = "Kitchen cutlery drawer"
+PRESET_NAME = "MAXIMERA Cutlery (Default)"
+LEGACY_PRESET_NAME = "Kitchen cutlery drawer"
 
 
 def release_paths(root: Path = ROOT) -> tuple[Path, Path]:
@@ -69,6 +70,7 @@ def openscad_render(
     image_camera: tuple[int, int, int] = (58, 0, 35),
     image_focus: tuple[float, float, float, float, float, float, float] | None = None,
     image_render: bool = False,
+    preset_name: str = PRESET_NAME,
 ) -> subprocess.CompletedProcess[str]:
     model, config = release_paths() if source is None or preset is None else (source, preset)
     executable = shutil.which("openscad")
@@ -97,13 +99,13 @@ def openscad_render(
     # OpenSCAD 2021.01's JSON Customizer preset wins over -D. Merge overrides
     # into a temporary preset; otherwise tests silently render default values.
     merged = json.loads(config.read_text(encoding="utf-8"))
-    settings = merged["parameterSets"][PRESET_NAME]
+    settings = merged["parameterSets"][preset_name]
     for key, value in (overrides or {}).items():
         settings[key] = str(value).lower() if isinstance(value, bool) else str(value)
     with tempfile.TemporaryDirectory(prefix="organizer-preset-") as folder:
         generated = Path(folder) / "test-preset.json"
         generated.write_text(json.dumps(merged), encoding="utf-8")
-        command = [*args, "-p", str(generated), "-P", PRESET_NAME, str(model)]
+        command = [*args, "-p", str(generated), "-P", preset_name, str(model)]
         if output.suffix.lower() == ".png":
             # Some headless environments expose a stale DISPLAY=:0.
             xvfb = shutil.which("xvfb-run")

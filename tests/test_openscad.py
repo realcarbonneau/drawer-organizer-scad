@@ -11,7 +11,28 @@ import numpy as np
 import pytest
 import trimesh
 
-from scripts.organizer_cli import openscad_render, require_render_ok, release_paths, preset_parameters
+from scripts.organizer_cli import (
+    LEGACY_PRESET_NAME, default_parts, openscad_render as _openscad_render,
+    require_render_ok, release_paths, preset_parameters,
+)
+
+
+def openscad_render(*args, **kwargs):
+    # Keep historical five-tray geometry regression fixtures intact. The new
+    # named default is independently checked below and by STL export.
+    return _openscad_render(*args, preset_name=LEGACY_PRESET_NAME, **kwargs)
+
+
+def test_named_maximera_default_is_six_trays_without_connectors():
+    _, config = release_paths()
+    params = preset_parameters(config)
+    assert default_parts(params) == [
+        (1, 1), (2, 1), (3, 1), (3, 2), (3, 3), (6, 1)
+    ]
+    assert params['Connectors_enabled'] == 'false'
+    assert params['Rim_front'] == params['Rim_rear'] == 'false'
+    assert params['Loose_connector_quantity'] == '1'
+    assert preset_parameters(config, LEGACY_PRESET_NAME)['Row_02'] == '0'
 
 
 def render_stl(tmp_path, name, overrides):

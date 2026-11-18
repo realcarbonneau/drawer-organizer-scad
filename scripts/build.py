@@ -9,7 +9,7 @@ from pathlib import Path
 from PIL import Image
 
 from scripts.organizer_cli import (
-    default_parts, openscad_render, preset_parameters,
+    PRESET_NAME, default_parts, openscad_render, preset_parameters,
     release_paths, require_render_ok,
 )
 
@@ -83,14 +83,14 @@ def main() -> None:
     screenshots = {
         "full-layout": ((107,250,37,58,0,35,1500),
                         {"Output_mode": 0, "Preview_separation_mm": 12}),
-        "rear-tray": ((94.5,79,35,62,0,35,850),
+        "rear-tray": ((94.5,39.5,35,62,0,35,750),
                       {"Output_mode": 1, "Selected_row": 1, "Selected_column": 1}),
         "middle-tray": ((31.5,118.5,35,70,0,67,1000),
                         {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),
         "front-tray": ((94.5,39.5,35,62,0,35,750),
                        {"Output_mode": 1, "Selected_row": 6, "Selected_column": 1}),
         "dogbone": (dogbone_preview_camera(params),
-                    {"Output_mode": 2, "Loose_connector_quantity": 1}),
+                    {"Output_mode": 2, "Loose_connector_quantity": 1, "Connectors_enabled": True}),
         "cutout-closeup": ((31.5,118.5,35,70,0,67,425),
                            {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),
     }
@@ -105,7 +105,7 @@ def main() -> None:
         verify_preview_framing(destination,closeup=name=="cutout-closeup",
                                small_object=name=="dogbone")
         print(f"high-resolution, properly framed preview {destination}")
-    print(f"Built {len(parts)} trays and preview images from {source.name}")
+    print(f"Built {len(parts)} trays and preview images from {source.name} / {PRESET_NAME}")
 
 
 if __name__ == "__main__":

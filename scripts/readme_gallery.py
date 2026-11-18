@@ -50,10 +50,10 @@ def hero(source,dest):
     label(d,(92,66),'OPENSCAD  /  PARAMETRIC CAD',23,ACCENT,True)
     label(d,(86,132),'Drawer',87,WHITE,True)
     label(d,(86,233),'Organizer',87,WHITE,True)
-    label(d,(91,363),'Tray sections printed separately; attached',27,'#d3e0ea')
-    label(d,(91,408),'from below using removable dogbones.',27,'#d3e0ea')
+    label(d,(91,363),'Tray sections print separately; optionally',27,'#d3e0ea')
+    label(d,(91,408),'connect from below using removable dogbones.',27,'#d3e0ea')
     rounded(d,(90,544,360,615),MID,18)
-    label(d,(110,562),'5 TRAYS  /  v12',28,WHITE,True)
+    label(d,(110,562),'6 TRAYS  /  v12',28,WHITE,True)
     rounded(d,(375,544,642,615),MID,18)
     label(d,(402,562),'2 mm WALLS',26,WHITE,True)
     rounded(d,(85,689,1705,750),'#1c354c',15)
@@ -88,9 +88,9 @@ def main():
     hero(args.input,args.output/'hero.png')
     sheet(args.output/'layout.png',args.input,
           'Tray arrangement: default grid',
-          'The kitchen example: one rear, three middle, one front tray.',
-          ('full-layout.png','Default five-tray layout','Rear to front: 1 / 3 / 1'),
-          ('rear-tray.png','Full-width rear tray','Tapered walls and smooth bottom'))
+          'Two rear, three middle and one front tray.',
+          ('full-layout.png','Default six-tray layout','Rear to front: 1 / 1 / 3 / 1'),
+          ('rear-tray.png','Full-width rear row 1 tray','Tapered walls and smooth bottom'))
     sheet(args.output/'details.png',args.input,
           'Interior divider access cutout',
           'A row-4 access opening with smooth tangent risers.',

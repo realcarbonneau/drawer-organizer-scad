@@ -10,12 +10,20 @@ These are **OpenSCAD previews from v12 geometry**, not photos or slicer results.
 
 <!-- Intentionally fixed 256 × 192 display thumbnails for balanced two-column GitHub mobile tables. Full-resolution PNG links are kept in each cell. -->
 
+## Default printable cutlery profile
+
+The named OpenSCAD preset **MAXIMERA Cutlery (Default)** uses six trays: separate full-width rows 1 and 2 at the rear, three side-by-side middle trays spanning rows 3–5, and a full-width row 6 at the front. The preset starts with connectors **off**. The three full-width trays have equal nominal dimensions (189 × 79 mm) and can reuse one STL without connectors; the middle side trays are rotational counterparts. The earlier **Kitchen cutlery drawer** five-tray preset remains available for reference and historical regression tests.
+
+### Ready-to-print STLs
+
+The two export sets live under [`STLs/`](STLs/): `MAXIMERA-Cutlery-with-connectors/` and `MAXIMERA-Cutlery-without-connectors/`. Each folder contains one STL for each verified unique part and a `manifest.json` listing every tray placement, copies and any 180° rotation. The connector-enabled folder contains **one loose dogbone STL**; duplicate it as needed in your slicer. Generate both collections with `python -m scripts.export_stls`. These dimensions are a **measured example**, not a guarantee of fit for all IKEA MAXIMERA or Blum TANDEMBOX drawers; measure your own drawer.
+
 ### Assembly and individual trays
 
-| Complete five-tray layout | Full-width rear tray |
+| Complete six-tray layout | Full-width rear tray |
 | --- | --- |
-| <a href="docs/images/cad/full-layout.png"><img src="docs/images/cad/full-layout.png" alt="Complete five-tray layout" width="256" height="192"></a> | <a href="docs/images/cad/rear-tray.png"><img src="docs/images/cad/rear-tray.png" alt="Full-width rear tray" width="256" height="192"></a> |
-| `Output_mode=0`; 3 × 6 logical grid, five separate physical trays | `Output_mode=1`, row 1: full-width rear section |
+| <a href="docs/images/cad/full-layout.png"><img src="docs/images/cad/full-layout.png" alt="Complete six-tray layout" width="256" height="192"></a> | <a href="docs/images/cad/rear-tray.png"><img src="docs/images/cad/rear-tray.png" alt="Full-width rear tray" width="256" height="192"></a> |
+| `Output_mode=0`; 3 × 6 logical grid, six separate physical trays | `Output_mode=1`, row 1: full-width rear section |
 
 | Middle tray with dividers | Full-width front tray |
 | --- | --- |
@@ -29,12 +37,17 @@ These are **OpenSCAD previews from v12 geometry**, not photos or slicer results.
 
 ### Each physical tray — alternate angle and details
 
-These ten additional **OpenSCAD CAD previews** cover every physical tray in the five-piece preset. The alternate angles show the complete selected tray; the closer views show its underside connection interfaces or row-4 divider access cutouts. Underside screenshots are fully rendered (F6): the sockets open at the bottom but have closed roofs, not through-holes. Images remain 1200 × 900 pixels and open at full resolution when tapped.
+These twelve additional **OpenSCAD CAD previews** cover every physical tray in the six-piece preset. The alternate angles show the complete selected tray; the closer views show its underside or row-4 divider access cutouts. Underside screenshots are fully rendered (F6). The default gallery has connectors off; the connector-enabled STL set has blind sockets that open only on the underside. Images remain 1200 × 900 pixels and open at full resolution when tapped.
 
 | Rear tray — opposite corner | Rear tray — underside |
 | --- | --- |
-| <a href="docs/images/cad/tray-rear-angle.png"><img src="docs/images/cad/tray-rear-angle.png" alt="Rear tray from opposite corner" width="256" height="192"></a> | <a href="docs/images/cad/tray-rear-underside.png"><img src="docs/images/cad/tray-rear-underside.png" alt="Rear tray underside and joining sockets" width="256" height="192"></a> |
-| Rows 1–2, column 1; alternate raised camera angle | Blind underside sockets; closed roofs above the openings |
+| <a href="docs/images/cad/tray-rear-angle.png"><img src="docs/images/cad/tray-rear-angle.png" alt="Rear tray from opposite corner" width="256" height="192"></a> | <a href="docs/images/cad/tray-rear-underside.png"><img src="docs/images/cad/tray-rear-underside.png" alt="Rear tray underside, connectors off" width="256" height="192"></a> |
+| Row 1, column 1; alternate raised camera angle | Underside of the full-width tray; connectors off |
+
+| Rear row 2 — alternate angle | Rear row 2 — underside |
+| --- | --- |
+| <a href="docs/images/cad/tray-row02-angle.png"><img src="docs/images/cad/tray-row02-angle.png" alt="Rear row 2 full-width tray" width="256" height="192"></a> | <a href="docs/images/cad/tray-row02-underside.png"><img src="docs/images/cad/tray-row02-underside.png" alt="Rear row 2 underside" width="256" height="192"></a> |
+| Row 2 is a separate full-width tray in the default profile | Connectors are off in the default gallery |
 
 | Middle left — alternate angle | Middle left — access cutout |
 | --- | --- |
@@ -53,8 +66,8 @@ These ten additional **OpenSCAD CAD previews** cover every physical tray in the 
 
 | Front tray — opposite corner | Front tray — underside |
 | --- | --- |
-| <a href="docs/images/cad/tray-front-angle.png"><img src="docs/images/cad/tray-front-angle.png" alt="Front tray from opposite corner" width="256" height="192"></a> | <a href="docs/images/cad/tray-front-underside.png"><img src="docs/images/cad/tray-front-underside.png" alt="Front tray underside and joining sockets" width="256" height="192"></a> |
-| Row 6, column 1; alternate raised camera angle | Blind underside sockets; closed roofs above the openings |
+| <a href="docs/images/cad/tray-front-angle.png"><img src="docs/images/cad/tray-front-angle.png" alt="Front tray from opposite corner" width="256" height="192"></a> | <a href="docs/images/cad/tray-front-underside.png"><img src="docs/images/cad/tray-front-underside.png" alt="Front tray underside, connectors off" width="256" height="192"></a> |
+| Row 6, column 1; alternate raised camera angle | Underside of the full-width tray; connectors off |
 
 ### Loose dogbone — footprint and first layers
 
@@ -111,7 +124,7 @@ One **Elephant_foot_mm = 1** setting now controls all printed first-layer edges:
 | Drawer top width / nominal floor width | 218 / 190 | Measured drawer dimensions; 1 mm total clearance is subtracted |
 | Drawer inside length / rim height | 475 / 65 | Drawer length and height to rim |
 | Grid | 3 columns × 6 rows | Row 1 is rear; column 1 is left as viewed from the drawer front |
-| Row starts | 1, continued, 3, continued, continued, 1 | Five trays: rear full width, three middle, front full width |
+| Row starts | 1, 1, 3, continued, continued, 1 | Six trays: two full-width rear, three middle, front full width |
 | Floor / wall thickness | 2 / 2 | Nominal base and divider stock |
 | **Inner bottom radius** | **30 mm** | Requested shared concave floor-to-wall fillet; changed from automatic in v11 |
 | Inner bottom radius = 0 | automatic | Structural minimum, **12 mm** for this preset (10 mm exterior chamfer rise + 2 mm stock) |
