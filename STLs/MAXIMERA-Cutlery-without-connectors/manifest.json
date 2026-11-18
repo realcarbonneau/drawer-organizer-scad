@@ -1,0 +1,59 @@
+{
+  "profile": "MAXIMERA Cutlery (Default)",
+  "connectors_enabled": false,
+  "placements": [
+    {
+      "row": 1,
+      "column": 1,
+      "stl": "tray-row01-col01.stl",
+      "rotate_z_degrees": 0
+    },
+    {
+      "row": 2,
+      "column": 1,
+      "stl": "tray-row01-col01.stl",
+      "rotate_z_degrees": 0
+    },
+    {
+      "row": 3,
+      "column": 1,
+      "stl": "tray-row03-col01.stl",
+      "rotate_z_degrees": 0
+    },
+    {
+      "row": 3,
+      "column": 2,
+      "stl": "tray-row03-col02.stl",
+      "rotate_z_degrees": 0
+    },
+    {
+      "row": 3,
+      "column": 3,
+      "stl": "tray-row03-col01.stl",
+      "rotate_z_degrees": 180
+    },
+    {
+      "row": 6,
+      "column": 1,
+      "stl": "tray-row01-col01.stl",
+      "rotate_z_degrees": 0
+    }
+  ],
+  "tray_stls": [
+    {
+      "stl": "tray-row01-col01.stl",
+      "copies": 3
+    },
+    {
+      "stl": "tray-row03-col01.stl",
+      "copies": 2
+    },
+    {
+      "stl": "tray-row03-col02.stl",
+      "copies": 1
+    }
+  ],
+  "single_connector_stl": null,
+  "connector_note": null,
+  "orientation_note": "All tray STL files have their base on Z=0; rotate a tray 180 degrees around Z if its placement specifies rotate_z_degrees=180."
+}
