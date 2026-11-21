@@ -26,14 +26,15 @@ class View:
     camera: tuple[float, float, float, float, float, float, float]
 
 
-# Center: effective width=314 mm, length=459 mm, printed height=125 mm.
+# Center: effective width=314 mm, length=459 mm, inside height=100 mm,
+# extension above rim=15 mm, printed height=115 mm.
 # OpenSCAD camera rotations: plan (0,0,0); front (90,0,0);
 # side (90,0,90). Orthographic projection keeps vertical edges parallel.
 VIEWS = (
-    View("metal-drawer-3d", (157, 229.5, 62, 58, 0, 35, 1600)),
-    View("metal-drawer-top", (157, 229.5, 62, 0, 0, 0, 1550)),
-    View("metal-drawer-side", (157, 229.5, 62, 90, 0, 90, 1550)),
-    View("metal-drawer-front", (157, 229.5, 62, 90, 0, 0, 1250)),
+    View("metal-drawer-3d", (157, 229.5, 57.5, 58, 0, 35, 1600)),
+    View("metal-drawer-top", (157, 229.5, 57.5, 0, 0, 0, 1550)),
+    View("metal-drawer-side", (157, 229.5, 57.5, 90, 0, 90, 1550)),
+    View("metal-drawer-front", (157, 229.5, 57.5, 90, 0, 0, 1250)),
 )
 
 
@@ -49,7 +50,8 @@ def main() -> None:
         "Rim_right": "false",
         "Drawer_top_inside_width_mm": "315",
         "Drawer_inside_length_mm": "460",
-        "Drawer_inside_height_mm": "115",
+        "Drawer_inside_height_mm": "100",
+        "Tray_height_above_rim_mm": "15",
         "Row_02": "0",
     }
     for key, value in expected.items():

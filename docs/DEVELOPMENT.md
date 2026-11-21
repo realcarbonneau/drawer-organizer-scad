@@ -12,7 +12,7 @@
 
 - Put `Straight_edges` first in Drawer dimensions, unchecked by default. When checked it overrides the effective floor width with the top inside width.
 - Consistently use `Drawer_top_inside_width_mm`, `Drawer_floor_inside_width_mm`, `Drawer_inside_length_mm` and `Drawer_inside_height_mm`. The inside height goes to the drawer rim.
-- The `Metal Cabinet Drawer` preset is **315 × 460 × 115 mm**, straight-sided, with the drawer's outer floor corner radius at 0 mm, a five-piece layout, 1 mm elephant-foot relief and 30 mm internal tray bottom fillet, no access cutouts.
+- The `Metal Cabinet Drawer` preset is **315 × 460 × 100 mm inside, plus 15 mm above the rim (115 mm total printed height)**, straight-sided, with the drawer's outer floor corner radius at 0 mm, a five-piece layout, 1 mm elephant-foot relief and 30 mm internal tray bottom fillet, no access cutouts.
 - The wall taper uses **only measured top/floor inside widths and drawer inside height**. The lower chamfer is a separate relief starting at the measured tapered wall's lower crest; its rise is the larger of drawer-floor clearance or elephant-foot relief. A 315/314 mm top/floor drawer with a 10 mm corner radius must render. Do not use side widening to validate a corner chamfer.
 
 ## Geometry and UI invariants

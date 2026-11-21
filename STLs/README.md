@@ -5,7 +5,7 @@ These printer-ready files are exported from two named OpenSCAD presets:
 defined in `drawer-organizer-v12.json`. Both presets use five physical trays:
 one fused full-width tray spanning rows 1–2, three side-by-side trays
 spanning rows 3–5, and a full-width tray in row 6. The metal cabinet
-preset uses 315 × 460 × 115 mm interior dimensions, straight sides,
+preset uses 315 × 460 × 100 mm interior dimensions, plus 15 mm above the rim, straight sides,
 and no access cutouts.
 
 - [Metal Cabinet Drawer — with connectors](Metal-Cabinet-Drawer-with-connectors/)
@@ -28,9 +28,12 @@ The three middle trays span rows 3–5; row 6 is a separate full-width front tra
 | `tray-row03-col02.stl` | **1** | Middle center (column 2) |
 | `tray-row06-col01.stl` | **1** | Full-width front tray, row 6 |
 
-Both connector-enabled and connector-free sets therefore need **four distinct
-tray STL files** if the middle side pair is geometrically equivalent under a
-180° turn, otherwise five. The with-connectors set adds just **one**
+The MAXIMERA sets need **four unique tray STLs** when the mirror-side pair
+shares one file. The metal cabinet set **without connectors needs only three
+unique tray STLs** because all three cutout-free middle trays are identical;
+print three copies of that middle STL. With connectors, middle trays can
+differ at socket positions, resulting in four unique tray STLs. Always
+follow each folder's `manifest.json` for the exact copies and rotations. The with-connectors set adds just **one**
 `dogbone-connector.stl` for duplication in the slicer. The file counts
 are not the number of pieces to print: **five physical trays** are needed.
 

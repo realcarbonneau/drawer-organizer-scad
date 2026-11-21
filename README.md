@@ -78,10 +78,14 @@ These ten additional **OpenSCAD CAD previews** cover every physical tray in the 
 
 | Connector underside | Connector side profile |
 | --- | --- |
-| <a href="docs/images/cad/connector-underside.png"><img src="docs/images/cad/connector-underside.png" alt="Connector underside" width="256" height="192"></a> ## Metal Cabinet Drawer — four CAD views
+| <a href="docs/images/cad/connector-underside.png"><img src="docs/images/cad/connector-underside.png" alt="Connector underside" width="256" height="192"></a> | <a href="docs/images/cad/connector-profile.png"><img src="docs/images/cad/connector-profile.png" alt="Connector side profile" width="256" height="192"></a> |
+| Bottom-facing view of the reduced first-layer footprint | Full fitting profile resumes above the 1 mm relief |
 
-The **Metal Cabinet Drawer** preset measures **315 × 460 × 115 mm** inside
-(top width × inside length × inside height). **Straight edges** is on,
+## Metal Cabinet Drawer — four CAD views
+
+The **Metal Cabinet Drawer** preset measures **315 × 460 × 100 mm** inside
+(top width × inside length × inside height), with the tray extending
+**15 mm above the rim** for a **115 mm total printed height**. **Straight edges** is on,
 and the lower drawer corner setting is 0 mm. The printable trays retain
 the independently adjustable **1 mm elephant-foot relief** and
 **30 mm inner bottom radius**. The complete assembly has the same
@@ -111,9 +115,6 @@ separate from the wall angle; the inner bottom radius remains at least
 large enough to retain the full wall and base thickness.
 
 ## Connector and print-interface details
-
-| <a href="docs/images/cad/connector-profile.png"><img src="docs/images/cad/connector-profile.png" alt="Connector side profile" width="256" height="192"></a> |
-| Bottom-facing view of the reduced first-layer footprint | Full fitting profile resumes above the 1 mm relief |
 
 ### Blind underside socket — mouth and section
 

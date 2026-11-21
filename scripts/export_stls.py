@@ -129,12 +129,15 @@ def export_variant(directory: Path, parts: list[tuple[int, int]],
             })
             print(f"{directory.name}: row {row}, column {col} -> "
                   f"{match} (rotate Z {turn} degrees)")
-    # One fused rear, one middle left/right pair, one middle center,
-    # one separate front = four unique shapes when the opposite sides are
-    # validated as symmetric. Never publish a spurious three-tray set.
-    if len(counts) < 4 or len(counts) > 5:
-        raise RuntimeError(f"Expected 4 or 5 unique tray shapes, got {len(counts)}: "
-                           f"{sorted(counts)}")
+    # MAXIMERA has distinct center and outside middle trays due to cutouts.
+    # Metal cabinet has NO cutouts, so when connectors are off its three
+    # middle trays can truly be identical: 3 unique STLs for 5 physical trays.
+    minimum = 3 if preset_name == "Metal Cabinet Drawer" and not connectors else 4
+    if not minimum <= len(counts) <= 5:
+        raise RuntimeError(
+            f"{preset_name}: expected {minimum}..5 unique tray shapes, "
+            f"got {len(counts)}: {sorted(counts)}"
+        )
     connector = None
     if connectors:
         connector = "dogbone-connector.stl"

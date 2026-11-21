@@ -310,7 +310,7 @@ def test_metal_cabinet_sample_renders_watertight_full_width_tray(tmp_path):
     require_render_ok(proc, path)
     mesh = trimesh.load(path, force="mesh", process=True)
     assert mesh.body_count == 1 and mesh.is_watertight
-    assert mesh.bounds[1,2] == pytest.approx(125, abs=0.1)
+    assert mesh.bounds[1,2] == pytest.approx(115, abs=0.1)
     assert mesh.bounds[0,2] == pytest.approx(0, abs=0.05)
     out = proc.stdout + proc.stderr
     assert "DRAWER CHAMFER DOES NOT FIT:" not in out
