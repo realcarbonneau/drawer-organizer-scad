@@ -1,6 +1,6 @@
 # Drawer Organizer — OpenSCAD v12
 
-Parametric tray geometry for a measured, metal-sided drawer. Separate printed trays connect through removable dogbone pieces inserted into blind sockets from underneath. All dimensions below are millimetres unless stated otherwise. This README is a reference for the supplied Customizer preset, geometry rules, exporting, and verification.
+Parametric tray geometry for measured metal-sided and straight-sided drawers. Separate printed trays connect through removable dogbone pieces inserted into blind sockets from underneath. All dimensions below are millimetres unless stated otherwise. This README is a reference for the supplied Customizer preset, geometry rules, exporting, and verification.
 
 **Files:** [Model](drawer-organizer-v12.scad) · [Matching Customizer preset](drawer-organizer-v12.json) · [Development and regression requirements](docs/DEVELOPMENT.md)
 
@@ -9,31 +9,6 @@ Parametric tray geometry for a measured, metal-sided drawer. Separate printed tr
 These are **OpenSCAD previews from v12 geometry**, not photos or slicer results. The top rows show the actual supplied preset; the magnified connector/socket views use isolated CAD inspection crops and shortened surrounding stock while reusing the real connector and socket geometry. All gallery images use the same 4:3 frame and are paired with the relevant technical setting. Tap a thumbnail to open its full-resolution PNG. **Color convention:** teal = printed trays, orange = loose male connectors, blue = socket inspection sections.
 
 <!-- Intentionally fixed 256 × 192 display thumbnails for balanced two-column GitHub mobile tables. Full-resolution PNG links are kept in each cell. -->
-
-## Metal Cabinet Drawer profile
-
-OpenSCAD's **Metal Cabinet Drawer** preset is for a straight-sided
-cabinet drawer. It uses the latest measurements: **315 mm top inside width**,
-**460 mm inside length**, and **115 mm inside height** (measured to the
-drawer rim). **Straight_edges** is checked, so the effective floor width
-automatically matches the top width, regardless of the floor-width entry.
-
-The drawer-floor corner radius is **0 mm** for square corners. This does
-**not** disable the independently adjustable **1 mm elephant-foot relief**
-or **30 mm inside bottom rounding** of the printed trays. Both also work
-when the drawer has a nonzero floor-corner radius: the model moves that
-outside clearance chamfer inward when there is insufficient side taper,
-rather than reporting a false fit error.
-
-The layout matches the default cutlery example: one fused full-width rear
-tray spanning rows 1–2, three middle trays spanning rows 3–5, and a front
-tray in row 6. All access cutouts are off. Connectors are off by default
-for this preset.
-
-In **Drawer dimensions**, the controls appear as **Straight edges**,
-**Drawer top inside width**, **Drawer floor inside width**, **Drawer inside
-length**, and **Drawer inside height**. Inside height means height to the
-rim; **Tray height above rim** is a separate setting.
 
 ## Default printable cutlery profile
 
@@ -103,7 +78,41 @@ These ten additional **OpenSCAD CAD previews** cover every physical tray in the 
 
 | Connector underside | Connector side profile |
 | --- | --- |
-| <a href="docs/images/cad/connector-underside.png"><img src="docs/images/cad/connector-underside.png" alt="Connector underside" width="256" height="192"></a> | <a href="docs/images/cad/connector-profile.png"><img src="docs/images/cad/connector-profile.png" alt="Connector side profile" width="256" height="192"></a> |
+| <a href="docs/images/cad/connector-underside.png"><img src="docs/images/cad/connector-underside.png" alt="Connector underside" width="256" height="192"></a> ## Metal Cabinet Drawer — four CAD views
+
+The **Metal Cabinet Drawer** preset measures **315 × 460 × 115 mm** inside
+(top width × inside length × inside height). **Straight edges** is on,
+and the lower drawer corner setting is 0 mm. The printable trays retain
+the independently adjustable **1 mm elephant-foot relief** and
+**30 mm inner bottom radius**. The complete assembly has the same
+five-tray arrangement as MAXIMERA, with the rear two logical rows fused
+and no middle divider cutouts.
+
+These are four real OpenSCAD views of the **Metal Cabinet Drawer** preset, generated with `python -m scripts.metal_gallery`.
+The two elevation views use orthographic projection, so you can inspect
+the vertical **90° sidewalls** without perspective distortion. The
+metal preset also disables optional upper rim flares so the sidewalls
+remain straight above the drawer rim.
+
+| 1. 3D overview | 2. Top view |
+| --- | --- |
+| <a href="docs/images/cad/metal-drawer-3d.png"><img src="docs/images/cad/metal-drawer-3d.png" alt="Metal cabinet drawer five-tray organizer, 3D oblique view" width="256" height="192"></a> | <a href="docs/images/cad/metal-drawer-top.png"><img src="docs/images/cad/metal-drawer-top.png" alt="Metal cabinet drawer five-tray organizer, exact orthographic top view" width="256" height="192"></a> |
+| Complete assembly with one fused rear tray, three middle trays and a front tray | Orthographic plan showing all five trays and no access cutouts |
+
+| 3. Side view | 4. Front view |
+| --- | --- |
+| <a href="docs/images/cad/metal-drawer-side.png"><img src="docs/images/cad/metal-drawer-side.png" alt="Metal cabinet drawer vertical long-side elevation" width="256" height="192"></a> | <a href="docs/images/cad/metal-drawer-front.png"><img src="docs/images/cad/metal-drawer-front.png" alt="Metal cabinet drawer vertical front elevation" width="256" height="192"></a> |
+| Orthographic side elevation, showing vertical sidewalls and lower relief | Orthographic front elevation, showing straight sides and inner bottom rounding |
+
+The drawer wall angle is calculated solely from its measured inside widths
+and height. The lower outside corner relief uses the **larger of**
+the requested drawer-floor clearance and elephant-foot rise. It is
+separate from the wall angle; the inner bottom radius remains at least
+large enough to retain the full wall and base thickness.
+
+## Connector and print-interface details
+
+| <a href="docs/images/cad/connector-profile.png"><img src="docs/images/cad/connector-profile.png" alt="Connector side profile" width="256" height="192"></a> |
 | Bottom-facing view of the reduced first-layer footprint | Full fitting profile resumes above the 1 mm relief |
 
 ### Blind underside socket — mouth and section

@@ -164,10 +164,13 @@ ELEPHANT_FOOT_Z=max(0,Elephant_foot_mm);
 ELEPHANT_FOOT_X=ELEPHANT_FOOT_Z/tan(ALPHA);
 CHAMFER_Z=max(DRAWER_CORNER_CHAMFER_Z,ELEPHANT_FOOT_Z);
 CHAMFER_X=CHAMFER_Z/tan(ALPHA);
-// An expanding metal drawer may put this lower chamfer outside its
-// nominal floor boundary. On straight, reverse or near-straight sides,
-// inset the chamfer into the printed tray instead of rejecting the drawer.
-OUTER_CHAMFER_INSET=SIDE_EXPAND<=CHAMFER_X+0.4;
+// The main sidewall is determined ONLY by the measured widths and height.
+// In particular, its taper is independent of the bottom corner relief.
+SIDE_K=SIDE_EXPAND/max(E,H);
+// The chamfer follows the same wall at its crest, then steps inward as it
+// approaches the print bed. No outward widening is required to fit it.
+OUTER_CHAMFER_TIP_X=-SIDE_K*CHAMFER_Z;
+OUTER_CHAMFER_FOOT_X=OUTER_CHAMFER_TIP_X+CHAMFER_X;
 // Joining, front and rear perimeter edges never inherit the drawer-corner rise.
 JOIN_Z=ELEPHANT_FOOT_Z;
 JOIN_X=ELEPHANT_FOOT_X;
@@ -298,9 +301,8 @@ assert(Elephant_foot_mm>=0 && Elephant_foot_mm<=B,
 function lip_run_at_z(z)=HAS_RIM ? (z-H)/tan(ALPHA) : 0;
 function left_profile(outside, rim, top_extra=0)=
     outside ? concat(
-              !OUTER_CHAMFER_INSET
-                ? concat([[0,0]],CHAMFER_Z>0 ? [[-CHAMFER_X,CHAMFER_Z]] : [])
-                : (CHAMFER_Z>0 ? [[CHAMFER_X,0],[0,CHAMFER_Z]] : [[0,0]]),
+              [[OUTER_CHAMFER_FOOT_X,0]],
+              CHAMFER_Z>0 ? [[OUTER_CHAMFER_TIP_X,CHAMFER_Z]] : [],
               [[-SIDE_EXPAND,H]],
               [[-SIDE_EXPAND-(rim?lip_run_at_z(ZTOP+top_extra):0),ZTOP+top_extra]])
             : [[JOIN_X,0],[0,JOIN_Z],[0,ZTOP+top_extra]];
@@ -358,9 +360,9 @@ function fillet_slope(outer,is_x) =
 function fillet_intercept(outer,is_x) =
     !outer || !is_x ? B :
     fillet_use_chamfer(outer,is_x) ?
-        (OUTER_CHAMFER_INSET ? CHAMFER_X : 0) +
+        OUTER_CHAMFER_FOOT_X +
         B*sqrt(1+pow(fillet_slope(outer,is_x),2)) :
-        -SIDE_EXPAND+H*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K);
+        B*sqrt(1+SIDE_K*SIDE_K);
 // One pair of circle-center helpers is shared by the rendered tray cavity
 // and the connector cutter profiles. These are the actual PR8 fillet centres.
 function inner_fillet_center_x(outer,is_x) =
@@ -391,10 +393,7 @@ module inner_corner_fillet_keepouts(span,left_outer,right_outer,is_x) {
 // sharp sidewall/lip junction rounded/mitred the inside kink erratically.
 // We retain the eroded + uniformly FILLETED cavity at the BOTTOM; above the
 // fillet's endpoint the cross-section is analytic and has ONE intended kink.
-// An inset corner chamfer ends on the nominal floor-width line.
-// The upper wall can expand, remain straight or taper inward independently.
-SIDE_K=(SIDE_EXPAND-(OUTER_CHAMFER_INSET ? 0 : CHAMFER_X)) /
-       max(0.01,H-CHAMFER_Z);
+// The straight side above the chamfer retains the measured drawer draft.
 LIP_K=HAS_RIM ? 1/tan(ALPHA) : 0;
 // For shallow above-rim heights, limit the inner-ramp transition
 // to preserve a continuous profile; normally it starts B mm higher.
@@ -1032,6 +1031,8 @@ module preview_loose_connectors() {
 // ----------- Output and non-fatal invalid selection handling -----------
 echo("DRAWER v12 | profile",W0,WT,DY,"metal rim",H,"printed height",ZTOP);
 echo("ANGLE / AUTO OUTER CHAMFER run, rise (from drawer floor radius)",ALPHA,CHAMFER_X,CHAMFER_Z);
+echo("SIDE WALL DRAFT (per-side width change / height / slope)",SIDE_EXPAND,H,SIDE_K);
+echo("LOWER SIDE FOOT (bed x / chamfer crest x)",OUTER_CHAMFER_FOOT_X,OUTER_CHAMFER_TIP_X);
 echo("DRAWER FLOOR radius / REQUIRED exterior chamfer rise",Drawer_floor_corner_radius_mm,CHAMFER_Z);
 echo("UNIFIED ELEPHANT FOOT (requested / inner and end edge rise / outer side rise)",
      Elephant_foot_mm,JOIN_Z,CHAMFER_Z);
@@ -1096,14 +1097,10 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
                  ". Increase Grid_columns to at least ",splits_at(r),
                  " (or reduce Row_",r,"). Nothing rendered."));
 } else if(CHAMFER_FIT_ERROR) {
-    echo(str("DRAWER CHAMFER DOES NOT FIT: The drawer floor radius of ",
-             Drawer_floor_corner_radius_mm," mm and elephant foot of ",Elephant_foot_mm,
-             " mm at ",ALPHA," degrees require ",
-             CHAMFER_X," mm horizontal run and ",CHAMFER_Z,
-             " mm rise. Drawer inside height is ",H,
-             " mm at drawer rim height ",H,
-             " mm. Adjust the drawer floor radius, measured widths, rim height, " ,
-             "or print overhang angle. Nothing rendered."));
+    echo(str("DRAWER CHAMFER DOES NOT FIT: The required rise of ",
+             CHAMFER_Z," mm is too large for drawer inside height ",H,
+             " mm with floor and wall stock ",B,
+             " mm. Reduce relief or increase inside height. Nothing rendered."));
 } else if(INNER_FLOOR_FIT_ERROR) {
     echo(str("INNER FLOOR FILLET DOES NOT FIT: Connector socket clearance and " ,
              "floor stock require an inner radius of ",INNER_BOTTOM_R,

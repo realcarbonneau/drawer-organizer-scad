@@ -13,7 +13,7 @@
 - Put `Straight_edges` first in Drawer dimensions, unchecked by default. When checked it overrides the effective floor width with the top inside width.
 - Consistently use `Drawer_top_inside_width_mm`, `Drawer_floor_inside_width_mm`, `Drawer_inside_length_mm` and `Drawer_inside_height_mm`. The inside height goes to the drawer rim.
 - The `Metal Cabinet Drawer` preset is **315 × 460 × 115 mm**, straight-sided, with the drawer's outer floor corner radius at 0 mm, a five-piece layout, 1 mm elephant-foot relief and 30 mm internal tray bottom fillet, no access cutouts.
-- A near-straight drawer with top width 315 mm and floor width 314 mm and 10 mm floor corner radius must not be rejected. Inset the lower corner chamfer when the available side widening is too small, independent of the elephant-foot setting.
+- The wall taper uses **only measured top/floor inside widths and drawer inside height**. The lower chamfer is a separate relief starting at the measured tapered wall's lower crest; its rise is the larger of drawer-floor clearance or elephant-foot relief. A 315/314 mm top/floor drawer with a 10 mm corner radius must render. Do not use side widening to validate a corner chamfer.
 
 ## Geometry and UI invariants
 
@@ -47,7 +47,7 @@ Use `Connector_center_thickness_mm = 4`, `Connector_diameter_protrusion_mm = 1` 
 ## Rim parameter and Customizer invariant
 
 - Expose **Tray_height_above_rim_mm** and **Print_overhang_angle_deg**, never a redundant projection control. Compute horizontal lip run from the two inputs, preserving exact height and slope.
-- The drawer's **Drawer_floor_corner_radius_mm** sets the lower exterior chamfer rise; derive its horizontal run from the print angle. Do not introduce a second maximum-rise control or quietly clamp the result. If there is insufficient widening or rim height, echo why and draw nothing.
+- The drawer's **Drawer_floor_corner_radius_mm** sets lower exterior clearance; combine it with elephant-foot relief using their maximum rise, and derive the horizontal run from print angle. The lower foot may always move inward even on straight sides. Reject only geometrically impossible **vertical** clearances or unsafe walls, not insufficient side widening.
 - The inner-bottom radius uses an OpenSCAD Customizer slider (0..100 mm); circular keepout wedges independently round the sidewalls and may meet at a narrow central valley. Avoid global 2D morphological opening: it introduces a square ledge at the fixed lower/upper cavity splice and can fill a narrow tray instead of rounding it. The min-width condition must not reject radius 30 in a 63 mm nominal tray; enforce vertical room, clearances, and watertightness instead.
 - The protected connector socket roof determines the mandatory minimum inner-bottom fillet radius (at least Base_thickness_mm). `Inner_bottom_radius_mm=0` uses this automatic minimum; explicit values may only increase it. Nonzero values below minimum must echo a warning and clamp UP to the structural minimum. Larger radii progressively increase the blind socket and matching male head profile; connector clearances and minimum floor thickness remain protected. Keep the cutout's convex ridge fillet entirely above that larger bottom fillet. If the tray width or height cannot accommodate these envelopes, report a nonfatal configuration mismatch rather than deleting essential material.
 - Use capitalized public Customizer identifiers (and matching JSON/test selectors). Keep section names and help text concise; no obsolete numeric-continuation explanations.

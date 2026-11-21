@@ -331,6 +331,97 @@ def test_metal_cabinet_middle_tray_has_no_cutouts(tmp_path):
     assert path.stat().st_size > 500
 
 
+
+@pytest.mark.parametrize("top,floor,corner", [
+    (315,315,0),    # vertical metal cabinet, no drawer corner relief
+    (315,315,10),   # vertical metal cabinet, chamfer changes only the foot
+    (315,314,10),   # reported nearly vertical 315/314 mm drawer
+    (218,190,10),   # original outward-tapered MAXIMERA drawer
+    (180,190,10),   # reverse taper, the floor wider than the top
+])
+def test_sidewall_taper_independent_of_lower_corner_relief(
+        tmp_path, top, floor, corner):
+    out, path = render_csg(
+        tmp_path, f"independent_taper_{top}_{floor}_{corner}",
+        {"Output_mode":1, "Selected_row":1, "Selected_column":1,
+         "Drawer_top_inside_width_mm":top,
+         "Drawer_floor_inside_width_mm":floor,
+         "Drawer_floor_corner_radius_mm":corner,
+         "Elephant_foot_mm":1}
+    )
+    assert "Nothing rendered" not in out
+    assert "DRAWER CHAMFER DOES NOT FIT:" not in out
+    slope = re.search(
+        r'"SIDE WALL DRAFT [(]per-side width change / height / slope[)]", '
+        r'([-0-9.e+]+), ([-0-9.e+]+), ([-0-9.e+]+)', out
+    )
+    foot = re.search(
+        r'"LOWER SIDE FOOT [(]bed x / chamfer crest x[)]", '
+        r'([-0-9.e+]+), ([-0-9.e+]+)', out
+    )
+    assert slope and foot, out[-3000:]
+    expansion, height, k = map(float, slope.groups())
+    foot_x, tip_x = map(float, foot.groups())
+    expected_expansion=(top-floor)/2
+    effective_rise=max(corner,1)
+    assert expansion == pytest.approx(expected_expansion)
+    assert height == pytest.approx(65)
+    assert k == pytest.approx(expected_expansion/65, abs=0.0001)
+    assert tip_x == pytest.approx(-k*effective_rise, abs=0.001)
+    assert foot_x-tip_x == pytest.approx(
+        effective_rise/math.tan(math.radians(60)),abs=0.003
+    )
+    assert path.stat().st_size>500
+
+
+@pytest.mark.parametrize("corner,foot,requested,minimum,actual", [
+    (0,1,0,3,3),
+    (10,1,0,12,12),
+    (10,1,30,12,30),
+    (4,1.5,10,6,10),
+])
+def test_larger_lower_relief_wins_and_protects_inside_floor(
+        tmp_path,corner,foot,requested,minimum,actual):
+    out, path=render_csg(tmp_path,
+        f"relief_max_{corner}_{foot}_{requested}",
+        {"Output_mode":1,"Selected_row":1,"Selected_column":1,
+         "Straight_edges":True,
+         "Drawer_top_inside_width_mm":315,
+         "Drawer_floor_inside_width_mm":314,
+         "Drawer_floor_corner_radius_mm":corner,
+         "Elephant_foot_mm":foot,
+         "Inner_bottom_radius_mm":requested})
+    assert "Nothing rendered" not in out
+    result=re.search(
+        r'"INNER BOTTOM ROUNDING [(]requested / chamfer-protected minimum / effective[)]", '
+        r'([0-9.]+), ([0-9.]+), ([0-9.]+)',out)
+    assert result, out[-1800:]
+    got=tuple(map(float,result.groups()))
+    assert got==pytest.approx((requested,minimum,actual))
+    assert path.stat().st_size>500
+
+
+def test_metal_straight_side_mesh_is_vertical_above_lower_relief(tmp_path):
+    path=tmp_path/"metal_side_vertical.stl"
+    proc=_openscad_render(path,
+        {"Output_mode":1,"Selected_row":1,"Selected_column":1,
+         "Render_facets":20},
+        preset_name="Metal Cabinet Drawer",timeout=300)
+    require_render_ok(proc,path)
+    mesh=trimesh.load(path,force="mesh",process=True)
+    assert mesh.is_watertight
+    assert mesh.body_count==1
+    # Horizontal mesh cross sections should have identical outside X extents
+    # at different heights, well above the 1mm first-layer relief.
+    sections=[]
+    for z in (45,90):
+        section=mesh.section(plane_origin=[0,0,z],plane_normal=[0,0,1])
+        assert section is not None
+        vertices=np.vstack(section.discrete)
+        sections.append((vertices[:,0].min(),vertices[:,0].max()))
+    assert sections[0]==pytest.approx(sections[1],abs=0.15)
+
+
 def test_sidewalls_are_outward_drafted_and_rear_wall_is_vertical(tmp_path):
     m,_ = render_stl(tmp_path,"rear_profile",{
         "Output_mode":1,"Selected_row":1,"Selected_column":1

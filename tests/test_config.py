@@ -63,6 +63,8 @@ def test_metal_cabinet_drawer_profile_settings():
     assert params["Drawer_inside_length_mm"] == "460"
     assert params["Drawer_inside_height_mm"] == "115"
     assert params["Drawer_floor_corner_radius_mm"] == "0"
+    assert params["Rim_left"] == "false"
+    assert params["Rim_right"] == "false"
     assert params["Inner_bottom_radius_mm"] == "30"
     assert params["Elephant_foot_mm"] == "1"
     assert params["Connectors_enabled"] == "false"
@@ -170,6 +172,12 @@ def test_customizer_controls_and_defaults():
     assert "JOIN_Z=ELEPHANT_FOOT_Z;" in scad
     assert "CHAMFER_X=CHAMFER_Z/tan(ALPHA);" in scad
     assert "CHAMFER_FIT_ERROR" in scad
+    # Side-wall angle uses only measured widths and height; foot relief is
+    # a separate lower-boundary shape with no widening-dependent fit error.
+    assert "SIDE_K=SIDE_EXPAND/max(E,H);" in scad
+    assert "OUTER_CHAMFER_TIP_X=-SIDE_K*CHAMFER_Z;" in scad
+    assert "OUTER_CHAMFER_FOOT_X=OUTER_CHAMFER_TIP_X+CHAMFER_X;" in scad
+    assert "OUTER_CHAMFER_INSET" not in scad
     assert "function cutout_floor_z()" in scad
     assert params["Cutout_row_04"] == "true"
     assert "Connector_center_thickness_mm" in params
@@ -332,3 +340,32 @@ def test_print_angle_and_height_are_only_rim_dimension_controls():
     assert "rim_projection_mm" not in scad
     assert "Continue previous" in scad
     assert "zero continues" not in scad.lower()
+
+
+def test_metal_gallery_uses_four_genuine_3d_and_orthographic_views():
+    from scripts.metal_gallery import VIEWS, PRESET
+    from scripts.organizer_cli import openscad_render as render
+    source, preset = release_paths()
+    params = preset_parameters(preset, PRESET)
+    assert params["Straight_edges"] == "true"
+    assert params["Rim_left"] == params["Rim_right"] == "false"
+    assert [v.name for v in VIEWS] == [
+        "metal-drawer-3d", "metal-drawer-top",
+        "metal-drawer-side", "metal-drawer-front"
+    ]
+    assert [v.camera[3:6] for v in VIEWS] == [
+        (58, 0, 35), (0, 0, 0), (90, 0, 90), (90, 0, 0)
+    ]
+    assert "image_ortho: bool = False" in (
+        source.parent / "scripts/organizer_cli.py"
+    ).read_text()
+    assert "--projection=o" in (
+        source.parent / "scripts/organizer_cli.py"
+    ).read_text()
+    readme = (source.parent / "README.md").read_text()
+    section = readme.index("## Metal Cabinet Drawer — four CAD views")
+    maximera = readme.index("## Default printable cutlery profile")
+    assert maximera < section
+    previews = [readme.index(f"docs/images/cad/{v.name}.png") for v in VIEWS]
+    assert previews == sorted(previews)
+

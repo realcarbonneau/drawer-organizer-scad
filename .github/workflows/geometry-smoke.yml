@@ -1,0 +1,36 @@
+name: Verify drawer wall and relief geometry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - drawer-organizer-v12.scad
+      - drawer-organizer-v12.json
+      - tests/test_openscad.py
+      - tests/test_config.py
+      - scripts/organizer_cli.py
+      - .github/workflows/geometry-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  geometry-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install OpenSCAD and Python test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openscad xvfb xauth fonts-dejavu-core
+          python -m pip install -r requirements-dev.txt
+      - name: Validate both dimension presets and four gallery cameras
+        run: python -m pytest -q tests/test_config.py
+      - name: Check chamfer max, independent wall taper and vertical metal sides
+        run: |
+          python -m pytest -q tests/test_openscad.py -k 'sidewall_taper_independent_of_lower_corner_relief or larger_lower_relief_wins_and_protects_inside_floor or metal_straight_side_mesh_is_vertical_above_lower_relief or metal_cabinet_straight_sides_allow_foot_and_interior_rounding or straight_equal_and_reverse_drawer_widths_render_without_errors'
