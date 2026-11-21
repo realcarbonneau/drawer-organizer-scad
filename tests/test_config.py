@@ -57,10 +57,10 @@ def test_preset_keys_exist_as_model_controls():
 def test_default_grid_and_row_continuations():
     _,preset=release_paths()
     params=preset_parameters(preset)
-    assert default_parts(params)==[(1,1),(2,1),(3,1),(3,2),(3,3),(6,1)]
-    assert [int(params[f"Row_{i:02d}"]) for i in range(1,7)]==[1,1,3,0,0,1]
+    assert default_parts(params)==[(1,1),(3,1),(3,2),(3,3),(6,1)]
+    assert [int(params[f"Row_{i:02d}"]) for i in range(1,7)]==[1,0,3,0,0,1]
     assert params["Connectors_enabled"]=="false"
-    # Row_02=1 means a separate full-width tray; 0 joins rows 1 and 2.
+    # The default Row_02=0 continues the fused rear tray (rows 1 and 2).
 
 
 def test_invalid_grid_first_row_rejected():
@@ -211,7 +211,7 @@ def test_underside_preview_uses_f6_not_opencsg():
     source = (release_paths()[0].parent / "scripts/tray_gallery.py").read_text()
     assert 'image_render=view.name.endswith("-underside")' in source
     assert {v.name for v in TRAY_VIEWS if v.name.endswith("-underside")} == {
-        "tray-rear-underside", "tray-row02-underside", "tray-front-underside"
+        "tray-rear-underside", "tray-front-underside"
     }
 
 
@@ -220,9 +220,9 @@ def test_every_physical_tray_has_two_distinct_real_cad_gallery_views():
 
     _, preset = release_paths()
     physical_parts = set(default_parts(preset_parameters(preset)))
-    assert len(TRAY_VIEWS) == 12
+    assert len(TRAY_VIEWS) == 10
     assert { (v.row, v.col) for v in TRAY_VIEWS } == physical_parts
-    assert len({v.name for v in TRAY_VIEWS}) == 12
+    assert len({v.name for v in TRAY_VIEWS}) == 10
     for row, col in physical_parts:
         views = [v for v in TRAY_VIEWS if (v.row, v.col) == (row, col)]
         assert len(views) == 2

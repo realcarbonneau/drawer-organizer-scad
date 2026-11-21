@@ -1,8 +1,8 @@
-"""Render twelve additional real OpenSCAD views: two for each physical tray.
+"""Render ten additional real OpenSCAD views: two for each physical tray.
 
 Uses the shipped kitchen-drawer preset. Each image comes from the selected
 physical tray (Output_mode=1), not a mockup or a reassembled depiction.
-Six alternate angles and six detail/underside images supplement the gallery.
+Five alternate angles and five detail/underside images supplement the gallery.
 Most views use fast F5 OpenSCAD previews. The two underside views use
 full F6/CGAL rendering so the blind socket roofs cannot appear transparent
 at the exterior joining edge. The model geometry is unchanged.
@@ -32,13 +32,11 @@ class TrayView:
 
 
 # Camera target X/Y/Z; Euler X/Y/Z; viewing distance (mm).
-# Rear: rows 1 and 2 separately; middle: rows 3-5, columns 1-3; front: row 6.
+# Rear: rows 1-2 fused; middle: rows 3-5, columns 1-3; front: row 6.
 # For the middle, the access openings are in logical row 4, Y=118.5.
 TRAY_VIEWS = (
-    TrayView("tray-rear-angle", 1, 1, (94.5,39.5,35,42,0,145,800)),
-    TrayView("tray-rear-underside", 1, 1, (94.5,39.5,18,145,0,35,900)),
-    TrayView("tray-row02-angle", 2, 1, (94.5,39.5,35,44,0,140,800)),
-    TrayView("tray-row02-underside", 2, 1, (94.5,39.5,18,145,0,35,900)),
+    TrayView("tray-rear-angle", 1, 1, (94.5,79,35,42,0,145,880)),
+    TrayView("tray-rear-underside", 1, 1, (94.5,79,18,145,0,35,950)),
     TrayView("tray-middle-left-angle", 3, 1, (31.5,118.5,35,55,0,145,970)),
     TrayView("tray-middle-left-cutout", 3, 1, (58,118.5,44,70,0,38,485), True),
     TrayView("tray-middle-center-angle", 3, 2, (31.5,118.5,35,47,0,20,970)),

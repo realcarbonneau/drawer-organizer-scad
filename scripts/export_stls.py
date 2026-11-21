@@ -47,14 +47,10 @@ def equivalent_layout_part(previous: tuple[int, int], current: tuple[int, int],
                            connectors: bool) -> int | None:
     """Return a required Z rotation for symmetric positions in this layout.
 
-    The three single-row, full-width shells have the same exterior shape
-    when connectors are disabled and both front/rear rim flags are false.
+    The rear tray spans rows 1-2 (one solid), unlike the front row-6 tray.
     The two outside middle trays have centered row-4 cutouts, symmetric side
     taper and symmetric connector station patterns, so rotate 180 degrees.
     """
-    if not connectors and previous in ((1, 1), (2, 1), (6, 1)) \
-            and current in ((1, 1), (2, 1), (6, 1)):
-        return 0
     if previous == (3, 1) and current == (3, 3):
         return 180
     return None
@@ -130,6 +126,12 @@ def export_variant(directory: Path, parts: list[tuple[int, int]],
             })
             print(f"{directory.name}: row {row}, column {col} -> "
                   f"{match} (rotate Z {turn} degrees)")
+    # One fused rear, one middle left/right pair, one middle center,
+    # one separate front = four unique shapes when the opposite sides are
+    # validated as symmetric. Never publish a spurious three-tray set.
+    if len(counts) < 4 or len(counts) > 5:
+        raise RuntimeError(f"Expected 4 or 5 unique tray shapes, got {len(counts)}: "
+                           f"{sorted(counts)}")
     connector = None
     if connectors:
         connector = "dogbone-connector.stl"
@@ -174,7 +176,7 @@ def main() -> None:
     _, preset = release_paths()
     parameters = preset_parameters(preset)
     parts = default_parts(parameters)
-    expected = [(1, 1), (2, 1), (3, 1), (3, 2), (3, 3), (6, 1)]
+    expected = [(1, 1), (3, 1), (3, 2), (3, 3), (6, 1)]
     if parts != expected:
         raise RuntimeError(f"Default cutlery profile changed: {parts}. "
                            "Update the export layout and README intentionally.")

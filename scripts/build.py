@@ -83,7 +83,7 @@ def main() -> None:
     screenshots = {
         "full-layout": ((107,250,37,58,0,35,1500),
                         {"Output_mode": 0, "Preview_separation_mm": 12}),
-        "rear-tray": ((94.5,39.5,35,62,0,35,750),
+        "rear-tray": ((94.5,79,35,62,0,35,850),
                       {"Output_mode": 1, "Selected_row": 1, "Selected_column": 1}),
         "middle-tray": ((31.5,118.5,35,70,0,67,1000),
                         {"Output_mode": 1, "Selected_row": 3, "Selected_column": 2}),

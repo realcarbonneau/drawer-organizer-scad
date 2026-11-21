@@ -23,12 +23,13 @@ def openscad_render(*args, **kwargs):
     return _openscad_render(*args, preset_name=LEGACY_PRESET_NAME, **kwargs)
 
 
-def test_named_maximera_default_is_six_trays_without_connectors():
+def test_named_maximera_default_has_fused_rear_and_five_trays_without_connectors():
     _, config = release_paths()
     params = preset_parameters(config)
     assert default_parts(params) == [
-        (1, 1), (2, 1), (3, 1), (3, 2), (3, 3), (6, 1)
+        (1, 1), (3, 1), (3, 2), (3, 3), (6, 1)
     ]
+    assert params['Row_01'] == '1' and params['Row_02'] == '0'
     assert params['Connectors_enabled'] == 'false'
     assert params['Rim_front'] == params['Rim_rear'] == 'false'
     assert params['Loose_connector_quantity'] == '1'
