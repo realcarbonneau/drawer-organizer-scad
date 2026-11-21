@@ -9,12 +9,6 @@
       "rotate_z_degrees": 0
     },
     {
-      "row": 2,
-      "column": 1,
-      "stl": "tray-row02-col01.stl",
-      "rotate_z_degrees": 0
-    },
-    {
       "row": 3,
       "column": 1,
       "stl": "tray-row03-col01.stl",
@@ -42,10 +36,6 @@
   "tray_stls": [
     {
       "stl": "tray-row01-col01.stl",
-      "copies": 1
-    },
-    {
-      "stl": "tray-row02-col01.stl",
       "copies": 1
     },
     {

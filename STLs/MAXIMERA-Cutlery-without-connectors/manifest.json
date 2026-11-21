@@ -9,12 +9,6 @@
       "rotate_z_degrees": 0
     },
     {
-      "row": 2,
-      "column": 1,
-      "stl": "tray-row01-col01.stl",
-      "rotate_z_degrees": 0
-    },
-    {
       "row": 3,
       "column": 1,
       "stl": "tray-row03-col01.stl",
@@ -35,14 +29,14 @@
     {
       "row": 6,
       "column": 1,
-      "stl": "tray-row01-col01.stl",
+      "stl": "tray-row06-col01.stl",
       "rotate_z_degrees": 0
     }
   ],
   "tray_stls": [
     {
       "stl": "tray-row01-col01.stl",
-      "copies": 3
+      "copies": 1
     },
     {
       "stl": "tray-row03-col01.stl",
@@ -50,6 +44,10 @@
     },
     {
       "stl": "tray-row03-col02.stl",
+      "copies": 1
+    },
+    {
+      "stl": "tray-row06-col01.stl",
       "copies": 1
     }
   ],
