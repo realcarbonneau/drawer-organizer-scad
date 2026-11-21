@@ -17,14 +17,14 @@
     {
       "row": 3,
       "column": 2,
-      "stl": "tray-row03-col02.stl",
+      "stl": "tray-row03-col01.stl",
       "rotate_z_degrees": 0
     },
     {
       "row": 3,
       "column": 3,
       "stl": "tray-row03-col01.stl",
-      "rotate_z_degrees": 180
+      "rotate_z_degrees": 0
     },
     {
       "row": 6,
@@ -40,11 +40,7 @@
     },
     {
       "stl": "tray-row03-col01.stl",
-      "copies": 2
-    },
-    {
-      "stl": "tray-row03-col02.stl",
-      "copies": 1
+      "copies": 3
     },
     {
       "stl": "tray-row06-col01.stl",
