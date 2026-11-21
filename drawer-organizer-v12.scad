@@ -8,8 +8,13 @@
 // Dimensions are millimetres; angles are measured from the print bed.
 
 /* [01 - Drawer dimensions] */
-// Inner width across the TOP of the metal drawer.
+// Use top width also at the floor; the floor width input below is ignored.
+// This removes drawer-side draft, but retains any separate corner clearance.
+Straight_edges = false;
+// Inner width across the TOP of the drawer.
 Drawer_top_width_mm = 218; // [60:1:1000]
+// Used only when Straight_edges is unchecked; may be equal to or wider
+// than the top width for straight or inward-tapered drawer sides.
 Drawer_floor_width_mm = 190; // [50:1:1000]
 // Metal drawer's floor-to-side inside radius. Determines the lower EXTERIOR
 // clearance chamfer height together with Print_overhang_angle_deg.
@@ -139,9 +144,10 @@ row_values=[Row_01,Row_02,Row_03,Row_04,Row_05,
 cutout_values=[Cutout_row_01,Cutout_row_02,Cutout_row_03,Cutout_row_04,Cutout_row_05,
                Cutout_row_06,Cutout_row_07,Cutout_row_08,Cutout_row_09,Cutout_row_10];
 
-// Width at the floor is a measured, theoretical sharp-corner position.
-// Both sides expand symmetrically as the metal walls rise to the rim.
-W0=Drawer_floor_width_mm-Drawer_total_clearance_mm;
+// Effective width at the floor equals the top when Straight_edges is checked.
+// Otherwise, the drawer may expand, remain straight, or taper inward.
+W0=(Straight_edges ? Drawer_top_width_mm : Drawer_floor_width_mm)
+    -Drawer_total_clearance_mm;
 WT=Drawer_top_width_mm-Drawer_total_clearance_mm;
 DY=Drawer_inside_length_mm-Drawer_total_clearance_mm;
 H=Drawer_rim_height_mm;
@@ -216,13 +222,14 @@ INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);
 INNER_BOTTOM_R_CLAMPED=Inner_bottom_radius_mm!=0 &&
     Inner_bottom_radius_mm<INNER_BOTTOM_R_MIN-0.00001;
 SOFT_R=min(max(0,Soft_edge_radius_mm),max(0,min(B,T)/2-0.1));
-// The radius-derived exterior chamfer must not pass through the measured
-// metal wall or consume the straight wall above it. An inner corner radius
-// may consume the entire FLAT floor in a narrow tray; opposing circular
-// fillets can meet in a shallow valley, which is valid geometry. Do not
-// reject it based on nominal tray width (and do not silently cap the radius).
+// Keep the original expanding-wall clearance requirement for tapered metal
+// drawers. When the top and floor are equal or the top is narrower, the
+// lower corner relief is inset INTO the nominal floor footprint instead,
+// so neither equal widths nor reverse draft are rejected by this rule.
+// Regardless of taper, the chamfer must leave useful vertical wall stock.
 CHAMFER_FIT_ERROR=CHAMFER_Z>=H-2*B ||
-    CHAMFER_X>=SIDE_EXPAND-0.4 || CHAMFER_Z>SIDE_EXPAND;
+    (SIDE_EXPAND>0 &&
+     (CHAMFER_X>=SIDE_EXPAND-0.4 || CHAMFER_Z>SIDE_EXPAND));
 MIN_TRAY_WIDTH=min([for(r=[1:Grid_rows]) if(splits_at(r)>0) W0/splits_at(r)]);
 MIN_TRAY_DEPTH=ROW_DEPTH;
 // A full circular fillet needs vertical room before the rim transition.
@@ -272,8 +279,8 @@ assert(min([for(r=[1:Grid_rows]) splits_at(r)])>=0&&max([for(r=[1:Grid_rows]) sp
 // A row may request more than the configured grid width, but that is a
 // user-fixable configuration mismatch, not a fatal assertion.
 GRID_OVERFLOW_ROWS=[for(r=[1:Grid_rows]) if(splits_at(r)>Grid_columns) r];
-assert(Drawer_top_width_mm>Drawer_floor_width_mm,"Top opening must exceed flat floor width.");
-assert(W0>10&&DY>20&&H>15&&B>0&&T>0&&H>B+5,"Drawer dimensions or thicknesses are invalid.");
+assert(W0>10&&WT>10&&DY>20&&H>15&&B>0&&T>0&&H>B+5,
+       "Drawer dimensions or thicknesses are invalid.");
 assert(ALPHA>=20&&ALPHA<85,"Printing angle must be between 20 and 85 degrees.");
 assert(Connector_spacing_mm>=2*(HEAD_R+T+2)&&Connector_spacing_mm>0,"Connector spacing is too short for dogbone heads.");
 assert(Connector_side_clearance_total_mm>=0 && Connector_top_clearance_mm>=0,
@@ -292,7 +299,11 @@ assert(Elephant_foot_mm>=0 && Elephant_foot_mm<=B,
 // these sections also produces a CONTINUOUS parallel sloped inner lip.
 function lip_run_at_z(z)=HAS_RIM ? (z-H)/tan(ALPHA) : 0;
 function left_profile(outside, rim, top_extra=0)=
-    outside ? concat([[0,0]],CHAMFER_Z>0 ? [[-CHAMFER_X,CHAMFER_Z]] : [],[[-SIDE_EXPAND,H]],
+    outside ? concat(
+              SIDE_EXPAND>0
+                ? concat([[0,0]],CHAMFER_Z>0 ? [[-CHAMFER_X,CHAMFER_Z]] : [])
+                : (CHAMFER_Z>0 ? [[CHAMFER_X,0],[0,CHAMFER_Z]] : [[0,0]]),
+              [[-SIDE_EXPAND,H]],
               [[-SIDE_EXPAND-(rim?lip_run_at_z(ZTOP+top_extra):0),ZTOP+top_extra]])
             : [[JOIN_X,0],[0,JOIN_Z],[0,ZTOP+top_extra]];
 function right_profile(w,outside,rim,top_extra=0)=
@@ -349,6 +360,7 @@ function fillet_slope(outer,is_x) =
 function fillet_intercept(outer,is_x) =
     !outer || !is_x ? B :
     fillet_use_chamfer(outer,is_x) ?
+        (SIDE_EXPAND>0 ? 0 : CHAMFER_X) +
         B*sqrt(1+pow(fillet_slope(outer,is_x),2)) :
         -SIDE_EXPAND+H*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K);
 // One pair of circle-center helpers is shared by the rendered tray cavity
@@ -381,7 +393,10 @@ module inner_corner_fillet_keepouts(span,left_outer,right_outer,is_x) {
 // sharp sidewall/lip junction rounded/mitred the inside kink erratically.
 // We retain the eroded + uniformly FILLETED cavity at the BOTTOM; above the
 // fillet's endpoint the cross-section is analytic and has ONE intended kink.
-SIDE_K=(SIDE_EXPAND-CHAMFER_X)/max(0.01,H-CHAMFER_Z);
+// Below zero expansion, the lower chamfer ends at x=0 rather than x=-run,
+// leaving a vertical wall for equal widths and inward draft for reverse taper.
+SIDE_K=(SIDE_EXPAND-(SIDE_EXPAND>0 ? CHAMFER_X : 0)) /
+       max(0.01,H-CHAMFER_Z);
 LIP_K=HAS_RIM ? 1/tan(ALPHA) : 0;
 // For shallow above-rim heights, limit the inner-ramp transition
 // to preserve a continuous profile; normally it starts B mm higher.

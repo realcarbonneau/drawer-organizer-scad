@@ -88,6 +88,11 @@ def test_customizer_controls_and_defaults():
     scad=source.read_text()
     params=preset_parameters(preset)
     assert "Preview_separation_mm = 0; // [0:1:50]" in scad
+    assert "Straight_edges = false;" in scad
+    assert params["Straight_edges"] == "false"
+    assert scad.index("Straight_edges = false;") < scad.index("Drawer_top_width_mm =")
+    assert scad.index("Drawer_top_width_mm =") < scad.index("Drawer_floor_width_mm =")
+    assert "assert(Drawer_top_width_mm>Drawer_floor_width_mm" not in scad
     assert "Preview_loose_connector_gap_mm = 12; // [0:0.5:60]" in scad
     assert "Preview_loose_connector_offset_mm = 12; // [0:0.5:100]" in scad
     assert params["Preview_loose_connector_gap_mm"] == "12"

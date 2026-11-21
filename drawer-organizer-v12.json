@@ -2,6 +2,7 @@
   "fileFormatVersion": "1",
   "parameterSets": {
     "MAXIMERA Cutlery (Default)": {
+      "Straight_edges": "false",
       "Drawer_top_width_mm": "218",
       "Drawer_floor_width_mm": "190",
       "Drawer_floor_corner_radius_mm": "10",
@@ -60,6 +61,7 @@
       "Connectors_enabled": "false"
     },
     "Kitchen cutlery drawer": {
+      "Straight_edges": "false",
       "Drawer_top_width_mm": "218",
       "Drawer_floor_width_mm": "190",
       "Drawer_floor_corner_radius_mm": "10",

@@ -216,6 +216,57 @@ def test_large_rim_runs_use_fixed_height_without_crashing(tmp_path,angle,height)
     assert 'RIM (angle FROM PRINT BED / fixed height / derived projection)' in output
 
 
+
+
+@pytest.mark.parametrize("top,floor,straight,expected_floor", [
+    (190, 190, False, 189),  # equal widths, no checkbox
+    (180, 190, False, 189),  # reverse taper: floor wider than top
+    (190, 150, True, 189),   # straight: ignore a different floor input
+])
+def test_straight_equal_and_reverse_drawer_widths_render_without_errors(
+        tmp_path, top, floor, straight, expected_floor):
+    overrides = {
+        "Output_mode": 1, "Selected_row": 1, "Selected_column": 1,
+        "Straight_edges": straight,
+        "Drawer_top_width_mm": top, "Drawer_floor_width_mm": floor,
+        "Drawer_floor_corner_radius_mm": 10,
+    }
+    out, path = render_csg(tmp_path, f"widths_{top}_{floor}_{straight}", overrides)
+    assert "Nothing rendered" not in out
+    assert "ERROR:" not in out
+    assert "DRAWER CHAMFER DOES NOT FIT:" not in out
+    match = re.search(
+        r'"DRAWER v12 [|] profile", ([-0-9.e+]+), ([-0-9.e+]+), ([-0-9.e+]+)',
+        out,
+    )
+    assert match, out[-2500:]
+    floor_width, top_width, depth = map(float, match.groups())
+    assert floor_width == pytest.approx(expected_floor)
+    assert top_width == pytest.approx(top - 1)
+    assert depth == pytest.approx(474)
+    assert path.stat().st_size > 500
+
+
+def test_straight_edges_ignore_floor_width_in_actual_mesh(tmp_path):
+    """Both floor inputs must produce exactly the same printed geometry."""
+    common = {
+        "Output_mode": 1, "Selected_row": 1, "Selected_column": 1,
+        "Straight_edges": True,
+        "Drawer_top_width_mm": 190,
+        "Drawer_floor_corner_radius_mm": 10,
+        "Render_facets": 20,
+    }
+    first, _ = render_stl(tmp_path, "straight_floor_100",
+                          {**common, "Drawer_floor_width_mm": 100})
+    second, _ = render_stl(tmp_path, "straight_floor_220",
+                           {**common, "Drawer_floor_width_mm": 220})
+    assert first.body_count == second.body_count == 1
+    assert first.volume == pytest.approx(second.volume, rel=0.000001)
+    assert first.bounds == pytest.approx(second.bounds, abs=0.001)
+    assert first.extents[0] == pytest.approx(189 + 2 * 10 / math.tan(math.radians(60)),
+                                             abs=1.0)
+
+
 def test_sidewalls_are_outward_drafted_and_rear_wall_is_vertical(tmp_path):
     m,_ = render_stl(tmp_path,"rear_profile",{
         "Output_mode":1,"Selected_row":1,"Selected_column":1
