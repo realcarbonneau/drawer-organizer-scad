@@ -11,6 +11,33 @@ and a full-width tray in row 6.
 - [Without connectors](MAXIMERA-Cutlery-without-connectors/): unique tray
   STLs with no sockets.
 
+## Print quantities and positions
+
+The default layout is **six separate physical trays**, but some occupy the same geometric shape. To split the original two-row rear tray into two pieces, `Row_02=1`. To keep the original single joined rear tray, use `Row_02=0` and regenerate the exports; do not use the six-tray set.
+
+### Without connectors (3 tray STL files; print 6 physical trays)
+
+| STL file | Quantity | Locations |
+| --- | ---: | --- |
+| `tray-row01-col01.stl` | **3** | Rear row 1, rear row 2, and front row 6 |
+| `tray-row03-col01.stl` | **2** | Middle row 3 column 1; reuse rotated 180° for column 3 |
+| `tray-row03-col02.stl` | **1** | Middle row 3 column 2 |
+
+### With connectors (5 tray STL files and one connector STL)
+
+| STL file | Quantity | Locations |
+| --- | ---: | --- |
+| `tray-row01-col01.stl` | **1** | Rear row 1 |
+| `tray-row02-col01.stl` | **1** | Rear row 2 |
+| `tray-row03-col01.stl` | **2** | Middle row 3 columns 1 and 3; rotate second 180° |
+| `tray-row03-col02.stl` | **1** | Middle row 3 column 2 |
+| `tray-row06-col01.stl` | **1** | Front row 6 |
+| `dogbone-connector.stl` | As needed | Print multiple copies in the slicer |
+
+The row/column numbers identify *placements*, not six different shapes.
+In particular, the file for row 3 column 1 is not missing: column 3
+reuses that same file after a 180° rotation.
+
 **Use each folder's `manifest.json` to assemble the layout.** It lists
 the row/column position, STL file to print, how many copies are required,
 and any 180-degree Z rotation needed to reuse a geometrically identical tray.
