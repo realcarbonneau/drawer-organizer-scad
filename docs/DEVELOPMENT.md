@@ -8,6 +8,13 @@
 - **Push a checkpoint frequently**, not just when a release is ready: after meaningful implementation milestones, before major refactors, and before expensive renders/testing. A WIP checkpoint may contain an incomplete design, but describe its status plainly. After any sync interruption, inspect the branch and resume from the newest surviving checkpoint.
 - Update the README, preset, tests, and gallery with each significant geometry change, and verify Markdown uses unescaped backticks and fenced code blocks.
 
+## Drawer Customizer names and profiles
+
+- Put `Straight_edges` first in Drawer dimensions, unchecked by default. When checked it overrides the effective floor width with the top inside width.
+- Consistently use `Drawer_top_inside_width_mm`, `Drawer_floor_inside_width_mm`, `Drawer_inside_length_mm` and `Drawer_inside_height_mm`. The inside height goes to the drawer rim.
+- The `Metal Cabinet Drawer` preset is **315 × 460 × 115 mm**, straight-sided, with the drawer's outer floor corner radius at 0 mm, a five-piece layout, 1 mm elephant-foot relief and 30 mm internal tray bottom fillet, no access cutouts.
+- A near-straight drawer with top width 315 mm and floor width 314 mm and 10 mm floor corner radius must not be rejected. Inset the lower corner chamfer when the available side widening is too small, independent of the elephant-foot setting.
+
 ## Geometry and UI invariants
 
 - Top-down drawer orientation: row 1 = REAR/farthest; column 1 = LEFT. A **Continue previous** row dropdown value extends the preceding group. Invalid selected parts and row splits that exceed Grid_columns print a helpful message and generate no geometry, without assertions.

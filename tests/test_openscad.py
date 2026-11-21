@@ -222,13 +222,15 @@ def test_large_rim_runs_use_fixed_height_without_crashing(tmp_path,angle,height)
     (190, 190, False, 189),  # equal widths, no checkbox
     (180, 190, False, 189),  # reverse taper: floor wider than top
     (190, 150, True, 189),   # straight: ignore a different floor input
+    (315, 314, False, 313), # near-straight sides with 10 mm floor radius
+    (315, 314, True, 314),  # straight checkbox ignores the 314 mm value
 ])
 def test_straight_equal_and_reverse_drawer_widths_render_without_errors(
         tmp_path, top, floor, straight, expected_floor):
     overrides = {
         "Output_mode": 1, "Selected_row": 1, "Selected_column": 1,
         "Straight_edges": straight,
-        "Drawer_top_width_mm": top, "Drawer_floor_width_mm": floor,
+        "Drawer_top_inside_width_mm": top, "Drawer_floor_inside_width_mm": floor,
         "Drawer_floor_corner_radius_mm": 10,
     }
     out, path = render_csg(tmp_path, f"widths_{top}_{floor}_{straight}", overrides)
@@ -252,19 +254,81 @@ def test_straight_edges_ignore_floor_width_in_actual_mesh(tmp_path):
     common = {
         "Output_mode": 1, "Selected_row": 1, "Selected_column": 1,
         "Straight_edges": True,
-        "Drawer_top_width_mm": 190,
+        "Drawer_top_inside_width_mm": 190,
         "Drawer_floor_corner_radius_mm": 10,
         "Render_facets": 20,
     }
     first, _ = render_stl(tmp_path, "straight_floor_100",
-                          {**common, "Drawer_floor_width_mm": 100})
+                          {**common, "Drawer_floor_inside_width_mm": 100})
     second, _ = render_stl(tmp_path, "straight_floor_220",
-                           {**common, "Drawer_floor_width_mm": 220})
+                           {**common, "Drawer_floor_inside_width_mm": 220})
     assert first.body_count == second.body_count == 1
     assert first.volume == pytest.approx(second.volume, rel=0.000001)
     assert first.bounds == pytest.approx(second.bounds, abs=0.001)
     assert first.extents[0] == pytest.approx(189 + 2 * 10 / math.tan(math.radians(60)),
                                              abs=1.0)
+
+
+
+@pytest.mark.parametrize("foot,radius", [(0,0),(0.5,12),(1,30),(1.5,20)])
+def test_metal_cabinet_straight_sides_allow_foot_and_interior_rounding(
+        tmp_path, foot, radius):
+    """Straight sides must not disable either bottom geometry control."""
+    path = tmp_path / f"metal_straight_foot{foot}_radius{radius}.csg"
+    proc = _openscad_render(path, {
+        "Output_mode": 1,
+        "Selected_row": 1,
+        "Selected_column": 1,
+        "Elephant_foot_mm": foot,
+        "Inner_bottom_radius_mm": radius,
+    }, preset_name="Metal Cabinet Drawer")
+    require_render_ok(proc, path)
+    out = proc.stdout + proc.stderr
+    assert "DRAWER CHAMFER DOES NOT FIT:" not in out
+    assert "INNER FLOOR FILLET DOES NOT FIT:" not in out
+    assert "Nothing rendered" not in out
+    requested = re.search(
+        r'"INNER BOTTOM ROUNDING [(]requested / chamfer-protected minimum / effective[)]", '
+        r'([0-9.]+), ([0-9.]+), ([0-9.]+)', out
+    )
+    assert requested, out[-2200:]
+    actual_requested, structural_min, effective = map(float, requested.groups())
+    assert actual_requested == pytest.approx(radius)
+    assert structural_min == pytest.approx(2+foot)
+    assert effective == pytest.approx(max(structural_min, radius))
+    assert path.stat().st_size > 500
+
+
+def test_metal_cabinet_sample_renders_watertight_full_width_tray(tmp_path):
+    path = tmp_path / "metal_cabinet_rear.stl"
+    proc = _openscad_render(path, {
+        "Output_mode": 1,
+        "Selected_row": 1,
+        "Selected_column": 1,
+        "Render_facets": 20,
+    }, preset_name="Metal Cabinet Drawer", timeout=300)
+    require_render_ok(proc, path)
+    mesh = trimesh.load(path, force="mesh", process=True)
+    assert mesh.body_count == 1 and mesh.is_watertight
+    assert mesh.bounds[1,2] == pytest.approx(125, abs=0.1)
+    assert mesh.bounds[0,2] == pytest.approx(0, abs=0.05)
+    out = proc.stdout + proc.stderr
+    assert "DRAWER CHAMFER DOES NOT FIT:" not in out
+    assert "INNER FLOOR FILLET DOES NOT FIT:" not in out
+
+
+def test_metal_cabinet_middle_tray_has_no_cutouts(tmp_path):
+    path = tmp_path / "metal_middle_no_cutouts.csg"
+    proc = _openscad_render(path, {
+        "Output_mode": 1,
+        "Selected_row": 3,
+        "Selected_column": 2,
+    }, preset_name="Metal Cabinet Drawer")
+    require_render_ok(proc, path)
+    combined = proc.stdout + proc.stderr
+    assert "TRAY rows 3-5 column 2" in combined
+    assert "CUTOUT DOES NOT FIT:" not in combined
+    assert path.stat().st_size > 500
 
 
 def test_sidewalls_are_outward_drafted_and_rear_wall_is_vertical(tmp_path):
@@ -311,11 +375,11 @@ def test_drawer_corner_radius_drives_exterior_chamfer(tmp_path,radius,angle):
     assert run==pytest.approx(max(radius,1)/math.tan(math.radians(angle)),abs=0.002)
 
 
-@pytest.mark.parametrize("radius,angle",[(10,25),(35,60),(20,75)])
-def test_unfittable_drawer_chamfer_reports_no_geometry(tmp_path,radius,angle):
-    out,path=render_csg(tmp_path,f"bad_chamfer_r{radius}_a{angle}",{
+@pytest.mark.parametrize("radius,height",[(20,23),(35,38)])
+def test_unfittable_drawer_chamfer_reports_no_geometry(tmp_path,radius,height):
+    out,path=render_csg(tmp_path,f"bad_chamfer_r{radius}_h{height}",{
         "Output_mode":1,"Selected_row":3,"Selected_column":2,
-        "Drawer_floor_corner_radius_mm":radius,"Print_overhang_angle_deg":angle
+        "Drawer_floor_corner_radius_mm":radius,"Drawer_inside_height_mm":height
     })
     assert "DRAWER CHAMFER DOES NOT FIT:" in out
     assert "Nothing rendered" in out

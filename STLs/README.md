@@ -1,11 +1,15 @@
-# MAXIMERA-style cutlery STLs (v12)
+# Drawer organizer STL profiles (v12)
 
-These printer-ready files are exported from the named OpenSCAD preset
-**MAXIMERA Cutlery (Default)** using the drawer measurements in
-`drawer-organizer-v12.json`. The default layout has five physical trays:
+These printer-ready files are exported from two named OpenSCAD presets:
+**MAXIMERA Cutlery (Default)** and **Metal Cabinet Drawer**, with dimensions
+defined in `drawer-organizer-v12.json`. Both presets use five physical trays:
 one fused full-width tray spanning rows 1–2, three side-by-side trays
-spanning rows 3–5, and a full-width tray in row 6.
+spanning rows 3–5, and a full-width tray in row 6. The metal cabinet
+preset uses 315 × 460 × 115 mm interior dimensions, straight sides,
+and no access cutouts.
 
+- [Metal Cabinet Drawer — with connectors](Metal-Cabinet-Drawer-with-connectors/)
+- [Metal Cabinet Drawer — without connectors](Metal-Cabinet-Drawer-without-connectors/)
 - [With connectors](MAXIMERA-Cutlery-with-connectors/): unique tray STLs
   with underside sockets, plus a **single** `dogbone-connector.stl`.
 - [Without connectors](MAXIMERA-Cutlery-without-connectors/): unique tray

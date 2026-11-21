@@ -1,4 +1,4 @@
-name: Publish default cutlery STL sets
+name: Publish drawer profile STL sets
 
 on:
   push:
@@ -34,12 +34,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y openscad
           python -m pip install numpy trimesh networkx scipy
-      - name: Export two deduplicated tray sets and one loose connector
+      - name: Export connector and connector-free sets for both drawer presets
         run: python -m scripts.export_stls --output STLs
       - name: Upload printable STL collections
         uses: actions/upload-artifact@v4
         with:
-          name: MAXIMERA-Cutlery-v12-STLs
+          name: Drawer-Organizer-v12-STL-profiles
           path: STLs/
           if-no-files-found: error
       - name: Commit exported STL collections
@@ -52,6 +52,6 @@ jobs:
             echo "STLs already up to date."
             exit 0
           fi
-          git commit -m 'Publish MAXIMERA cutlery STL sets [skip ci]'
+          git commit -m 'Publish drawer profile STL sets [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main

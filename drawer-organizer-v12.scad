@@ -1,5 +1,5 @@
 // DRAWER ORGANIZER v12
-// Independent parametric model for a measured, metal-sided kitchen drawer.
+// Independent parametric model for metal-sided or straight cabinet drawers.
 // OpenSCAD 2021.01; no libraries or external geometry required.
 //
 // TOP VIEW: stand at the FRONT of the open drawer and look DOWN.
@@ -11,17 +11,16 @@
 // Use top width also at the floor; the floor width input below is ignored.
 // This removes drawer-side draft, but retains any separate corner clearance.
 Straight_edges = false;
-// Inner width across the TOP of the drawer.
-Drawer_top_width_mm = 218; // [60:1:1000]
-// Used only when Straight_edges is unchecked; may be equal to or wider
-// than the top width for straight or inward-tapered drawer sides.
-Drawer_floor_width_mm = 190; // [50:1:1000]
-// Metal drawer's floor-to-side inside radius. Determines the lower EXTERIOR
-// clearance chamfer height together with Print_overhang_angle_deg.
-// If its required chamfer cannot fit the measured drawer, no model is drawn.
-Drawer_floor_corner_radius_mm = 10; // [0:0.5:35]
+// Measured inside dimensions; height is measured to the drawer rim.
+// When Straight_edges is true, the floor width input is ignored.
+Drawer_top_inside_width_mm = 218; // [60:1:1000]
+Drawer_floor_inside_width_mm = 190; // [50:1:1000]
 Drawer_inside_length_mm = 475; // [60:1:1200]
-Drawer_rim_height_mm = 65; // [20:1:200]
+Drawer_inside_height_mm = 65; // [20:1:200]
+// Separate lower OUTSIDE clearance for the drawer's own floor corner.
+// Choose 0 for a sharp square cabinet corner; this does not disable
+// elephant-foot compensation or the tray's INNER bottom rounding.
+Drawer_floor_corner_radius_mm = 10; // [0:0.5:35]
 // Total lateral and front/rear clearance, shared between opposite sides.
 Drawer_total_clearance_mm = 1; // [0:0.1:6]
 
@@ -146,11 +145,11 @@ cutout_values=[Cutout_row_01,Cutout_row_02,Cutout_row_03,Cutout_row_04,Cutout_ro
 
 // Effective width at the floor equals the top when Straight_edges is checked.
 // Otherwise, the drawer may expand, remain straight, or taper inward.
-W0=(Straight_edges ? Drawer_top_width_mm : Drawer_floor_width_mm)
+W0=(Straight_edges ? Drawer_top_inside_width_mm : Drawer_floor_inside_width_mm)
     -Drawer_total_clearance_mm;
-WT=Drawer_top_width_mm-Drawer_total_clearance_mm;
+WT=Drawer_top_inside_width_mm-Drawer_total_clearance_mm;
 DY=Drawer_inside_length_mm-Drawer_total_clearance_mm;
-H=Drawer_rim_height_mm;
+H=Drawer_inside_height_mm;
 B=Base_thickness_mm;
 T=Wall_thickness_mm;
 SIDE_EXPAND=(WT-W0)/2;
@@ -165,6 +164,10 @@ ELEPHANT_FOOT_Z=max(0,Elephant_foot_mm);
 ELEPHANT_FOOT_X=ELEPHANT_FOOT_Z/tan(ALPHA);
 CHAMFER_Z=max(DRAWER_CORNER_CHAMFER_Z,ELEPHANT_FOOT_Z);
 CHAMFER_X=CHAMFER_Z/tan(ALPHA);
+// An expanding metal drawer may put this lower chamfer outside its
+// nominal floor boundary. On straight, reverse or near-straight sides,
+// inset the chamfer into the printed tray instead of rejecting the drawer.
+OUTER_CHAMFER_INSET=SIDE_EXPAND<=CHAMFER_X+0.4;
 // Joining, front and rear perimeter edges never inherit the drawer-corner rise.
 JOIN_Z=ELEPHANT_FOOT_Z;
 JOIN_X=ELEPHANT_FOOT_X;
@@ -222,14 +225,9 @@ INNER_BOTTOM_R=max(INNER_BOTTOM_R_MIN,Inner_bottom_radius_mm);
 INNER_BOTTOM_R_CLAMPED=Inner_bottom_radius_mm!=0 &&
     Inner_bottom_radius_mm<INNER_BOTTOM_R_MIN-0.00001;
 SOFT_R=min(max(0,Soft_edge_radius_mm),max(0,min(B,T)/2-0.1));
-// Keep the original expanding-wall clearance requirement for tapered metal
-// drawers. When the top and floor are equal or the top is narrower, the
-// lower corner relief is inset INTO the nominal floor footprint instead,
-// so neither equal widths nor reverse draft are rejected by this rule.
-// Regardless of taper, the chamfer must leave useful vertical wall stock.
-CHAMFER_FIT_ERROR=CHAMFER_Z>=H-2*B ||
-    (SIDE_EXPAND>0 &&
-     (CHAMFER_X>=SIDE_EXPAND-0.4 || CHAMFER_Z>SIDE_EXPAND));
+// The chamfer is inset where the drawer has too little side widening.
+// Only reject a chamfer too tall to leave solid vertical wall stock.
+CHAMFER_FIT_ERROR=CHAMFER_Z>=H-2*B;
 MIN_TRAY_WIDTH=min([for(r=[1:Grid_rows]) if(splits_at(r)>0) W0/splits_at(r)]);
 MIN_TRAY_DEPTH=ROW_DEPTH;
 // A full circular fillet needs vertical room before the rim transition.
@@ -300,7 +298,7 @@ assert(Elephant_foot_mm>=0 && Elephant_foot_mm<=B,
 function lip_run_at_z(z)=HAS_RIM ? (z-H)/tan(ALPHA) : 0;
 function left_profile(outside, rim, top_extra=0)=
     outside ? concat(
-              SIDE_EXPAND>0
+              !OUTER_CHAMFER_INSET
                 ? concat([[0,0]],CHAMFER_Z>0 ? [[-CHAMFER_X,CHAMFER_Z]] : [])
                 : (CHAMFER_Z>0 ? [[CHAMFER_X,0],[0,CHAMFER_Z]] : [[0,0]]),
               [[-SIDE_EXPAND,H]],
@@ -360,7 +358,7 @@ function fillet_slope(outer,is_x) =
 function fillet_intercept(outer,is_x) =
     !outer || !is_x ? B :
     fillet_use_chamfer(outer,is_x) ?
-        (SIDE_EXPAND>0 ? 0 : CHAMFER_X) +
+        (OUTER_CHAMFER_INSET ? CHAMFER_X : 0) +
         B*sqrt(1+pow(fillet_slope(outer,is_x),2)) :
         -SIDE_EXPAND+H*SIDE_K+B*sqrt(1+SIDE_K*SIDE_K);
 // One pair of circle-center helpers is shared by the rendered tray cavity
@@ -393,9 +391,9 @@ module inner_corner_fillet_keepouts(span,left_outer,right_outer,is_x) {
 // sharp sidewall/lip junction rounded/mitred the inside kink erratically.
 // We retain the eroded + uniformly FILLETED cavity at the BOTTOM; above the
 // fillet's endpoint the cross-section is analytic and has ONE intended kink.
-// Below zero expansion, the lower chamfer ends at x=0 rather than x=-run,
-// leaving a vertical wall for equal widths and inward draft for reverse taper.
-SIDE_K=(SIDE_EXPAND-(SIDE_EXPAND>0 ? CHAMFER_X : 0)) /
+// An inset corner chamfer ends on the nominal floor-width line.
+// The upper wall can expand, remain straight or taper inward independently.
+SIDE_K=(SIDE_EXPAND-(OUTER_CHAMFER_INSET ? 0 : CHAMFER_X)) /
        max(0.01,H-CHAMFER_Z);
 LIP_K=HAS_RIM ? 1/tan(ALPHA) : 0;
 // For shallow above-rim heights, limit the inner-ramp transition
@@ -1102,7 +1100,7 @@ if(len(GRID_OVERFLOW_ROWS)>0) {
              Drawer_floor_corner_radius_mm," mm and elephant foot of ",Elephant_foot_mm,
              " mm at ",ALPHA," degrees require ",
              CHAMFER_X," mm horizontal run and ",CHAMFER_Z,
-             " mm rise. Available side widening is ",SIDE_EXPAND,
+             " mm rise. Drawer inside height is ",H,
              " mm at drawer rim height ",H,
              " mm. Adjust the drawer floor radius, measured widths, rim height, " ,
              "or print overhang angle. Nothing rendered."));

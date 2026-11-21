@@ -24,7 +24,10 @@ from scripts.organizer_cli import (
     preset_parameters, release_paths, require_render_ok,
 )
 
-FOLDER_BASE = "MAXIMERA-Cutlery"
+PROFILE_FOLDERS = (
+    (PRESET_NAME, "MAXIMERA-Cutlery"),
+    ("Metal Cabinet Drawer", "Metal-Cabinet-Drawer"),
+)
 
 
 def mesh_signature(path: Path, rotate_180: bool = False) -> str:
@@ -57,7 +60,7 @@ def equivalent_layout_part(previous: tuple[int, int], current: tuple[int, int],
 
 
 def export_variant(directory: Path, parts: list[tuple[int, int]],
-                   connectors: bool) -> None:
+                   connectors: bool, preset_name: str) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     # Remove obsolete exports so an old version cannot linger as a false part.
     for prior in directory.glob("*.stl"):
@@ -81,7 +84,7 @@ def export_variant(directory: Path, parts: list[tuple[int, int]],
                     "Selected_column": col,
                     "Connectors_enabled": connectors,
                 },
-                preset_name=PRESET_NAME,
+                preset_name=preset_name,
                 timeout=300,
             )
             require_render_ok(result, temporary_stl)
@@ -143,13 +146,13 @@ def export_variant(directory: Path, parts: list[tuple[int, int]],
                 "Loose_connector_quantity": 1,
                 "Connectors_enabled": True,
             },
-            preset_name=PRESET_NAME,
+            preset_name=preset_name,
             timeout=300,
         )
         require_render_ok(result, output)
         mesh_signature(output)
     manifest = {
-        "profile": PRESET_NAME,
+        "profile": preset_name,
         "connectors_enabled": connectors,
         "placements": placements,
         "tray_stls": [
@@ -174,16 +177,17 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("STLs"))
     args = parser.parse_args()
     _, preset = release_paths()
-    parameters = preset_parameters(preset)
-    parts = default_parts(parameters)
     expected = [(1, 1), (3, 1), (3, 2), (3, 3), (6, 1)]
-    if parts != expected:
-        raise RuntimeError(f"Default cutlery profile changed: {parts}. "
-                           "Update the export layout and README intentionally.")
-    for connectors, suffix in ((True, "with-connectors"),
-                               (False, "without-connectors")):
-        export_variant(args.output / f"{FOLDER_BASE}-{suffix}",
-                       parts, connectors)
+    for preset_name, folder_prefix in PROFILE_FOLDERS:
+        params = preset_parameters(preset, preset_name)
+        parts = default_parts(params)
+        if parts != expected:
+            raise RuntimeError(f"{preset_name} layout changed: {parts}. "
+                               "Update the exporter and README intentionally.")
+        for connectors, suffix in ((True, "with-connectors"),
+                                   (False, "without-connectors")):
+            export_variant(args.output / f"{folder_prefix}-{suffix}",
+                           parts, connectors, preset_name)
 
 
 if __name__ == "__main__":

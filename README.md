@@ -10,6 +10,31 @@ These are **OpenSCAD previews from v12 geometry**, not photos or slicer results.
 
 <!-- Intentionally fixed 256 × 192 display thumbnails for balanced two-column GitHub mobile tables. Full-resolution PNG links are kept in each cell. -->
 
+## Metal Cabinet Drawer profile
+
+OpenSCAD's **Metal Cabinet Drawer** preset is for a straight-sided
+cabinet drawer. It uses the latest measurements: **315 mm top inside width**,
+**460 mm inside length**, and **115 mm inside height** (measured to the
+drawer rim). **Straight_edges** is checked, so the effective floor width
+automatically matches the top width, regardless of the floor-width entry.
+
+The drawer-floor corner radius is **0 mm** for square corners. This does
+**not** disable the independently adjustable **1 mm elephant-foot relief**
+or **30 mm inside bottom rounding** of the printed trays. Both also work
+when the drawer has a nonzero floor-corner radius: the model moves that
+outside clearance chamfer inward when there is insufficient side taper,
+rather than reporting a false fit error.
+
+The layout matches the default cutlery example: one fused full-width rear
+tray spanning rows 1–2, three middle trays spanning rows 3–5, and a front
+tray in row 6. All access cutouts are off. Connectors are off by default
+for this preset.
+
+In **Drawer dimensions**, the controls appear as **Straight edges**,
+**Drawer top inside width**, **Drawer floor inside width**, **Drawer inside
+length**, and **Drawer inside height**. Inside height means height to the
+rim; **Tray height above rim** is a separate setting.
+
 ## Default printable cutlery profile
 
 The named OpenSCAD preset **MAXIMERA Cutlery (Default)** uses five physical trays: one fused full-width rear tray spanning rows 1–2, three middle trays spanning rows 3–5, and one full-width front tray in row 6. The preset starts with connectors **off**. The fused rear tray is 189 × 158 mm; the front tray is 189 × 79 mm. The two outside middle trays may share one STL after 180° rotation, for four distinct printable tray shapes. The earlier **Kitchen cutlery drawer** preset remains available as a connector-enabled variant.
@@ -117,8 +142,8 @@ One **Elephant_foot_mm = 1** setting now controls all printed first-layer edges:
 | Parameter | v12 preset | Interpretation |
 | --- | ---: | --- |
 | Straight edges | Off by default | When checked, use top width at the floor; ignore Drawer_floor_width_mm |
-| Drawer top width / nominal floor width | 218 / 190 | Measured drawer dimensions; 1 mm total clearance is subtracted |
-| Drawer inside length / rim height | 475 / 65 | Drawer length and height to rim |
+| Drawer top inside width / floor inside width | 218 / 190 | Measured inside widths; 1 mm total clearance is subtracted |
+| Drawer inside length / inside height | 475 / 65 | Measured from front to rear / floor to drawer rim |
 | Grid | 3 columns × 6 rows | Row 1 is rear; column 1 is left as viewed from the drawer front |
 | Row starts | 1, continued, 3, continued, continued, 1 | Five trays: one fused full-width rear, three middle, front full width |
 | Floor / wall thickness | 2 / 2 | Nominal base and divider stock |
@@ -171,7 +196,7 @@ Tests cover OpenSCAD F5/F6 output, watertight individual tray/connector meshes, 
 
 Square-sided drawers can use **Straight_edges = true** instead of entering the same top and floor width twice. The checkbox is **off by default**. With the checkbox off, equal top/floor widths and even a floor wider than the top are permitted. For a fully square floor corner, set **Drawer_floor_corner_radius_mm = 0**; a nonzero radius retains lower exterior clearance even when the sides are straight. Rim projections are separate from drawer-side taper. Metal-sided systems such as **Blum TANDEMBOX** and **IKEA MAXIMERA** can have tapered sides and a shaped junction at the floor; an organizer placed against those sides needs clearance.
 
-In this model, `Straight_edges` overrides the floor-width input with `Drawer_top_width_mm`. When unchecked, `Drawer_floor_width_mm` and `Drawer_top_width_mm` describe side taper in either direction; `Drawer_floor_corner_radius_mm` sets the **outside** lower-side clearance; and `Print_overhang_angle_deg` determines the clearance chamfer's slope and any rim projection. `Inner_bottom_radius_mm` is the separate **inside radius of the printed tray**. Measure the individual drawer; these photos illustrate drawer construction, not nominal dimensions or interchangeable profiles.
+In this model, `Straight_edges` overrides the floor-width input with `Drawer_top_inside_width_mm`. When unchecked, `Drawer_floor_inside_width_mm` and `Drawer_top_inside_width_mm` describe side taper in either direction; `Drawer_floor_corner_radius_mm` sets the **outside** lower-side clearance; and `Print_overhang_angle_deg` determines the clearance chamfer's slope and any rim projection. `Inner_bottom_radius_mm` is the separate **inside radius of the printed tray**. Measure the individual drawer; these photos illustrate drawer construction, not nominal dimensions or interchangeable profiles.
 
 **IKEA MAXIMERA — high drawer**
 

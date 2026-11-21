@@ -54,6 +54,37 @@ def test_preset_keys_exist_as_model_controls():
         assert re.search(rf"(?m)^\s*{re.escape(key)}\s*=",scad),key
 
 
+def test_metal_cabinet_drawer_profile_settings():
+    _, preset = release_paths()
+    params = preset_parameters(preset, "Metal Cabinet Drawer")
+    assert params["Straight_edges"] == "true"
+    assert params["Drawer_top_inside_width_mm"] == "315"
+    assert params["Drawer_floor_inside_width_mm"] == "315"
+    assert params["Drawer_inside_length_mm"] == "460"
+    assert params["Drawer_inside_height_mm"] == "115"
+    assert params["Drawer_floor_corner_radius_mm"] == "0"
+    assert params["Inner_bottom_radius_mm"] == "30"
+    assert params["Elephant_foot_mm"] == "1"
+    assert params["Connectors_enabled"] == "false"
+    assert [int(params[f"Row_{i:02d}"]) for i in range(1,7)] == [1,0,3,0,0,1]
+    assert default_parts(params) == [(1,1),(3,1),(3,2),(3,3),(6,1)]
+    assert all(params[f"Cutout_row_{i:02d}"] == "false" for i in range(1,11))
+
+
+def test_dimension_schema_uses_consistent_inside_names():
+    source, preset = release_paths()
+    scad = source.read_text()
+    config = __import__("json").loads(preset.read_text())
+    current = ("Drawer_top_inside_width_mm", "Drawer_floor_inside_width_mm",
+               "Drawer_inside_length_mm", "Drawer_inside_height_mm")
+    old = ("Drawer_top_width_mm", "Drawer_floor_width_mm", "Drawer_rim_height_mm")
+    for params in config["parameterSets"].values():
+        assert all(name in params for name in current)
+        assert all(name not in params for name in old)
+    for name in current:
+        assert f"{name} =" in scad
+
+
 def test_default_grid_and_row_continuations():
     _,preset=release_paths()
     params=preset_parameters(preset)
@@ -90,9 +121,15 @@ def test_customizer_controls_and_defaults():
     assert "Preview_separation_mm = 0; // [0:1:50]" in scad
     assert "Straight_edges = false;" in scad
     assert params["Straight_edges"] == "false"
-    assert scad.index("Straight_edges = false;") < scad.index("Drawer_top_width_mm =")
-    assert scad.index("Drawer_top_width_mm =") < scad.index("Drawer_floor_width_mm =")
-    assert "assert(Drawer_top_width_mm>Drawer_floor_width_mm" not in scad
+    control_order = [
+        "Straight_edges = false;", "Drawer_top_inside_width_mm =",
+        "Drawer_floor_inside_width_mm =", "Drawer_inside_length_mm =",
+        "Drawer_inside_height_mm =", "Drawer_floor_corner_radius_mm ="
+    ]
+    assert [scad.index(name) for name in control_order] == sorted(
+        scad.index(name) for name in control_order
+    )
+    assert "assert(Drawer_top_inside_width_mm>Drawer_floor_inside_width_mm" not in scad
     assert "Preview_loose_connector_gap_mm = 12; // [0:0.5:60]" in scad
     assert "Preview_loose_connector_offset_mm = 12; // [0:0.5:100]" in scad
     assert params["Preview_loose_connector_gap_mm"] == "12"
